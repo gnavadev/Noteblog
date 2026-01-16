@@ -243,7 +243,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                         <Space size={16}>
                             <Avatar size={isExpanded ? 56 : 48} src="/GabrielPhoto.jpg" style={{ backgroundColor: '#007aff' }}>G</Avatar>
                             <div>
-                                <Typography.Text strong style={{ display: 'block' }}>Gabriel</Typography.Text>
+                                <Typography.Text strong style={{ display: 'block' }}>Gabriel Nava</Typography.Text>
                                 <Typography.Text type="secondary" style={{ fontSize: '0.85rem' }}>
                                     <CalendarOutlined style={{ marginRight: '6px' }} />
                                     {new Date(post.created_at).toLocaleDateString()}

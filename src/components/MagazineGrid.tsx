@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 import { Space, Tag, Empty, Spin, Dropdown, App, Typography, Masonry, Avatar, Button } from 'antd';
 import { EditTwoTone, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text } = Typography;
 
 interface Post {
     id: string;
@@ -70,7 +71,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     topics,
     loading
 }) => {
-    const { modal: modalApi, message: messageApi } = App.useApp();
+    const { modal: modalApi } = App.useApp();
     const displayPosts = useMemo(() => {
         let filtered = [...posts].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -214,17 +215,46 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                         )}
                                     </div>
 
-                                    <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                        <Title level={5} style={{ margin: '0 0 0.5rem', fontWeight: 800, fontSize: '1rem' }}>
+                                    <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <Title level={3} style={{ margin: '0 0 0.5rem', fontWeight: 800, fontSize: '1rem' }}>
                                             {post.title}
                                         </Title>
-                                        <Paragraph
-                                            ellipsis={{ rows: 2 }}
-                                            type="secondary"
-                                            style={{ margin: '0 0 1rem', fontSize: '0.85rem', lineHeight: 1.5 }}
+
+                                        <div style={{
+                                            height: '0.03em',
+                                            background: 'linear-gradient(to right, var(--mac-border), transparent)',
+                                        }} />
+
+                                        <div
+                                            style={{
+                                                margin: '0 0 0.5rem',
+                                                fontSize: '0.6rem',
+                                                color: 'var(--app-secondary)',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 1,
+                                                WebkitBoxOrient: 'vertical',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis'
+                                            }}
                                         >
-                                            {post.content}
-                                        </Paragraph>
+                                            <ReactMarkdown
+                                                components={{
+                                                    p: ({ children }) => <span>{children} </span>,
+                                                    strong: ({ children }) => <strong>{children}</strong>,
+                                                    em: ({ children }) => <em>{children}</em>,
+                                                    code: ({ children }) => <code style={{
+                                                        background: 'rgba(0,0,0,0.05)',
+                                                        padding: '2px 4px',
+                                                        borderRadius: '3px',
+                                                        fontSize: '0.9em',
+                                                        fontFamily: 'monospace'
+                                                    }}>{children}</code>,
+                                                    a: ({ children, href }) => <a href={href} style={{ color: '#007aff' }}>{children}</a>
+                                                }}
+                                            >
+                                                {post.content}
+                                            </ReactMarkdown>
+                                        </div>
 
                                         <div style={{
                                             marginTop: 'auto',
