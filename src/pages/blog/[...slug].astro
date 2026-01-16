@@ -21,6 +21,8 @@ interface Props {
 
 const { entry } = Astro.props;
 const { Content } = await entry.render();
+// This will be overridden by the React component on the client,
+// but we should default to matching our head script.
 const themeConfig = getThemeConfig("light");
 ---
 

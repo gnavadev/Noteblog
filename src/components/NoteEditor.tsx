@@ -23,9 +23,11 @@ interface PostEditorProps {
     onSave: () => void;
     postId?: string | null;
     availableTopics: { name: string; color: string }[];
+    colorMode: 'light' | 'dark';
+    toggleTheme: () => void;
 }
 
-const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, availableTopics }) => {
+const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, availableTopics, colorMode, toggleTheme }) => {
     const [markdown, setMarkdown] = useState('');
     const [title, setTitle] = useState('');
     const [topic, setTopic] = useState('Technology');
@@ -33,37 +35,10 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const [saving, setSaving] = useState(false);
     const [featuredImage, setFeaturedImage] = useState<string | null>(null);
     const [isUploadingBanner, setIsUploadingBanner] = useState(false);
-    const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
-        if (typeof document !== 'undefined') {
-            return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
-        }
-        return 'light';
-    });
     const { message: messageApi } = App.useApp();
     const [newTopicName, setNewTopicName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasBeenInitialized = useRef(false);
-
-    const toggleTheme = () => {
-        const newMode = colorMode === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', newMode);
-        localStorage.setItem('theme', newMode);
-        setColorMode(newMode);
-    };
-
-    useEffect(() => {
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
-                    const theme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark';
-                    setColorMode(theme || 'light');
-                }
-            });
-        });
-
-        observer.observe(document.documentElement, { attributes: true });
-        return () => observer.disconnect();
-    }, []);
 
     useEffect(() => {
         if (open) {

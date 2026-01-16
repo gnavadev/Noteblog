@@ -46,6 +46,7 @@ interface ReaderPanelProps {
     isExpanded: boolean;
     onToggleExpand: () => void;
     onClose: () => void;
+    colorMode: 'light' | 'dark';
 }
 
 const ReaderPanel: React.FC<ReaderPanelProps> = ({
@@ -54,11 +55,11 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
     topics,
     isExpanded,
     onToggleExpand,
-    onClose
+    onClose,
+    colorMode
 }) => {
     const [post, setPost] = useState<Post | null>(null);
     const [loading, setLoading] = useState(false);
-    const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
 
     useEffect(() => {
         if (initialPost) {
@@ -107,25 +108,6 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
         };
     }, [selectedPostId]);
 
-    useEffect(() => {
-        const syncTheme = () => {
-            const theme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark';
-            setColorMode(theme || 'light');
-        };
-
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
-                    syncTheme();
-                }
-            });
-        });
-
-        observer.observe(document.documentElement, { attributes: true });
-        syncTheme();
-
-        return () => observer.disconnect();
-    }, []);
 
     if (loading && !post) {
         return (

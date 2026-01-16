@@ -329,6 +329,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                                         isExpanded={isReaderExpanded}
                                         onToggleExpand={() => setIsReaderExpanded(!isReaderExpanded)}
                                         onClose={() => setSelectedPostId(null)}
+                                        colorMode={colorMode}
                                     />
                                 </motion.div>
                             </>
@@ -347,6 +348,8 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                         setIsEditorOpen(false);
                     }}
                     availableTopics={topics}
+                    colorMode={colorMode}
+                    toggleTheme={toggleTheme}
                 />
             )}
 
@@ -429,7 +432,7 @@ const BlogShell: React.FC = () => {
         const newMode = colorMode === 'light' ? 'dark' : 'light';
         setColorMode(newMode);
         document.documentElement.setAttribute('data-theme', newMode);
-        localStorage.setItem('theme', newMode);
+        localStorage.setItem('blog-theme', newMode);
     };
 
     return (
