@@ -18,8 +18,19 @@ const Auth: React.FC = () => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const loginWithGithub = () => supabase.auth.signInWithOAuth({ provider: 'github' });
-    const loginWithLinkedin = () => supabase.auth.signInWithOAuth({ provider: 'linkedin' });
+    const getRedirectUrl = () => {
+        // Use production URL if it exists, otherwise fall back to current origin
+        return "https://noteblog-self.vercel.app/";
+    };
+
+    const loginWithGithub = () => supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: { redirectTo: getRedirectUrl() }
+    });
+    const loginWithLinkedin = () => supabase.auth.signInWithOAuth({
+        provider: 'linkedin',
+        options: { redirectTo: getRedirectUrl() }
+    });
     const logout = () => supabase.auth.signOut();
 
     if (user) return null;
