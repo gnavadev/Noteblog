@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Space, Tag, Empty, Spin, Dropdown, Modal, Typography, Masonry, Avatar, Button } from 'antd';
+import { Space, Tag, Empty, Spin, Dropdown, App, Typography, Masonry, Avatar, Button } from 'antd';
 import { EditTwoTone, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -70,6 +70,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     topics,
     loading
 }) => {
+    const { modal: modalApi, message: messageApi } = App.useApp();
     const displayPosts = useMemo(() => {
         let filtered = [...posts].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -123,7 +124,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
             >
                 <Masonry
                     items={displayPosts.map(p => ({ key: p.id, data: p }))}
-                    columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
+                    columns={{ xs: 1, sm: 2, md: 2, lg: 3, xl: 4, xxl: 5 }}
                     gutter={24}
                     itemRender={(item) => {
                         const post = item.data;
@@ -189,7 +190,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                                                 label: 'Delete',
                                                                 danger: true,
                                                                 icon: <DeleteOutlined />,
-                                                                onClick: () => Modal.confirm({
+                                                                onClick: () => modalApi.confirm({
                                                                     title: 'Delete Story?',
                                                                     icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
                                                                     content: 'This will permanently remove this post and all its contents.',

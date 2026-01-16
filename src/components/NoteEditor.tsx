@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button, Space, Input, Select, message, Switch, Divider, Typography } from 'antd';
+import { Button, Space, Input, Select, App, Switch, Divider, Typography } from 'antd';
 import {
     CloseOutlined,
     SaveOutlined,
@@ -34,6 +34,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const [featuredImage, setFeaturedImage] = useState<string | null>(null);
     const [isUploadingBanner, setIsUploadingBanner] = useState(false);
     const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
+    const { message: messageApi } = App.useApp();
     const [newTopicName, setNewTopicName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasBeenInitialized = useRef(false);
@@ -100,7 +101,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 setMarkdown(data.content || '');
             }
         } catch (error: any) {
-            message.error(`Failed to load post: ${error.message}`);
+            messageApi.error(`Failed to load post: ${error.message}`);
         } finally {
             setSaving(false);
         }
@@ -131,13 +132,13 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
 
             if (isUploadingBanner) {
                 setFeaturedImage(publicUrl);
-                message.success('Banner updated');
+                messageApi.success('Banner updated');
             } else {
                 setMarkdown(prev => `${prev}\n![Image](${publicUrl})\n`);
-                message.success('Image added');
+                messageApi.success('Image added');
             }
         } catch (error: any) {
-            message.error(error.message);
+            messageApi.error(error.message);
         } finally {
             setSaving(false);
             setIsUploadingBanner(false);
@@ -147,7 +148,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
 
     const handleSave = async () => {
         if (!title.trim()) {
-            message.error('Please enter a title');
+            messageApi.error('Please enter a title');
             return;
         }
 
@@ -178,11 +179,11 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 payload: { action: 'saved', postId: postId || 'new' }
             });
 
-            message.success('Post published successfully');
+            messageApi.success('Post published successfully');
             await onSave(); // Ensure BlogShell fetches new data before closing
             onClose();
         } catch (error: any) {
-            message.error(error.message);
+            messageApi.error(error.message);
         } finally {
             setSaving(false);
         }
@@ -268,11 +269,10 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         value={topic}
                         onChange={setTopic}
                         options={availableTopics.map(t => ({ label: t.name, value: t.name }))}
-                        dropdownRender={topicDropdownHeader}
+                        popupRender={topicDropdownHeader}
                         style={{ width: 220 }}
                         variant="outlined"
                         getPopupContainer={trigger => trigger.parentElement}
-                        dropdownStyle={{ zIndex: 3000 }}
                     />
                 </Space>
 
