@@ -407,12 +407,15 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
 };
 
 const BlogShell: React.FC = () => {
-    const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
-        if (typeof document !== 'undefined') {
-            return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
-        }
-        return 'light';
-    });
+    const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
+
+    useEffect(() => {
+        // Read from localStorage on mount, after inline script has run
+        const savedTheme = localStorage.getItem('blog-theme');
+        const theme = (savedTheme as 'light' | 'dark') || 'light';
+        setColorMode(theme);
+        document.documentElement.setAttribute('data-theme', theme);
+    }, []);
 
     useEffect(() => {
         const observer = new MutationObserver((mutations) => {
