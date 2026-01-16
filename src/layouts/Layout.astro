@@ -12,22 +12,17 @@ const {
 	description = "Gabriel's library of thoughts, projects, and travel essays.",
 	image = "/GabrielPhoto.jpg",
 } = Astro.props;
-
-// Get theme server-side if possible (for SSR)
-const theme = "light"; // Default for SSR
 ---
 
 <!doctype html>
-<html lang="en" data-theme={theme}>
+<html lang="en" data-theme="light">
 	<head>
-		<script is:inline>
-			// ATOMIC THEME INITIALIZER - CRITICAL MUST RUN FIRST
+		<script>
 			(function () {
 				try {
 					const savedTheme = localStorage.getItem("blog-theme");
 					const theme = savedTheme || "light";
 					document.documentElement.setAttribute("data-theme", theme);
-					document.documentElement.dataset.theme = theme;
 					console.log(
 						"[THEME INIT] Applied theme:",
 						theme,
@@ -36,7 +31,6 @@ const theme = "light"; // Default for SSR
 					);
 				} catch (e) {
 					console.error("Theme init error:", e);
-					// Fallback to light theme
 					document.documentElement.setAttribute(
 						"data-theme",
 						"light",
