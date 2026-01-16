@@ -202,7 +202,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                 open={isMobileMenuOpen}
                 styles={{ body: { padding: 0 } }}
                 closable={false}
-                width={280}
+                size={280}
             >
                 <Sidebar {...sidebarProps} />
             </Drawer>

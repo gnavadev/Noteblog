@@ -15,14 +15,26 @@ const {
 ---
 
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
 	<head>
 		<script is:inline>
+			// ATOMIC THEME INITIALIZER - CRITICAL MUST RUN FIRST
 			(function () {
-				const savedTheme = localStorage.getItem("blog-theme");
-				const theme = savedTheme || "light";
-				document.documentElement.setAttribute("data-theme", theme);
-				console.log("[Theme Debug] Forced theme:", theme);
+				try {
+					const savedTheme = localStorage.getItem("blog-theme");
+					const theme = savedTheme || "light";
+					document.documentElement.setAttribute("data-theme", theme);
+					// Set directly on the html element for CSS selectors
+					document.documentElement.dataset.theme = theme;
+					console.log(
+						"[FINAL THEME DEBUG, ALMOST DROPPING THE N WORD (NUCLEAR)] Initialized to:",
+						theme,
+						"Store:",
+						savedTheme,
+					);
+				} catch (e) {
+					console.error("Theme init error:", e);
+				}
 			})();
 		</script>
 
