@@ -173,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             icon: <FileTextOutlined />,
             label: 'All Posts',
             style: {
-                padding: '0.5rem 1.3rem',
+                padding: '0.5rem 1rem',
                 background: (!selectedTopic && !selectedPostId) ? 'rgba(0, 122, 255, 0.1)' : 'transparent',
                 borderRadius: '8px',
                 margin: '4px 8px'
@@ -285,7 +285,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         mode="inline"
                         selectedKeys={[(!selectedTopic && !selectedPostId) ? 'all' : '']}
                         items={mainMenuItems}
-                        style={{ border: 'none', background: 'transparent' }}
+                        style={{ border: 'none', background: 'transparent', padding: '0 1rem 0 0' }}
                     />
                 </motion.div>
 
