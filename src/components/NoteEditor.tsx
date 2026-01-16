@@ -33,7 +33,12 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const [saving, setSaving] = useState(false);
     const [featuredImage, setFeaturedImage] = useState<string | null>(null);
     const [isUploadingBanner, setIsUploadingBanner] = useState(false);
-    const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
+    const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
+        if (typeof document !== 'undefined') {
+            return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
+        }
+        return 'light';
+    });
     const { message: messageApi } = App.useApp();
     const [newTopicName, setNewTopicName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,22 +52,16 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     };
 
     useEffect(() => {
-        const syncTheme = () => {
-            const theme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark';
-            setColorMode(theme || 'light');
-        };
-
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
-                    syncTheme();
+                    const theme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark';
+                    setColorMode(theme || 'light');
                 }
             });
         });
 
         observer.observe(document.documentElement, { attributes: true });
-        syncTheme();
-
         return () => observer.disconnect();
     }, []);
 

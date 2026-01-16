@@ -21,7 +21,12 @@ interface Post {
     featured_image?: string;
 }
 
-const BlogShellInner: React.FC = () => {
+interface BlogShellInnerProps {
+    colorMode: 'light' | 'dark';
+    toggleTheme: () => void;
+}
+
+const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme }) => {
     const { message: messageApi } = App.useApp();
     const [posts, setPosts] = useState<Post[]>([]);
     const [topics, setTopics] = useState<{ name: string; count: number; color: string }[]>([]);
@@ -32,7 +37,6 @@ const BlogShellInner: React.FC = () => {
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [user, setUser] = useState<any>(null);
     const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
-    const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isReaderExpanded, setIsReaderExpanded] = useState(false);
     const screens = Grid.useBreakpoint();
@@ -48,26 +52,6 @@ const BlogShellInner: React.FC = () => {
     useEffect(() => {
         const savedAvatar = localStorage.getItem('adminAvatar');
         if (savedAvatar) setAdminAvatar(savedAvatar);
-
-        const syncInitialTheme = () => {
-            const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-            if (savedTheme) {
-                setColorMode(savedTheme);
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            }
-        };
-        syncInitialTheme();
-
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
-                    const theme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark';
-                    setColorMode(theme || 'light');
-                }
-            });
-        });
-
-        observer.observe(document.documentElement, { attributes: true });
 
         supabase.auth.getSession().then(({ data: { session } }) => {
             const currentUser = session?.user ?? null;
@@ -112,7 +96,6 @@ const BlogShellInner: React.FC = () => {
 
         return () => {
             subscription.unsubscribe();
-            observer.disconnect();
             supabase.removeChannel(dbChannel);
             supabase.removeChannel(broadcastChannel);
         };
@@ -195,13 +178,6 @@ const BlogShellInner: React.FC = () => {
             console.error('Failure deleting post:', error);
             messageApi.error('Delete failed: ' + error.message);
         }
-    };
-
-    const toggleTheme = () => {
-        const newMode = colorMode === 'light' ? 'dark' : 'light';
-        setColorMode(newMode);
-        document.documentElement.setAttribute('data-theme', newMode);
-        localStorage.setItem('theme', newMode);
     };
 
     const sidebarProps = {
@@ -428,12 +404,14 @@ const BlogShellInner: React.FC = () => {
 };
 
 const BlogShell: React.FC = () => {
-    const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
+    const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
+        if (typeof document !== 'undefined') {
+            return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
+        }
+        return 'light';
+    });
 
     useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-        if (savedTheme) setColorMode(savedTheme);
-
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
@@ -447,10 +425,17 @@ const BlogShell: React.FC = () => {
         return () => observer.disconnect();
     }, []);
 
+    const toggleTheme = () => {
+        const newMode = colorMode === 'light' ? 'dark' : 'light';
+        setColorMode(newMode);
+        document.documentElement.setAttribute('data-theme', newMode);
+        localStorage.setItem('theme', newMode);
+    };
+
     return (
         <ConfigProvider theme={getThemeConfig(colorMode)}>
             <App>
-                <BlogShellInner />
+                <BlogShellInner colorMode={colorMode} toggleTheme={toggleTheme} />
             </App>
         </ConfigProvider>
     );
