@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Avatar, Space, Dropdown, Typography, Menu } from 'antd';
-import { GithubOutlined, LinkedinOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
+import { GithubOutlined, LinkedinOutlined } from '@ant-design/icons';
 import { supabase } from '../lib/supabase';
 
 const Auth: React.FC = () => {

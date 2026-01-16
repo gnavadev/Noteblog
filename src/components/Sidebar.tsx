@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Layout, Menu, Badge, Avatar, Space, Typography, Dropdown } from 'antd';
+import { motion } from 'framer-motion';
+import { Menu, Badge, Avatar, Space, Typography, Dropdown } from 'antd';
 import {
     FileTextOutlined,
     MailOutlined,
@@ -266,14 +266,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                background: 'var(--notability-sidebar)'
+                background: 'var(--app-sidebar)'
             }}
         >
             <motion.div variants={sidebarItemVariants} style={{ padding: '2rem 1.5rem 1.5rem' }}>
                 <Space size={16}>
                     <Avatar size={70} src={adminAvatar || '/GabrielPhoto.jpg'} style={{ backgroundColor: '#007aff' }}>G</Avatar>
                     <div>
-                        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--notability-text)', lineHeight: 1.2 }}>Gabriel's Blog</h2>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--app-text)', lineHeight: 1.2 }}>Gabriel's Blog</h2>
                         <Text type="secondary" style={{ fontSize: '0.9rem' }}> ← Looking for a job</Text>
                     </div>
                 </Space>
@@ -289,7 +289,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     />
                 </motion.div>
 
-                <motion.div variants={sidebarItemVariants} style={{ padding: '0.5rem 1.6rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--notability-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <motion.div variants={sidebarItemVariants} style={{ padding: '0.5rem 1.6rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--app-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     Categories
                 </motion.div>
 

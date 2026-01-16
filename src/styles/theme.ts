@@ -1,7 +1,7 @@
 import type { ThemeConfig } from 'antd';
 import { theme as antdTheme } from 'antd';
 
-const PRIMARY_BLUE = '#007aff'; // macOS Blue
+const PRIMARY_BLUE = '#007aff';
 
 export const getThemeConfig = (mode: 'light' | 'dark'): ThemeConfig => ({
   algorithm: mode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,

@@ -1,4 +1,4 @@
-import React, { useState, useRef, Suspense, lazy, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button, Space, Input, Select, message, Switch, Divider, Typography } from 'antd';
 import {
     CloseOutlined,
@@ -172,7 +172,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
 
             if (error) throw error;
 
-            await supabase.channel('notability_updates').send({
+            await supabase.channel('blog_updates').send({
                 type: 'broadcast',
                 event: 'refresh',
                 payload: { action: 'saved', postId: postId || 'new' }
@@ -236,13 +236,13 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             position: 'fixed',
             inset: 0,
             zIndex: 2000,
-            background: 'var(--notability-bg)',
+            background: 'var(--app-bg)',
             display: 'flex',
             flexDirection: 'column'
         }}>
             <header style={{
                 padding: '0.75rem 2rem',
-                background: 'var(--notability-sidebar)',
+                background: 'var(--app-sidebar)',
                 borderBottom: '1px solid var(--mac-border)',
                 display: 'flex',
                 alignItems: 'center',
@@ -253,14 +253,14 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         type="text"
                         icon={<ArrowLeftOutlined />}
                         onClick={onClose}
-                        style={{ color: 'var(--notability-text)' }}
+                        style={{ color: 'var(--app-text)' }}
                     />
                     <Input
                         placeholder="Post Title"
                         variant="borderless"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        style={{ fontSize: '1.4rem', fontWeight: 800, width: '22rem', padding: 0, color: 'var(--notability-text)' }}
+                        style={{ fontSize: '1.4rem', fontWeight: 800, width: '22rem', padding: 0, color: 'var(--app-text)' }}
                     />
                     <Divider orientation="vertical" />
                     <Select
@@ -286,7 +286,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                     <Divider orientation="vertical" />
                     <Space size={8}>
                         <GlobalOutlined style={{ color: isPublic ? '#007aff' : undefined, opacity: isPublic ? 1 : 0.5 }} />
-                        <Typography.Text strong style={{ fontSize: '0.9rem', color: 'var(--notability-text)' }}>Public</Typography.Text>
+                        <Typography.Text strong style={{ fontSize: '0.9rem', color: 'var(--app-text)' }}>Public</Typography.Text>
                         <Switch size="small" checked={isPublic} onChange={setIsPublic} />
                     </Space>
                     <Divider orientation="vertical" />
@@ -329,7 +329,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         type="text"
                         icon={<CloseOutlined />}
                         onClick={onClose}
-                        style={{ color: 'var(--notability-text)' }}
+                        style={{ color: 'var(--app-text)' }}
                     />
                 </Space>
             </header>
@@ -340,7 +340,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                     onChange={(val) => setMarkdown(val || '')}
                     height="100%"
                     preview="live"
-                    style={{ border: 'none', background: 'var(--notability-bg)' }}
+                    style={{ border: 'none', background: 'var(--app-bg)' }}
                 />
             </main>
         </div>

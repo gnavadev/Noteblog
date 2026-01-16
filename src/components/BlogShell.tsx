@@ -113,7 +113,7 @@ const BlogShell: React.FC = () => {
             .subscribe();
 
         const broadcastChannel = supabase
-            .channel('notability_updates')
+            .channel('blog_updates')
             .on('broadcast', { event: 'refresh' }, () => {
                 fetchPosts();
             })
@@ -205,7 +205,7 @@ const BlogShell: React.FC = () => {
 
             if (selectedPostId === id) setSelectedPostId(null);
 
-            await supabase.channel('notability_updates').send({
+            await supabase.channel('blog_updates').send({
                 type: 'broadcast',
                 event: 'refresh',
                 payload: { action: 'deleted', postId: id }
@@ -237,7 +237,7 @@ const BlogShell: React.FC = () => {
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.8 }}
                 >
-                    <Layout style={{ minHeight: '100vh', background: 'var(--notability-bg)' }}>
+                    <Layout style={{ minHeight: '100vh', background: 'var(--app-bg)' }}>
                         {isMobile ? (
                             <Drawer
                                 placement="left"
@@ -370,7 +370,7 @@ const BlogShell: React.FC = () => {
                                                     right: 0,
                                                     bottom: 0,
                                                     zIndex: isReaderExpanded ? 5000 : 200,
-                                                    background: 'var(--notability-sidebar)',
+                                                    background: 'var(--app-sidebar)',
                                                     boxShadow: '-10px 0 30px rgba(0,0,0,0.1)',
                                                     overflow: 'hidden',
                                                     display: 'flex',

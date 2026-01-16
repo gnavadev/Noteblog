@@ -3,16 +3,18 @@
 :root[data-theme="light"],
 :root {
   --mac-border: rgba(0, 0, 0, 0.08);
-  --notability-bg: #F8F9FA;
-  --notability-sidebar: #FFFFFF;
-  --notability-text: #1A1A1A;
+  --app-bg: #F8F9FA;
+  --app-sidebar: #FFFFFF;
+  --app-text: #1A1A1A;
+  --app-secondary: #8E8E93;
 }
 
 :root[data-theme="dark"] {
   --mac-border: rgba(255, 255, 255, 0.1);
-  --notability-bg: #282a36;
-  --notability-sidebar: #1e1f29;
-  --notability-text: #f8f8f2;
+  --app-bg: #282a36;
+  --app-sidebar: #1e1f29;
+  --app-text: #f8f8f2;
+  --app-secondary: #98989D;
 }
 
 :root {
@@ -26,8 +28,8 @@ html {
 
 body {
   font-family: 'Nunito', sans-serif;
-  background: var(--notability-bg);
-  color: var(--notability-text);
+  background: var(--app-bg);
+  color: var(--app-text);
   overflow-x: hidden;
   line-height: 1.6;
 }
@@ -42,30 +44,30 @@ body {
 
 /* Markdown Editor Theme Blending */
 .w-md-editor {
-  background-color: var(--notability-bg) !important;
-  color: var(--notability-text) !important;
+  background-color: var(--app-bg) !important;
+  color: var(--app-text) !important;
 }
 
 .w-md-editor-toolbar {
-  background-color: var(--notability-sidebar) !important;
+  background-color: var(--app-sidebar) !important;
   border-bottom: 1px solid var(--mac-border) !important;
 }
 
 .w-md-editor-toolbar li button,
 .w-md-editor-toolbar li svg {
-  color: var(--notability-text) !important;
-  fill: var(--notability-text) !important;
+  color: var(--app-text) !important;
+  fill: var(--app-text) !important;
 }
 
 .w-md-editor-content {
-  background-color: var(--notability-bg) !important;
+  background-color: var(--app-bg) !important;
 }
 
 .w-md-editor-area {
-  background-color: var(--notability-bg) !important;
+  background-color: var(--app-bg) !important;
 }
 
 .wmde-markdown {
   background-color: transparent !important;
-  color: var(--notability-text) !important;
+  color: var(--app-text) !important;
 }

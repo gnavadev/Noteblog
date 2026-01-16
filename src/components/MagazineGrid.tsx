@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { Space, Tag, Empty, Spin, Dropdown, Modal, Typography, Masonry, Avatar, Button } from 'antd';
 import { EditTwoTone, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabase';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -232,7 +231,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                             justifyContent: 'space-between',
                                             alignItems: 'center',
                                             fontSize: '0.75rem',
-                                            color: 'var(--notability-secondary)',
+                                            color: 'var(--app-secondary)',
                                             fontWeight: 500
                                         }}>
                                             <Space size={8}>

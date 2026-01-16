@@ -1,7 +1,7 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Space, Avatar, Divider, Tag, Spin, Button, Typography } from 'antd';
 import { ClockCircleOutlined, CalendarOutlined, ShareAltOutlined, ExpandOutlined, FullscreenExitOutlined } from '@ant-design/icons';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import "@uiw/react-markdown-preview/markdown.css";
 
@@ -129,7 +129,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
 
     if (loading && !post) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: 'var(--notability-bg)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: 'var(--app-bg)' }}>
                 <Spin size="large" tip="Entering Reading Mode...">
                     <div style={{ padding: '20px' }} />
                 </Spin>
@@ -147,7 +147,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 alignItems: 'center',
                 padding: '40px',
                 textAlign: 'center',
-                background: 'var(--notability-bg)'
+                background: 'var(--app-bg)'
             }}>
                 <div style={{ maxWidth: '320px' }}>
                     <div style={{ fontSize: '4rem', marginBottom: '24px', opacity: 0.2 }}>📖</div>
@@ -174,7 +174,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 opacity: { duration: 0.4 }
             }}
             style={{
-                background: 'var(--notability-sidebar)',
+                background: 'var(--app-sidebar)',
                 overflowY: 'auto',
                 overflowX: 'hidden',
                 flex: 1,
@@ -269,7 +269,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                             </div>
                         </Space>
 
-                        <Space size={20} style={{ color: 'var(--notability-secondary)', fontSize: '0.9rem' }}>
+                        <Space size={20} style={{ color: 'var(--app-secondary)', fontSize: '0.9rem' }}>
                             <span title="Read time">
                                 <ClockCircleOutlined style={{ marginRight: '4px' }} />
                                 {post.read_time_minutes} min
@@ -309,8 +309,8 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 </motion.div>
 
                 <motion.div variants={contentVariants}>
-                    <footer style={{ textAlign: 'center', color: 'var(--notability-secondary)', opacity: 0.6 }}>
-                        <p>© {new Date().getFullYear()} Gabriel's Notability Blog • Built with Astro</p>
+                    <footer style={{ textAlign: 'center', color: 'var(--app-secondary)', opacity: 0.6 }}>
+                        <p>© {new Date().getFullYear()} Gabriel's Blog</p>
                     </footer>
                 </motion.div>
             </motion.div>
