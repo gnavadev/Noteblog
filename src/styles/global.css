@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Architects+Daughter&display=swap');
 
-:root[data-theme="light"],
-:root {
+html[data-theme="light"],
+html {
   --mac-border: rgba(0, 0, 0, 0.08);
   --app-bg: #F8F9FA;
   --app-sidebar: #FFFFFF;
@@ -9,7 +9,7 @@
   --app-secondary: #8E8E93;
 }
 
-:root[data-theme="dark"] {
+html[data-theme="dark"] {
   --mac-border: rgba(255, 255, 255, 0.1);
   --app-bg: #282a36;
   --app-sidebar: #1e1f29;
