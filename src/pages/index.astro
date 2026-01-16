@@ -1,0 +1,16 @@
+---
+import Layout from "../layouts/Layout.astro";
+import BlogShell from "../components/BlogShell";
+---
+
+<Layout title="Gabriel's Portfolio">
+	<BlogShell client:only="react" />
+</Layout>
+
+<style is:global>
+	/* Background needs to be explicitly set for the whole page */
+	body {
+		background-color: var(--notability-bg) !important;
+		overflow: hidden;
+	}
+</style>

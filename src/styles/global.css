@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Architects+Daughter&display=swap');
+
+:root[data-theme="light"],
+:root {
+  --mac-border: rgba(0, 0, 0, 0.08);
+  --notability-bg: #F8F9FA;
+  --notability-sidebar: #FFFFFF;
+  --notability-text: #1A1A1A;
+}
+
+:root[data-theme="dark"] {
+  --mac-border: rgba(255, 255, 255, 0.1);
+  --notability-bg: #282a36;
+  --notability-sidebar: #1e1f29;
+  --notability-text: #f8f8f2;
+}
+
+:root {
+  --sidebar-width: 280px;
+  --gutter-main: 32px;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--notability-bg);
+  color: var(--notability-text);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+.glass {
+  background: var(--mac-bg);
+  backdrop-filter: blur(var(--mac-blur));
+  -webkit-backdrop-filter: blur(var(--mac-blur));
+  border: 1px solid var(--mac-border);
+  box-shadow: var(--mac-shadow);
+}
+
+/* Markdown Editor Theme Blending */
+.w-md-editor {
+  background-color: var(--notability-bg) !important;
+  color: var(--notability-text) !important;
+}
+
+.w-md-editor-toolbar {
+  background-color: var(--notability-sidebar) !important;
+  border-bottom: 1px solid var(--mac-border) !important;
+}
+
+.w-md-editor-toolbar li button,
+.w-md-editor-toolbar li svg {
+  color: var(--notability-text) !important;
+  fill: var(--notability-text) !important;
+}
+
+.w-md-editor-content {
+  background-color: var(--notability-bg) !important;
+}
+
+.w-md-editor-area {
+  background-color: var(--notability-bg) !important;
+}
+
+.wmde-markdown {
+  background-color: transparent !important;
+  color: var(--notability-text) !important;
+}

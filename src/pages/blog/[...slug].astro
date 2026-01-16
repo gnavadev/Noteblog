@@ -1,0 +1,93 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Sidebar from "../../components/Sidebar";
+import Comments from "../../components/Comments";
+import FloatingAsset from "../../components/FloatingAsset";
+import { getCollection, type CollectionEntry } from "astro:content";
+import { ConfigProvider } from "antd";
+import { getThemeConfig } from "../../styles/theme";
+
+export async function getStaticPaths() {
+    const blogEntries = await getCollection("blog");
+    return blogEntries.map((entry: CollectionEntry<"blog">) => ({
+        params: { slug: entry.id },
+        props: { entry },
+    }));
+}
+
+interface Props {
+    entry: CollectionEntry<"blog">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+const themeConfig = getThemeConfig("light");
+---
+
+<Layout title={entry.data.title}>
+    <ConfigProvider theme={themeConfig} client:load>
+        <main class="main-container">
+            <Sidebar
+                client:load
+                onNewPost={() => {}}
+                selectedPostId={null}
+                onSelectPost={() => {}}
+                selectedTopic={null}
+                onSelectTopic={() => {}}
+                posts={[]}
+                topics={[]}
+                isAdmin={false}
+                onUpdateTopicOrder={() => {}}
+                adminAvatar={null}
+            />
+            <div class="content-wrapper">
+                <article class="post-content">
+                    <header>
+                        <h1>{entry.data.title}</h1>
+                        <p class="meta">{entry.data.pubDate.toDateString()}</p>
+                    </header>
+                    <div class="markdown-body">
+                        <Content components={{ FloatingAsset }} />
+                    </div>
+
+                    <Comments postSlug={entry.id} client:load />
+                </article>
+            </div>
+        </main>
+    </ConfigProvider>
+</Layout>
+
+<style>
+    .main-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    .content-wrapper {
+        margin-left: 300px;
+        padding: 60px;
+        width: 100%;
+        max-width: 1000px;
+        position: relative; /* For absolute children like FloatingAsset */
+    }
+    header {
+        margin-bottom: 40px;
+    }
+    header h1 {
+        font-size: 3rem;
+        margin-bottom: 8px;
+    }
+    .meta {
+        color: rgba(60, 60, 67, 0.6);
+    }
+    .markdown-body {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        position: relative;
+        min-height: 500px;
+    }
+    @media (prefers-color-scheme: dark) {
+        .meta {
+            color: rgba(235, 235, 245, 0.6);
+        }
+    }
+</style>
