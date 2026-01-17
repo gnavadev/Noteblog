@@ -85,7 +85,10 @@ const PostIt = forwardRef<DrawingCanvasHandle, PostItProps>(({
             dragListener={false}
             dragMomentum={false}
             onDragEnd={(_, info) => {
-                onDragEnd(data.id, data.position_x + info.offset.x, data.position_y + info.offset.y);
+                const newX = data.position_x + info.offset.x;
+                const newY = data.position_y + info.offset.y;
+                console.log(`Dragging ended: id=${data.id}, offset=[${info.offset.x}, ${info.offset.y}], newPos=[${newX}, ${newY}]`);
+                onDragEnd(data.id, newX, newY);
             }}
             initial={{ scale: 0.8, opacity: 0, rotate: rotation }}
             animate={{

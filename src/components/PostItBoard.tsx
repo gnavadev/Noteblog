@@ -143,6 +143,14 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
 
         if (error) {
             console.error('Error updating post-it:', error);
+            toast({
+                title: "Failed to save changes",
+                description: error.message,
+                variant: "destructive"
+            });
+        } else {
+            // Force a fetch to ensure we have the latest server state
+            fetchPostIts();
         }
     };
 
@@ -220,7 +228,7 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
                             isAdmin={isAdmin}
                             onUpdate={handleUpdatePostIt}
                             onDelete={handleDeletePostIt}
-                            onDragEnd={(id, x, y) => handleUpdatePostIt(id, { position_x: x, position_y: y })}
+                            onDragEnd={(id, x, y) => handleUpdatePostIt(id, { position_x: Math.round(x), position_y: Math.round(y) })}
                             onInteract={() => setActivePostItId(postIt.id)}
                         />
                     ))
