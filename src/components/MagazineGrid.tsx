@@ -1,10 +1,27 @@
-import React, { useMemo } from 'react';
-import { Space, Tag, Empty, Spin, Dropdown, App, Typography, Masonry, Avatar, Button } from 'antd';
-import { EditTwoTone, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import React, { useMemo, useState } from 'react';
+import { Pencil, Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-
-const { Title, Text } = Typography;
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Post {
     id: string;
@@ -71,7 +88,9 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     topics,
     loading
 }) => {
-    const { modal: modalApi } = App.useApp();
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [postToDelete, setPostToDelete] = useState<string | null>(null);
+
     const displayPosts = useMemo(() => {
         let filtered = [...posts].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -87,11 +106,10 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                style={{ height: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="h-[40vh] flex flex-col items-center justify-center gap-4 text-muted-foreground"
             >
-                <Spin size="large" tip="Curating Gallery...">
-                    <div style={{ padding: '20px' }} />
-                </Spin>
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="text-sm font-medium">Curating Gallery...</span>
             </motion.div>
         );
     }
@@ -101,185 +119,169 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                style={{ padding: '4rem 2rem' }}
+                className="py-16 px-8 flex flex-col items-center justify-center text-center gap-4"
             >
-                <Empty
-                    description={selectedTopic ? `No stories yet in "${selectedTopic}"` : "The library is currently empty"}
-                >
-                    {isAdmin && (
-                        <Button type="primary" shape="round" onClick={onNewPost}>
-                            Compose First Story
-                        </Button>
-                    )}
-                </Empty>
+                <div className="p-6 rounded-full bg-muted/50">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground/50" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold">No stories found</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                        {selectedTopic ? `No stories yet in "${selectedTopic}"` : "The library is currently empty"}
+                    </p>
+                </div>
+                {isAdmin && (
+                    <Button onClick={onNewPost} className="rounded-full px-8">
+                        Compose First Story
+                    </Button>
+                )}
             </motion.div>
         );
     }
 
     return (
-        <div style={{ padding: '2rem var(--gutter-main)' }}>
+        <div className="p-8 md:p-12 lg:px-16">
             <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
+                className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-8 space-y-8"
             >
-                <Masonry
-                    items={displayPosts.map(p => ({ key: p.id, data: p }))}
-                    columns={{ xs: 1, sm: 2, md: 2, lg: 3, xl: 4, xxl: 5 }}
-                    gutter={24}
-                    itemRender={(item) => {
-                        const post = item.data;
+                <AnimatePresence mode="popLayout">
+                    {displayPosts.map((post) => {
                         const isSelected = selectedPostId === post.id;
+                        const topicColor = topics.find(t => t.name === post.topic)?.color || '#007aff';
 
                         return (
-                            <AnimatePresence mode="popLayout">
-                                <motion.div
-                                    key={post.id}
-                                    layout
-                                    variants={cardVariants}
-                                    whileHover={{
-                                        y: -8,
-                                        transition: { duration: 0.2 }
-                                    }}
-                                    id={post.id}
-                                    onClick={() => onSelectPost(post.id)}
-                                    className={`editorial-card ${isSelected ? 'selected' : ''}`}
+                            <motion.div
+                                key={post.id}
+                                layout
+                                variants={cardVariants}
+                                whileHover={{
+                                    y: -8,
+                                    transition: { duration: 0.2 }
+                                }}
+                                id={post.id}
+                                onClick={() => onSelectPost(post.id)}
+                                className={cn(
+                                    "break-inside-avoid relative flex flex-col overflow-hidden cursor-pointer transition-all duration-300",
+                                    "bg-card rounded-[24px] border border-border shadow-sm hover:shadow-xl",
+                                    isSelected && "ring-2 ring-primary border-transparent shadow-primary/10"
+                                )}
+                            >
+                                <div
+                                    className="h-40 w-full relative bg-muted"
                                     style={{
-                                        background: 'var(--card-bg)',
-                                        borderRadius: '20px',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        transition: 'background 0.3s, border 0.3s, box-shadow 0.3s',
-                                        border: `1px solid ${isSelected ? '#007aff' : 'var(--mac-border)'}`,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        boxShadow: isSelected ? '0 12px 24px rgba(0,122,255,0.12)' : 'var(--mac-shadow)',
-                                        marginBottom: '24px'
+                                        backgroundImage: `url(${post.featured_image})`,
+                                        backgroundPosition: 'center',
+                                        backgroundSize: 'cover'
                                     }}
                                 >
-                                    <div style={{
-                                        height: '9rem',
-                                        background: `url(${post.featured_image}) center/cover no-repeat`,
-                                        position: 'relative'
-                                    }}>
-                                        <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
-                                            <Tag
-                                                color={topics.find(t => t.name === post.topic)?.color || 'blue'}
-                                                variant="filled"
-                                                style={{
-                                                    borderRadius: '6px',
-                                                    fontWeight: 800,
-                                                    padding: '2px 8px',
-                                                    fontSize: '10px',
-                                                    textTransform: 'uppercase',
-                                                    border: 'none'
-                                                }}
-                                            >
-                                                {post.topic}
-                                            </Tag>
-                                        </div>
-
-                                        {isAdmin && (
-                                            <div style={{ position: 'absolute', top: '0.75rem', right: '1rem' }} onClick={e => e.stopPropagation()}>
-                                                <Dropdown
-                                                    menu={{
-                                                        items: [
-                                                            { key: 'edit', label: 'Edit', icon: <EditOutlined />, onClick: () => onEditPost(post.id) },
-                                                            { type: 'divider' },
-                                                            {
-                                                                key: 'delete',
-                                                                label: 'Delete',
-                                                                danger: true,
-                                                                icon: <DeleteOutlined />,
-                                                                onClick: () => modalApi.confirm({
-                                                                    title: 'Delete Story?',
-                                                                    icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
-                                                                    content: 'This will permanently remove this post and all its contents.',
-                                                                    okText: 'Delete',
-                                                                    okType: 'danger',
-                                                                    onOk: () => onDeletePost(post.id)
-                                                                })
-                                                            }
-                                                        ]
-                                                    }}
-                                                    placement="bottomRight"
-                                                >
-                                                    <Button
-                                                        size="small"
-                                                        shape="circle"
-                                                        icon={<EditTwoTone twoToneColor="#007aff" />}
-                                                        style={{ background: 'rgba(255,255,255,0.9)', border: 'none' }}
-                                                    />
-                                                </Dropdown>
-                                            </div>
-                                        )}
+                                    <div className="absolute top-4 left-4">
+                                        <Badge
+                                            className="bg-primary/90 text-primary-foreground backdrop-blur-sm border-none font-bold uppercase tracking-wider text-[10px] px-2.5 py-1"
+                                            style={{ backgroundColor: `${topicColor}cc` }}
+                                        >
+                                            {post.topic}
+                                        </Badge>
                                     </div>
 
-                                    <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                        <Title level={3} style={{ margin: '0 0 0.5rem', fontWeight: 800, fontSize: '1rem' }}>
-                                            {post.title}
-                                        </Title>
+                                    {isAdmin && (
+                                        <div className="absolute top-3 right-3" onClick={e => e.stopPropagation()}>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="icon"
+                                                        className="h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-sm border-none backdrop-blur-sm"
+                                                    >
+                                                        <Pencil className="h-4 w-4 text-primary" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-40">
+                                                    <DropdownMenuItem onClick={() => onEditPost(post.id)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        <span>Edit</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        className="text-destructive focus:text-destructive"
+                                                        onClick={() => {
+                                                            setPostToDelete(post.id);
+                                                            setDeleteConfirmOpen(true);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        <span>Delete</span>
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    )}
+                                </div>
 
-                                        <div style={{
-                                            height: '0.03em',
-                                            background: 'linear-gradient(to right, var(--mac-border), transparent)',
-                                        }} />
+                                <div className="p-6 flex-1 flex flex-col gap-3">
+                                    <h3 className="text-[1.1rem] font-extrabold leading-tight tracking-tight text-foreground">
+                                        {post.title}
+                                    </h3>
 
-                                        <div
-                                            style={{
-                                                margin: '0 0 0.5rem',
-                                                fontSize: '0.6rem',
-                                                color: 'var(--app-secondary)',
-                                                display: '-webkit-box',
-                                                WebkitLineClamp: 1,
-                                                WebkitBoxOrient: 'vertical',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis'
+                                    <div className="h-px w-full bg-gradient-to-r from-border to-transparent" />
+
+                                    <div className="text-[0.85rem] text-muted-foreground leading-relaxed line-clamp-2 italic opacity-80">
+                                        <ReactMarkdown
+                                            components={{
+                                                p: ({ children }) => <span className="inline">{children} </span>,
+                                                strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                                                em: ({ children }) => <em className="italic">{children}</em>,
+                                                code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-[0.9em] font-mono">{children}</code>,
+                                                a: ({ children, href }) => <a href={href} className="text-primary hover:underline" onClick={e => e.stopPropagation()}>{children}</a>
                                             }}
                                         >
-                                            <ReactMarkdown
-                                                components={{
-                                                    p: ({ children }) => <span>{children} </span>,
-                                                    strong: ({ children }) => <strong>{children}</strong>,
-                                                    em: ({ children }) => <em>{children}</em>,
-                                                    code: ({ children }) => <code style={{
-                                                        background: 'rgba(0,0,0,0.05)',
-                                                        padding: '2px 4px',
-                                                        borderRadius: '3px',
-                                                        fontSize: '0.9em',
-                                                        fontFamily: 'monospace'
-                                                    }}>{children}</code>,
-                                                    a: ({ children, href }) => <a href={href} style={{ color: '#007aff' }}>{children}</a>
-                                                }}
-                                            >
-                                                {post.content}
-                                            </ReactMarkdown>
-                                        </div>
-
-                                        <div style={{
-                                            marginTop: 'auto',
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            fontSize: '0.75rem',
-                                            color: 'var(--app-secondary)',
-                                            fontWeight: 500
-                                        }}>
-                                            <Space size={8}>
-                                                <Avatar size={20} src="/GabrielPhoto.jpg" style={{ border: '1px solid rgba(0,0,0,0.05)' }} />
-                                                <Text type="secondary" style={{ fontSize: '0.75rem' }}>
-                                                    {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                </Text>
-                                            </Space>
-                                            <span>{post.read_time_minutes} min read</span>
-                                        </div>
+                                            {post.content}
+                                        </ReactMarkdown>
                                     </div>
-                                </motion.div>
-                            </AnimatePresence>
+
+                                    <div className="mt-auto pt-4 flex items-center justify-between text-[0.75rem] font-medium text-muted-foreground">
+                                        <div className="flex items-center gap-2">
+                                            <Avatar className="h-6 w-6 border border-border">
+                                                <AvatarImage src="/GabrielPhoto.jpg" />
+                                                <AvatarFallback>G</AvatarFallback>
+                                            </Avatar>
+                                            <span>
+                                                {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                        <span className="opacity-70">{post.read_time_minutes} min read</span>
+                                    </div>
+                                </div>
+                            </motion.div>
                         );
-                    }}
-                />
+                    })}
+                </AnimatePresence>
             </motion.div>
+
+            <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Story?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove this post and all its contents. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setPostToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (postToDelete) onDeletePost(postToDelete);
+                                setDeleteConfirmOpen(false);
+                                setPostToDelete(null);
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

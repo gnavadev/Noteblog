@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Space, Avatar, Divider, Tag, Spin, Button, Typography } from 'antd';
-import { ClockCircleOutlined, CalendarOutlined, ShareAltOutlined, ExpandOutlined, FullscreenExitOutlined } from '@ant-design/icons';
+import { Clock, Calendar, Share2, Maximize2, Minimize2, X, Loader2, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import "@uiw/react-markdown-preview/markdown.css";
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import ReactMarkdown from '@uiw/react-markdown-preview';
 
@@ -111,39 +116,35 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
 
     if (loading && !post) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: 'var(--app-bg)' }}>
-                <Spin size="large" tip="Entering Reading Mode...">
-                    <div style={{ padding: '20px' }} />
-                </Spin>
+            <div className="flex flex-col items-center justify-center h-full bg-background gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="text-sm font-medium animate-pulse">Entering Reading Mode...</span>
             </div>
         );
     }
 
     if (!post) {
         return (
-            <div style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                padding: '40px',
-                textAlign: 'center',
-                background: 'var(--app-bg)'
-            }}>
-                <div style={{ maxWidth: '320px' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '24px', opacity: 0.2 }}>📖</div>
-                    <Typography.Title level={2} style={{ margin: 0 }}>
-                        Select a Story
-                    </Typography.Title>
-                    <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
-                        Dive into Gabriel's library of thoughts, projects, and travel essays.
-                    </Typography.Paragraph>
-                    <Button onClick={onClose} style={{ marginTop: '20px' }}>Back to Grid</Button>
+            <div className="h-full flex flex-col items-center justify-center p-10 text-center bg-background">
+                <div className="max-w-[320px] flex flex-col items-center gap-6">
+                    <div className="bg-muted rounded-full p-8">
+                        <BookOpen className="h-16 w-16 text-muted-foreground opacity-30" />
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold tracking-tight">Select a Story</h2>
+                        <p className="text-muted-foreground">
+                            Dive into Gabriel's library of thoughts, projects, and travel essays.
+                        </p>
+                    </div>
+                    <Button variant="outline" onClick={onClose} className="rounded-full px-8">
+                        Back to Grid
+                    </Button>
                 </div>
             </div>
         );
     }
+
+    const topicColor = topics.find(t => t.name === post.topic)?.color || '#007aff';
 
     return (
         <motion.div
@@ -155,14 +156,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
                 opacity: { duration: 0.4 }
             }}
-            style={{
-                background: 'var(--app-sidebar)',
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                flex: 1,
-                width: '100%',
-                position: 'relative'
-            }}
+            className="bg-sidebar overflow-y-auto overflow-x-hidden flex-1 w-full relative h-full scroll-smooth"
         >
             <motion.div
                 layout="position"
@@ -172,33 +166,38 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                     layout: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
                     opacity: { duration: 0.5 }
                 }}
+                className={cn(
+                    "relative flex items-end p-8 transition-[height] duration-700 ease-[0.4,0,0.2,1]",
+                    isExpanded ? "h-[45vh]" : "h-[25vh]"
+                )}
                 style={{
-                    height: isExpanded ? '40vh' : '20vh',
-                    background: `linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.4)), url(${post.featured_image}) center/cover no-repeat`,
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    padding: '24px',
-                    position: 'relative'
+                    background: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${post.featured_image}) center/cover no-repeat`,
                 }}
             >
-                <div style={{ position: 'absolute', top: 20, right: 20, display: 'flex', gap: '12px' }}>
+                <div className="absolute top-6 right-6 flex items-center gap-3">
                     <Button
-                        shape="circle"
-                        icon={<ShareAltOutlined />}
-                        style={{ border: 'none', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', color: 'white' }}
-                    />
+                        size="icon"
+                        variant="ghost"
+                        className="rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-none h-10 w-10"
+                    >
+                        <Share2 className="h-4 w-4" />
+                    </Button>
                     <Button
-                        shape="circle"
-                        icon={isExpanded ? <FullscreenExitOutlined /> : <ExpandOutlined />}
+                        size="icon"
+                        variant="ghost"
+                        className="rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-none h-10 w-10"
                         onClick={onToggleExpand}
-                        style={{ border: 'none', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', color: 'white' }}
-                    />
+                    >
+                        {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                    </Button>
                     <Button
-                        shape="circle"
-                        icon={<Typography.Text style={{ color: 'white', fontWeight: 800 }}>✕</Typography.Text>}
+                        size="icon"
+                        variant="ghost"
+                        className="rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-none h-10 w-10"
                         onClick={onClose}
-                        style={{ border: 'none', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
-                    />
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
                 </div>
 
                 <motion.div
@@ -206,19 +205,12 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
                 >
-                    <Tag
-                        color={topics.find(t => t.name === post.topic)?.color || 'purple'}
-                        variant="filled"
-                        style={{
-                            marginBottom: '1rem',
-                            fontWeight: 800,
-                            padding: '0.25rem 1rem',
-                            borderRadius: '0.375rem',
-                            fontSize: '0.9rem'
-                        }}
+                    <Badge
+                        className="mb-4 font-extrabold px-4 py-1.5 rounded-lg text-sm uppercase tracking-wider backdrop-blur-md shadow-lg border-none"
+                        style={{ backgroundColor: `${topicColor}dd`, color: 'white' }}
                     >
-                        {post.topic.toUpperCase()}
-                    </Tag>
+                        {post.topic}
+                    </Badge>
                 </motion.div>
             </motion.div>
 
@@ -226,73 +218,76 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 variants={staggerContainer}
                 initial="hidden"
                 animate="show"
-                style={{
-                    maxWidth: isExpanded ? '1000px' : '800px',
-                    margin: '0 auto',
-                    padding: '3rem var(--gutter-main)',
-                    transition: 'max-width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
-                }}
+                className={cn(
+                    "mx-auto py-12 px-8 transition-all duration-700 ease-[0.4,0,0.2,1]",
+                    isExpanded ? "max-w-[1000px]" : "max-w-[800px]"
+                )}
             >
-                <header style={{ marginBottom: '2.5rem' }}>
+                <header className="mb-10 flex flex-col gap-6">
                     <motion.div variants={contentVariants}>
-                        <Typography.Title level={1} style={{ margin: '0 0 1.5rem', fontWeight: 800, fontSize: isExpanded ? '3rem' : '2.5rem', transition: 'font-size 0.6s' }}>
+                        <h1 className={cn(
+                            "font-extrabold tracking-tight transition-all duration-700 leading-[1.1]",
+                            isExpanded ? "text-5xl" : "text-4xl"
+                        )}>
                             {post.title}
-                        </Typography.Title>
+                        </h1>
                     </motion.div>
-                    <motion.div variants={contentVariants} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                        <Space size={16}>
-                            <Avatar size={isExpanded ? 56 : 48} src="/GabrielPhoto.jpg" style={{ backgroundColor: '#007aff' }}>G</Avatar>
-                            <div>
-                                <Typography.Text strong style={{ display: 'block' }}>Gabriel Nava</Typography.Text>
-                                <Typography.Text type="secondary" style={{ fontSize: '0.85rem' }}>
-                                    <CalendarOutlined style={{ marginRight: '6px' }} />
-                                    {new Date(post.created_at).toLocaleDateString()}
-                                </Typography.Text>
-                            </div>
-                        </Space>
 
-                        <Space size={20} style={{ color: 'var(--app-secondary)', fontSize: '0.9rem' }}>
-                            <span title="Read time">
-                                <ClockCircleOutlined style={{ marginRight: '4px' }} />
-                                {post.read_time_minutes} min
-                            </span>
+                    <motion.div variants={contentVariants} className="flex items-center justify-between flex-wrap gap-6">
+                        <div className="flex items-center gap-4">
+                            <Avatar className={cn(
+                                "border-2 border-primary/10 shadow-lg transition-all duration-700",
+                                isExpanded ? "h-14 w-14" : "h-12 w-12"
+                            )}>
+                                <AvatarImage src="/GabrielPhoto.jpg" />
+                                <AvatarFallback>G</AvatarFallback>
+                            </Avatar>
+                            <div className="space-y-0.5">
+                                <span className="block font-bold text-[1.05rem]">Gabriel Nava</span>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    <span>{new Date(post.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-6 text-sm font-semibold text-muted-foreground">
+                            <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
+                                <Clock className="h-4 w-4 text-primary" />
+                                <span>{post.read_time_minutes} min read</span>
+                            </div>
+
                             <Button
-                                type="primary"
-                                shape="round"
-                                icon={isExpanded ? <FullscreenExitOutlined /> : <ExpandOutlined />}
+                                size="sm"
+                                variant={isExpanded ? "destructive" : "default"}
                                 onClick={onToggleExpand}
-                                style={{
-                                    background: isExpanded ? '#ff3b30' : '#007aff',
-                                    borderColor: isExpanded ? '#ff3b30' : '#007aff',
-                                    fontWeight: 600,
-                                    height: '2rem',
-                                    padding: '0 1rem',
-                                    fontSize: '0.85rem'
-                                }}
+                                className="rounded-full px-6 font-bold shadow-lg shadow-primary/20"
                             >
+                                {isExpanded ? <Minimize2 className="h-4 w-4 mr-2" /> : <Maximize2 className="h-4 w-4 mr-2" />}
                                 {isExpanded ? 'Minimize' : 'Expand View'}
                             </Button>
-                        </Space>
+                        </div>
                     </motion.div>
                 </header>
 
+                <Separator className="mb-10 opacity-50" />
+
                 <motion.div variants={contentVariants}>
-                    <div className="markdown-reader-content" style={{
-                        width: '100%',
-                        minHeight: '25rem',
-                        background: 'transparent'
-                    }} data-color-mode={colorMode}>
+                    <div
+                        className="markdown-reader-content prose prose-neutral dark:prose-invert max-w-none min-h-[400px]"
+                        data-color-mode={colorMode}
+                    >
                         <ReactMarkdown source={post.content} />
                     </div>
                 </motion.div>
 
                 <motion.div variants={contentVariants}>
-                    <Divider style={{ margin: '3.75rem 0' }} />
+                    <Separator className="my-16" />
                 </motion.div>
 
                 <motion.div variants={contentVariants}>
-                    <footer style={{ textAlign: 'center', color: 'var(--app-secondary)', opacity: 0.6 }}>
-                        <p>© {new Date().getFullYear()} Gabriel's Blog</p>
+                    <footer className="text-center text-sm font-medium text-muted-foreground opacity-50 py-8">
+                        <p>© {new Date().getFullYear()} Gabriel Nava — Crafting Digital Experiences</p>
                     </footer>
                 </motion.div>
             </motion.div>

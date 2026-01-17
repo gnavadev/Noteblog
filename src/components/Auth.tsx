@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from 'antd';
-import { GithubOutlined, LinkedinOutlined } from '@ant-design/icons';
+import { Button } from '@/components/ui/button';
+import { Github, Linkedin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const Auth: React.FC = () => {
@@ -19,7 +19,10 @@ const Auth: React.FC = () => {
     }, []);
 
     const getRedirectUrl = () => {
-        // Use production URL if it exists, otherwise fall back to current origin
+        // Use current window origin for all environments (localhost in dev, vercel in prod)
+        if (typeof window !== 'undefined') {
+            return window.location.origin;
+        }
         return "https://noteblog-self.vercel.app/";
     };
 
@@ -31,16 +34,17 @@ const Auth: React.FC = () => {
         provider: 'linkedin',
         options: { redirectTo: getRedirectUrl() }
     });
-    const logout = () => supabase.auth.signOut();
 
     if (user) return null;
 
     return (
-        <div style={{ padding: '0 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Button icon={<GithubOutlined />} onClick={loginWithGithub} block>
+        <div className="px-6 flex flex-col gap-2">
+            <Button variant="outline" onClick={loginWithGithub} className="w-full justify-start gap-2">
+                <Github className="w-4 h-4" />
                 GitHub Login
             </Button>
-            <Button icon={<LinkedinOutlined />} onClick={loginWithLinkedin} block>
+            <Button variant="outline" onClick={loginWithLinkedin} className="w-full justify-start gap-2">
+                <Linkedin className="w-4 h-4" />
                 LinkedIn Login
             </Button>
         </div>

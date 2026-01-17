@@ -3,13 +3,15 @@ import Sidebar from './Sidebar';
 import MagazineGrid from './MagazineGrid';
 import ReaderPanel from './ReaderPanel';
 import PostEditor from './NoteEditor';
-import { PlusOutlined, MenuOutlined, SunOutlined, MoonOutlined } from "@ant-design/icons";
+import { Plus, Menu, Sun, Moon, User } from "lucide-react";
 import { supabase } from '../lib/supabase';
-import { ConfigProvider, App, FloatButton, Layout, Drawer, Grid, Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getThemeConfig } from '../styles/theme';
-
-const { Content, Sider } = Layout;
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 interface Post {
     id: string;
@@ -27,7 +29,7 @@ interface BlogShellInnerProps {
 }
 
 const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme }) => {
-    const { message: messageApi } = App.useApp();
+    const { toast } = useToast();
     const [posts, setPosts] = useState<Post[]>([]);
     const [topics, setTopics] = useState<{ name: string; count: number; color: string }[]>([]);
     const [loading, setLoading] = useState(true);
@@ -37,11 +39,11 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [user, setUser] = useState<any>(null);
     const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isReaderExpanded, setIsReaderExpanded] = useState(false);
-    const screens = Grid.useBreakpoint();
-    const isMobile = !screens.md;
+    const [showPostIt, setShowPostIt] = useState(false);
+    const isMobile = useIsMobile();
     const contentRef = useRef<HTMLDivElement>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
     const topicPalette = ['#ff9500', '#ff2d55', '#007aff', '#5856d6', '#00b96b', '#af52de', '#ff3b30', '#ffcc00'];
 
     // Reset expansion when changing posts
@@ -75,6 +77,8 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                     localStorage.setItem('adminAvatar', avatar);
                 }
             }
+            // Sync with iframe if it exists
+            syncAuthWithIframe();
         });
 
         fetchPosts();
@@ -138,6 +142,37 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
         setLoading(false);
     };
 
+    const syncAuthWithIframe = async () => {
+        if (!iframeRef.current || !iframeRef.current.contentWindow) return;
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            iframeRef.current.contentWindow.postMessage({
+                type: 'SUPABASE_AUTH_SYNC',
+                session: {
+                    access_token: session.access_token,
+                    refresh_token: session.refresh_token,
+                }
+            }, '*');
+        }
+    };
+
+    const handleSelectPostIt = () => {
+        setShowPostIt(true);
+        setSelectedPostId(null);
+        setSelectedTopic(null);
+    };
+
+    const handleSelectPost = (id: string | null) => {
+        setSelectedPostId(id);
+        setShowPostIt(false);
+    };
+
+    const handleSelectTopic = (topic: string | null) => {
+        setSelectedTopic(topic);
+        setShowPostIt(false);
+    };
+
     const isAdmin = user?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1';
 
     const handleUpdateTopicOrder = (newOrder: string[]) => {
@@ -173,170 +208,55 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                 payload: { action: 'deleted', postId: id }
             });
             await fetchPosts();
-            messageApi.success('Post deleted successfully');
+            toast({ title: "Post deleted successfully" });
         } catch (error: any) {
             console.error('Failure deleting post:', error);
-            messageApi.error('Delete failed: ' + error.message);
+            toast({ title: "Delete failed", description: error.message, variant: "destructive" });
         }
     };
 
     const sidebarProps = {
         onNewPost: handleNewPost,
         selectedPostId,
-        onSelectPost: setSelectedPostId,
+        onSelectPost: handleSelectPost,
         selectedTopic,
-        onSelectTopic: setSelectedTopic,
+        onSelectTopic: handleSelectTopic,
         posts,
         topics,
         isAdmin,
         onUpdateTopicOrder: handleUpdateTopicOrder,
-        adminAvatar
+        adminAvatar,
+        isSelectedPostIt: showPostIt,
+        onSelectPostIt: handleSelectPostIt
     };
 
     return (
-        <Layout style={{ minHeight: '100vh', background: 'var(--app-bg)' }}>
-            {/* Mobile Drawer */}
-            <Drawer
-                placement="left"
-                onClose={() => setIsMobileMenuOpen(false)}
-                open={isMobileMenuOpen}
-                styles={{ body: { padding: 0 } }}
-                closable={false}
-                size={280}
-            >
-                <Sidebar {...sidebarProps} />
-            </Drawer>
+        <div className="flex min-h-screen w-full bg-background transition-colors duration-300">
+            <Sidebar {...sidebarProps} />
 
-            {/* Desktop Sider - Fixed Width with Breakpoint Support */}
-            <Sider
-                width={280}
-                breakpoint="md"
-                collapsedWidth="0"
-                trigger={null}
-                style={{
-                    overflow: 'auto',
-                    height: '100vh',
-                    position: 'fixed',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    backgroundColor: 'var(--mac-sidebar)',
-                    borderRight: '1px solid var(--mac-border)',
-                    zIndex: 100
-                }}
-            >
-                <Sidebar {...sidebarProps} />
-            </Sider>
-
-            <Layout className="main-content-layout" style={{
-                background: 'transparent',
-                transition: 'margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}>
-                <Content
-                    ref={contentRef}
-                    style={{
-                        height: '100vh',
-                        overflowX: 'hidden',
-                        overflowY: 'auto'
-                    }}
-                    id="grid-scroll-container"
-                >
-                    {isMobile && (
-                        <div style={{ position: 'fixed', top: 24, left: 24, zIndex: 1000 }}>
-                            <Button
-                                shape="circle"
-                                size="large"
-                                icon={<MenuOutlined />}
-                                onClick={() => setIsMobileMenuOpen(true)}
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                    border: 'none',
-                                    background: 'var(--app-sidebar)',
-                                    color: 'var(--app-text)'
-                                }}
-                            />
-                        </div>
-                    )}
-
-                    <MagazineGrid
-                        selectedPostId={selectedPostId}
-                        onSelectPost={setSelectedPostId}
-                        onNewPost={handleNewPost}
-                        onEditPost={handleEditPost}
-                        onDeletePost={handleDeletePost}
-                        isAdmin={isAdmin}
-                        selectedTopic={selectedTopic}
-                        posts={posts}
-                        topics={topics}
-                        loading={loading}
-                    />
-
-                    <AnimatePresence>
-                        {selectedPostId && (
-                            <>
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{
-                                        opacity: isReaderExpanded ? 0 : 1,
-                                        transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] }
-                                    }}
-                                    exit={{ opacity: 0 }}
-                                    onClick={() => setSelectedPostId(null)}
-                                    style={{
-                                        position: 'fixed',
-                                        inset: 0,
-                                        background: 'rgba(0,0,0,0.2)',
-                                        backdropFilter: 'blur(4px)',
-                                        zIndex: 199,
-                                        pointerEvents: isReaderExpanded ? 'none' : 'auto'
-                                    }}
-                                />
-
-                                <motion.div
-                                    initial={{ x: '100%' }}
-                                    animate={{
-                                        x: 0,
-                                        width: isReaderExpanded ? '100vw' : (screens.xl ? '40vw' : screens.lg ? '60vw' : '100vw'),
-                                    }}
-                                    exit={{ x: '100%' }}
-                                    transition={{
-                                        width: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
-                                        x: { type: 'spring', damping: 28, stiffness: 180 }
-                                    }}
-                                    layout
-                                    style={{
-                                        position: 'fixed',
-                                        top: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        zIndex: isReaderExpanded ? 5000 : 200,
-                                        background: 'var(--app-sidebar)',
-                                        boxShadow: '-10px 0 30px rgba(0,0,0,0.1)',
-                                        overflow: 'hidden',
-                                        display: 'flex',
-                                        flexDirection: 'column'
-                                    }}
-                                >
-                                    <ReaderPanel
-                                        selectedPostId={selectedPostId}
-                                        initialPost={posts.find(p => p.id === selectedPostId) || null}
-                                        topics={topics}
-                                        isExpanded={isReaderExpanded}
-                                        onToggleExpand={() => setIsReaderExpanded(!isReaderExpanded)}
-                                        onClose={() => setSelectedPostId(null)}
-                                        colorMode={colorMode}
-                                    />
-                                </motion.div>
-                            </>
-                        )}
-                    </AnimatePresence>
-                </Content>
-            </Layout>
+            <SidebarInset className="flex-1 flex flex-col relative w-full overflow-hidden">
+                <ContentArea
+                    contentRef={contentRef}
+                    isMobile={isMobile}
+                    showPostIt={showPostIt}
+                    iframeRef={iframeRef}
+                    syncAuthWithIframe={syncAuthWithIframe}
+                    posts={posts}
+                    topics={topics}
+                    selectedPostId={selectedPostId}
+                    handleSelectPost={handleSelectPost}
+                    handleNewPost={handleNewPost}
+                    handleEditPost={handleEditPost}
+                    handleDeletePost={handleDeletePost}
+                    isAdmin={isAdmin}
+                    selectedTopic={selectedTopic}
+                    loading={loading}
+                    isReaderExpanded={isReaderExpanded}
+                    setIsReaderExpanded={setIsReaderExpanded}
+                    colorMode={colorMode}
+                    toggleTheme={toggleTheme}
+                />
+            </SidebarInset>
 
             {isEditorOpen && (
                 <PostEditor
@@ -353,58 +273,140 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                 />
             )}
 
-            {isAdmin ? (
-                <FloatButton.Group
-                    trigger="hover"
-                    type="primary"
-                    style={{ right: 24, bottom: 24, zIndex: 9999 }}
-                    icon={<PlusOutlined />}
-                >
-                    <FloatButton icon={<PlusOutlined />} tooltip="New Post" onClick={handleNewPost} />
-                    <FloatButton
-                        icon={colorMode === 'light' ? <MoonOutlined /> : <SunOutlined />}
-                        tooltip={colorMode === 'light' ? 'Dark Mode' : 'Light Mode'}
-                        onClick={toggleTheme}
-                    />
-                </FloatButton.Group>
-            ) : (
-                <FloatButton
-                    icon={colorMode === 'light' ? <MoonOutlined /> : <SunOutlined />}
-                    tooltip={colorMode === 'light' ? 'Dark Mode' : 'Light Mode'}
-                    style={{ right: 24, bottom: 24, zIndex: 9999 }}
+            <div className="fixed right-6 bottom-6 z-[200] flex flex-col gap-3">
+                {isAdmin && (
+                    <Button
+                        size="icon"
+                        className="h-14 w-14 rounded-full shadow-2xl bg-primary hover:scale-105 transition-transform"
+                        onClick={handleNewPost}
+                    >
+                        <Plus className="h-7 w-7" />
+                    </Button>
+                )}
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-14 w-14 rounded-full shadow-2xl bg-background/80 backdrop-blur-md hover:scale-105 transition-transform"
                     onClick={toggleTheme}
+                >
+                    {colorMode === 'light' ? <Moon className="h-6 w-6" /> : <Sun className="h-6 w-6" />}
+                </Button>
+            </div>
+        </div>
+    );
+};
+
+// Extracted ContentArea for better organization
+const ContentArea: React.FC<any> = ({
+    contentRef,
+    isMobile,
+    showPostIt,
+    iframeRef,
+    syncAuthWithIframe,
+    posts,
+    topics,
+    selectedPostId,
+    handleSelectPost,
+    handleNewPost,
+    handleEditPost,
+    handleDeletePost,
+    isAdmin,
+    selectedTopic,
+    loading,
+    isReaderExpanded,
+    setIsReaderExpanded,
+    colorMode,
+    toggleTheme
+}) => {
+    return (
+        <main
+            ref={contentRef}
+            className="flex-1 h-screen overflow-x-hidden overflow-y-auto"
+            id="grid-scroll-container"
+        >
+            {isMobile && (
+                <div className="fixed top-6 left-6 z-[100]">
+                    <SidebarTrigger className="h-12 w-12 rounded-full shadow-lg bg-background border-none flex items-center justify-center">
+                        <Menu className="h-6 w-6" />
+                    </SidebarTrigger>
+                </div>
+            )}
+
+            {showPostIt ? (
+                <div className="h-full p-8 md:p-12 flex flex-col">
+                    <div className="flex-1 min-h-[calc(100vh-10rem)] bg-card rounded-3xl overflow-hidden border border-border shadow-xl">
+                        <iframe
+                            ref={iframeRef}
+                            src="https://gnava-postit.vercel.app/#"
+                            onLoad={syncAuthWithIframe}
+                            className="w-full h-full border-none"
+                            title="Gabriel's Post-it Board"
+                        />
+                    </div>
+                </div>
+            ) : (
+                <MagazineGrid
+                    selectedPostId={selectedPostId}
+                    onSelectPost={handleSelectPost}
+                    onNewPost={handleNewPost}
+                    onEditPost={handleEditPost}
+                    onDeletePost={handleDeletePost}
+                    isAdmin={isAdmin}
+                    selectedTopic={selectedTopic}
+                    posts={posts}
+                    topics={topics}
+                    loading={loading}
                 />
             )}
 
-            <style>{`
-                /* Responsive Layout Margins via CSS Media Queries */
-                .main-content-layout {
-                    margin-left: 280px;
-                }
-                
-                @media (max-width: 767px) {
-                    .main-content-layout {
-                        margin-left: 0 !important;
-                    }
-                }
+            <AnimatePresence>
+                {selectedPostId && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{
+                                opacity: isReaderExpanded ? 0 : 1,
+                                transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] }
+                            }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => handleSelectPost(null)}
+                            className="fixed inset-0 bg-black/20 backdrop-blur-[4px] z-[190]"
+                            style={{ pointerEvents: isReaderExpanded ? 'none' : 'auto' }}
+                        />
 
-                #grid-scroll-container::-webkit-scrollbar,
-                #reader-scroll-container::-webkit-scrollbar {
-                    width: 6px;
-                }
-                #grid-scroll-container::-webkit-scrollbar-thumb,
-                #reader-scroll-container::-webkit-scrollbar-thumb {
-                    background: rgba(128, 128, 128, 0.3);
-                    border-radius: 10px;
-                }
-                #grid-scroll-container::-webkit-scrollbar-track,
-                #reader-scroll-container::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-            `}</style>
-        </Layout>
-    );
-};
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{
+                                x: 0,
+                                width: isReaderExpanded ? '100vw' : 'clamp(320px, 60vw, 800px)',
+                            }}
+                            exit={{ x: '100%' }}
+                            transition={{
+                                width: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
+                                x: { type: 'spring', damping: 28, stiffness: 180 }
+                            }}
+                            layout
+                            className={cn(
+                                "fixed top-0 right-0 bottom-0 z-[200] bg-sidebar shadow-2xl overflow-hidden flex flex-col border-l border-border",
+                                isReaderExpanded && "z-[5000]"
+                            )}
+                        >
+                            <ReaderPanel
+                                selectedPostId={selectedPostId}
+                                initialPost={posts.find((p: Post) => p.id === selectedPostId) || null}
+                                topics={topics}
+                                isExpanded={isReaderExpanded}
+                                onToggleExpand={() => setIsReaderExpanded(!isReaderExpanded)}
+                                onClose={() => handleSelectPost(null)}
+                                colorMode={colorMode}
+                            />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        </main>
+    )
+}
 
 const BlogShell: React.FC = () => {
     const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
@@ -415,6 +417,11 @@ const BlogShell: React.FC = () => {
         const theme = (savedTheme as 'light' | 'dark') || 'light';
         setColorMode(theme);
         document.documentElement.setAttribute('data-theme', theme);
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
     }, []);
 
     useEffect(() => {
@@ -423,6 +430,11 @@ const BlogShell: React.FC = () => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
                     const theme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark';
                     setColorMode(theme || 'light');
+                    if (theme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
                 }
             });
         });
@@ -435,15 +447,19 @@ const BlogShell: React.FC = () => {
         const newMode = colorMode === 'light' ? 'dark' : 'light';
         setColorMode(newMode);
         document.documentElement.setAttribute('data-theme', newMode);
+        if (newMode === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
         localStorage.setItem('blog-theme', newMode);
     };
 
     return (
-        <ConfigProvider theme={getThemeConfig(colorMode)}>
-            <App>
-                <BlogShellInner colorMode={colorMode} toggleTheme={toggleTheme} />
-            </App>
-        </ConfigProvider>
+        <SidebarProvider>
+            <BlogShellInner colorMode={colorMode} toggleTheme={toggleTheme} />
+            <Toaster />
+        </SidebarProvider>
     );
 };
 

@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Menu, Badge, Avatar, Space, Typography, Dropdown } from 'antd';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    FileTextOutlined,
-    MailOutlined,
-    LogoutOutlined,
-    UserOutlined,
-    MenuOutlined
-} from '@ant-design/icons';
+    FileText,
+    Mail,
+    LogOut,
+    User,
+    GripVertical,
+    LayoutGrid,
+    ChevronRight,
+    MoreHorizontal
+} from 'lucide-react';
 import Auth from './Auth';
 import { supabase } from '../lib/supabase';
 import {
@@ -27,8 +29,31 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-const { Text } = Typography;
+import { cn } from '@/lib/utils';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarGroupContent,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+    SidebarMenuSub,
+    SidebarMenuSubItem,
+    SidebarMenuSubButton,
+} from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const sidebarItemVariants = {
     hidden: { opacity: 0, x: -10 },
@@ -67,6 +92,8 @@ interface SidebarProps {
     isAdmin: boolean;
     onUpdateTopicOrder?: (newOrder: string[]) => void;
     adminAvatar: string | null;
+    isSelectedPostIt?: boolean;
+    onSelectPostIt?: () => void;
 }
 
 const SortableMenuItem: React.FC<{
@@ -89,31 +116,110 @@ const SortableMenuItem: React.FC<{
         opacity: isDragging ? 0.5 : 1,
         zIndex: isDragging ? 1000 : 1,
         position: 'relative' as const,
-        display: 'flex',
-        alignItems: 'center',
-        width: '100%',
         cursor: isAdmin ? 'grab' : 'default',
-        padding: '0.5rem 1rem',
-        borderRadius: '8px',
-        margin: '2px 0'
+        width: '100%'
     };
 
     return (
-        <motion.div
+        <div
             ref={setNodeRef}
             style={style}
             {...attributes}
-            {...listeners}
-            variants={sidebarItemVariants}
-            whileHover={{ x: 4, background: 'rgba(0,0,0,0.03)' }}
+            className="flex items-center w-full group/sortable"
         >
-            {isAdmin && <MenuOutlined style={{ marginRight: 8, opacity: 0.3, fontSize: '12px' }} />}
-            <div style={{ flex: 1 }}>{label}</div>
-        </motion.div>
+            {isAdmin && (
+                <div {...listeners} className="mr-1 p-1 -ml-1 cursor-grab active:cursor-grabbing hover:bg-accent rounded opacity-0 group-hover/sortable:opacity-100 transition-opacity">
+                    <GripVertical className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                </div>
+            )}
+            <div className="flex-1">{label}</div>
+        </div>
     );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({
+const CollapsibleTopic: React.FC<{
+    topic: { name: string; count: number; color: string };
+    posts: Post[];
+    selectedTopic: string | null;
+    selectedPostId: string | null;
+    onSelectTopic: (topic: string | null) => void;
+    onSelectPost: (id: string | null) => void;
+    isAdmin: boolean;
+}> = ({ topic, posts, selectedTopic, selectedPostId, onSelectTopic, onSelectPost, isAdmin }) => {
+    const [isOpen, setIsOpen] = useState(selectedTopic === topic.name);
+
+    useEffect(() => {
+        if (selectedTopic === topic.name) {
+            setIsOpen(true);
+        }
+    }, [selectedTopic, topic.name]);
+
+    const topicPosts = useMemo(() => posts.filter(p => p.topic === topic.name), [posts, topic.name]);
+
+    return (
+        <SidebarMenuItem>
+            <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group/collapsible">
+                <SortableMenuItem
+                    id={topic.name}
+                    isAdmin={isAdmin}
+                    label={
+                        <div className="flex items-center w-full">
+                            <CollapsibleTrigger asChild>
+                                <SidebarMenuButton
+                                    className={cn(
+                                        "w-full justify-start h-9 transition-colors",
+                                        selectedTopic === topic.name && "bg-primary/5 text-primary font-bold"
+                                    )}
+                                    onClick={() => onSelectTopic(topic.name)}
+                                >
+                                    <div className="w-2 h-2 rounded-full mr-3 shrink-0" style={{ backgroundColor: topic.color }} />
+                                    <span className="flex-1 truncate">{topic.name}</span>
+                                    <span className="text-[11px] font-bold opacity-60 ml-2 shrink-0">{topic.count}</span>
+                                    <ChevronRight className="h-4 w-4 ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                </SidebarMenuButton>
+                            </CollapsibleTrigger>
+                        </div>
+                    }
+                />
+                <CollapsibleContent asChild forceMount>
+                    <AnimatePresence initial={false}>
+                        {isOpen && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{
+                                    height: { type: "spring", stiffness: 300, damping: 30 },
+                                    opacity: { duration: 0.2 }
+                                }}
+                                className="overflow-hidden"
+                            >
+                                <SidebarMenuSub>
+                                    {topicPosts.map(post => (
+                                        <SidebarMenuSubItem key={post.id}>
+                                            <SidebarMenuSubButton
+                                                isActive={selectedPostId === post.id}
+                                                onClick={() => onSelectPost(post.id)}
+                                                className={cn(
+                                                    "text-[13px] py-1 h-auto min-h-[1.75rem]",
+                                                    selectedPostId === post.id ? "text-primary font-semibold" : "font-normal text-muted-foreground"
+                                                )}
+                                            >
+                                                {post.title}
+                                            </SidebarMenuSubButton>
+                                        </SidebarMenuSubItem>
+                                    ))}
+                                </SidebarMenuSub>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </CollapsibleContent>
+            </Collapsible>
+        </SidebarMenuItem>
+    );
+};
+
+const SidebarComponent: React.FC<SidebarProps> = ({
     onNewPost,
     selectedPostId,
     onSelectPost,
@@ -123,10 +229,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     topics,
     isAdmin,
     onUpdateTopicOrder,
-    adminAvatar
+    adminAvatar,
+    isSelectedPostIt,
+    onSelectPostIt
 }) => {
     const [user, setUser] = useState<any>(null);
-    const [openKeys, setOpenKeys] = useState<string[]>([]);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -147,17 +254,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         return () => subscription.unsubscribe();
     }, []);
 
-    useEffect(() => {
-        if (selectedTopic) {
-            setOpenKeys([selectedTopic]);
-        }
-    }, [selectedTopic]);
-
-    const handleOpenChange = (keys: string[]) => {
-        const latestOpenKey = keys.find((key) => !openKeys.includes(key));
-        setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
-    };
-
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         if (over && active.id !== over.id) {
@@ -167,170 +263,137 @@ const Sidebar: React.FC<SidebarProps> = ({
         }
     };
 
-    const mainMenuItems = useMemo(() => [
-        {
-            key: 'all',
-            icon: <FileTextOutlined />,
-            label: 'All Posts',
-            style: {
-                padding: '0.5rem 1rem',
-                background: (!selectedTopic && !selectedPostId) ? 'rgba(0, 122, 255, 0.1)' : 'transparent',
-                borderRadius: '8px',
-                margin: '4px 8px'
-            },
-            onClick: () => {
-                onSelectPost(null);
-                onSelectTopic(null);
-                setOpenKeys([]);
-            }
-        }
-    ], [selectedTopic, selectedPostId, onSelectPost, onSelectTopic]);
-
-    const categoryMenuItems = useMemo(() => topics.map((topic) => ({
-        key: topic.name,
-        onTitleClick: () => onSelectTopic(topic.name),
-        label: (
-            <SortableMenuItem
-                id={topic.name}
-                isAdmin={isAdmin}
-                label={
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        width: '100%',
-                        color: selectedTopic === topic.name ? '#007aff' : undefined,
-                        fontWeight: selectedTopic === topic.name ? 700 : 500
-                    }}>
-                        <Badge color={topic.color} style={{ marginRight: 12 }} />
-                        <span style={{ flex: 1 }}>{topic.name}</span>
-                        <Text type="secondary" style={{ fontSize: '11px', fontWeight: 700 }}>{topic.count}</Text>
-                    </div>
-                }
-            />
-        ),
-        children: posts
-            .filter((p) => p.topic === topic.name)
-            .map((post) => ({
-                key: post.id,
-                label: post.title,
-                onClick: () => onSelectPost(post.id),
-                style: {
-                    fontSize: '13px',
-                    color: selectedPostId === post.id ? '#007aff' : undefined,
-                    fontWeight: selectedPostId === post.id ? 600 : 400
-                }
-            }))
-    })), [topics, posts, selectedTopic, selectedPostId, isAdmin, onSelectTopic, onSelectPost]);
-
-    const footerMenuItems = [
-        {
-            key: 'contact',
-            icon: <MailOutlined style={{ fontSize: '1.8rem', marginLeft: -5 }} />,
-            label: 'Contact',
-            style: { fontSize: '1rem' },
-            onClick: () => window.open('https://linktr.ee/gabrielnavainfo', '_blank')
-        }
-    ];
-
-    const allFooterItems = useMemo(() => [
-        ...footerMenuItems,
-        ...(user ? [{
-            key: 'profile',
-            icon: <Avatar size={40} src={user.user_metadata?.avatar_url} icon={<UserOutlined />} style={{ marginLeft: -11 }} />,
-            label: (
-                <Dropdown
-                    menu={{
-                        items: [{
-                            key: 'logout',
-                            label: 'Logout',
-                            icon: <LogoutOutlined />,
-                            onClick: () => supabase.auth.signOut()
-                        }]
-                    }}
-                    placement="topRight"
-                >
-                    <Typography.Text strong style={{ fontSize: '1rem', cursor: 'pointer', marginLeft: 2 }}>
-                        {user.user_metadata?.full_name || user.email}
-                    </Typography.Text>
-                </Dropdown>
-            )
-        }] : [])
-    ], [user]);
-
     return (
-        <motion.div
-            variants={sidebarContainerVariants}
-            initial="hidden"
-            animate="show"
-            style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                background: 'var(--app-sidebar)'
-            }}
-        >
-            <motion.div variants={sidebarItemVariants} style={{ padding: '2rem 1.5rem 1.5rem' }}>
-                <Space size={16}>
-                    <Avatar size={70} src={adminAvatar || '/GabrielPhoto.jpg'} style={{ backgroundColor: '#007aff' }}>G</Avatar>
-                    <div>
-                        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--app-text)', lineHeight: 1.2 }}>Gabriel's Blog</h2>
-                        <Text type="secondary" style={{ fontSize: '0.9rem' }}> ← Looking for a job</Text>
+        <Sidebar className="border-r border-border bg-sidebar/50 backdrop-blur-sm">
+            <SidebarHeader className="p-6 pb-4">
+                <motion.div variants={sidebarItemVariants} initial="hidden" animate="show" className="flex items-center gap-3">
+                    <Avatar className="h-14 w-14 bg-primary ring-2 ring-primary/10 transition-transform hover:scale-105">
+                        <AvatarImage src={adminAvatar || '/GabrielPhoto.jpg'} alt="Gabriel" />
+                        <AvatarFallback className="text-white text-lg">G</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                        <h2 className="text-lg font-bold m-0 text-foreground leading-tight truncate">Gabriel's Blog</h2>
+                        <span className="text-muted-foreground text-xs font-medium">← Looking for a job</span>
                     </div>
-                </Space>
-            </motion.div>
-
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-                <motion.div variants={sidebarItemVariants}>
-                    <Menu
-                        mode="inline"
-                        selectedKeys={[(!selectedTopic && !selectedPostId) ? 'all' : '']}
-                        items={mainMenuItems}
-                        style={{ border: 'none', background: 'transparent', padding: '0 1rem 0 0' }}
-                    />
                 </motion.div>
+            </SidebarHeader>
 
-                <motion.div variants={sidebarItemVariants} style={{ padding: '0.5rem 1.6rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--app-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Categories
-                </motion.div>
+            <SidebarContent>
+                <ScrollArea className="flex-1">
+                    <motion.div variants={sidebarContainerVariants} initial="hidden" animate="show">
+                        <SidebarGroup>
+                            <SidebarMenu className="px-2">
+                                <motion.div variants={sidebarItemVariants}>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={!selectedTopic && !selectedPostId && !isSelectedPostIt}
+                                            onClick={() => { onSelectPost(null); onSelectTopic(null); }}
+                                            className={cn(
+                                                "py-6 px-4 h-12",
+                                                (!selectedTopic && !selectedPostId && !isSelectedPostIt) && "bg-primary/10 text-primary font-bold"
+                                            )}
+                                        >
+                                            <FileText className="mr-3 h-5 w-5" />
+                                            <span className="text-[1rem]">All Posts</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </motion.div>
+                                <motion.div variants={sidebarItemVariants}>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={isSelectedPostIt}
+                                            onClick={() => onSelectPostIt?.()}
+                                            className={cn(
+                                                "py-6 px-4 h-12",
+                                                isSelectedPostIt && "bg-primary/10 text-primary font-bold"
+                                            )}
+                                        >
+                                            <LayoutGrid className="mr-3 h-5 w-5" />
+                                            <span className="text-[1rem]">Gabriel's Post-it Board</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </motion.div>
+                            </SidebarMenu>
+                        </SidebarGroup>
 
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                >
-                    <SortableContext
-                        items={topics.map(t => t.name)}
-                        strategy={verticalListSortingStrategy}
-                    >
-                        <motion.div variants={sidebarItemVariants}>
-                            <Menu
-                                mode="inline"
-                                selectedKeys={[selectedTopic || '', selectedPostId || '']}
-                                openKeys={openKeys}
-                                onOpenChange={handleOpenChange}
-                                items={categoryMenuItems}
-                                style={{ border: 'none', background: 'transparent' }}
-                            />
-                        </motion.div>
-                    </SortableContext>
-                </DndContext>
-            </div>
+                        <SidebarGroup className="mt-4">
+                            <motion.div variants={sidebarItemVariants}>
+                                <SidebarGroupLabel className="px-6 pb-2 text-[0.8rem] font-bold text-muted-foreground uppercase tracking-widest">
+                                    Categories
+                                </SidebarGroupLabel>
+                            </motion.div>
+                            <SidebarMenu className="px-2">
+                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                    <SortableContext items={topics.map(t => t.name)} strategy={verticalListSortingStrategy}>
+                                        {topics.map(topic => (
+                                            <motion.div
+                                                key={topic.name}
+                                                variants={sidebarItemVariants}
+                                                whileHover={{ x: 4 }}
+                                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                            >
+                                                <CollapsibleTopic
+                                                    topic={topic}
+                                                    posts={posts}
+                                                    selectedTopic={selectedTopic}
+                                                    selectedPostId={selectedPostId}
+                                                    onSelectTopic={onSelectTopic}
+                                                    onSelectPost={onSelectPost}
+                                                    isAdmin={isAdmin}
+                                                />
+                                            </motion.div>
+                                        ))}
+                                    </SortableContext>
+                                </DndContext>
+                            </SidebarMenu>
+                        </SidebarGroup>
+                    </motion.div>
+                </ScrollArea>
+            </SidebarContent>
 
-            <motion.div variants={sidebarItemVariants} style={{ padding: '1rem 0', borderTop: '1px solid var(--mac-border)' }}>
-                <Menu
-                    mode="inline"
-                    selectable={false}
-                    items={allFooterItems}
-                    style={{ border: 'none', background: 'transparent' }}
-                />
-                {!user && (
-                    <div style={{ marginTop: '12px', padding: '0 1rem' }}>
-                        <Auth />
-                    </div>
-                )}
-            </motion.div>
-        </motion.div>
+            <SidebarFooter className="p-0 border-t border-border mt-auto bg-sidebar/50">
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            onClick={() => window.open('https://linktr.ee/gabrielnavainfo', '_blank')}
+                            className="py-6 px-4 h-12"
+                        >
+                            <Mail className="mr-3 h-5 w-5" />
+                            <span className="text-[1rem]">Contact</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    {user ? (
+                        <SidebarMenuItem>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <SidebarMenuButton className="py-8 px-4 h-16">
+                                        <Avatar className="h-10 w-10 mr-3 shrink-0">
+                                            <AvatarImage src={user.user_metadata?.avatar_url} />
+                                            <AvatarFallback><User /></AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-bold text-foreground truncate flex-1">
+                                            {user.user_metadata?.full_name || user.email}
+                                        </span>
+                                        <MoreHorizontal className="ml-2 h-4 w-4 opacity-50 shrink-0" />
+                                    </SidebarMenuButton>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="top" align="start" className="w-[--radix-popper-anchor-width] z-[1000]">
+                                    <DropdownMenuItem onClick={() => supabase.auth.signOut()} className="cursor-pointer text-destructive focus:text-destructive">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Logout</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </SidebarMenuItem>
+                    ) : (
+                        <div className="py-4">
+                            <Auth />
+                        </div>
+                    )}
+                </SidebarMenu>
+            </SidebarFooter>
+        </Sidebar>
     );
 };
 
-export default Sidebar;
+export default SidebarComponent;

@@ -7,17 +7,23 @@ import mdx from '@astrojs/mdx';
 
 import vercel from '@astrojs/vercel';
 
+import tailwind from '@astrojs/tailwind';
+
 // https://astro.build/config
 export default defineConfig({
-  integrations: [react(), mdx()],
+  integrations: [react(), mdx(), tailwind({
+    applyBaseStyles: false,
+  })],
 
   vite: {
     ssr: {
       noExternal: ['@uiw/react-md-editor', '@uiw/react-markdown-preview', '@excalidraw/excalidraw']
     },
+
     optimizeDeps: {
       include: ['@uiw/react-md-editor', '@uiw/react-markdown-preview']
     },
+
     define: {
       'process.env': {}
     }
