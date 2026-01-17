@@ -280,7 +280,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         options: { redirectTo: getRedirectUrl() }
     });
     const loginWithLinkedin = () => supabase.auth.signInWithOAuth({
-        provider: 'linkedin',
+        provider: 'linkedin_oidc',
         options: { redirectTo: getRedirectUrl() }
     });
 
