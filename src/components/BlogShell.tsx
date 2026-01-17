@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import MagazineGrid from './MagazineGrid';
 import ReaderPanel from './ReaderPanel';
 import PostEditor from './NoteEditor';
+import PostItBoard from './PostItBoard';
 import { Plus, Menu, Sun, Moon, User } from "lucide-react";
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,7 +44,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
     const [showPostIt, setShowPostIt] = useState(false);
     const isMobile = useIsMobile();
     const contentRef = useRef<HTMLDivElement>(null);
-    const iframeRef = useRef<HTMLIFrameElement>(null);
     const topicPalette = ['#ff9500', '#ff2d55', '#007aff', '#5856d6', '#00b96b', '#af52de', '#ff3b30', '#ffcc00'];
 
     // Reset expansion when changing posts
@@ -77,8 +77,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                     localStorage.setItem('adminAvatar', avatar);
                 }
             }
-            // Sync with iframe if it exists
-            syncAuthWithIframe();
         });
 
         fetchPosts();
@@ -140,21 +138,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
             setTopics(dynamicTopics);
         }
         setLoading(false);
-    };
-
-    const syncAuthWithIframe = async () => {
-        if (!iframeRef.current || !iframeRef.current.contentWindow) return;
-
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            iframeRef.current.contentWindow.postMessage({
-                type: 'SUPABASE_AUTH_SYNC',
-                session: {
-                    access_token: session.access_token,
-                    refresh_token: session.refresh_token,
-                }
-            }, '*');
-        }
     };
 
     const handleSelectPostIt = () => {
@@ -230,6 +213,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
         onSelectPostIt: handleSelectPostIt
     };
 
+
     return (
         <div className="flex min-h-screen w-full bg-background transition-colors duration-300">
             <Sidebar {...sidebarProps} />
@@ -239,8 +223,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                     contentRef={contentRef}
                     isMobile={isMobile}
                     showPostIt={showPostIt}
-                    iframeRef={iframeRef}
-                    syncAuthWithIframe={syncAuthWithIframe}
+                    user={user}
                     posts={posts}
                     topics={topics}
                     selectedPostId={selectedPostId}
@@ -301,8 +284,7 @@ const ContentArea: React.FC<any> = ({
     contentRef,
     isMobile,
     showPostIt,
-    iframeRef,
-    syncAuthWithIframe,
+    user,
     posts,
     topics,
     selectedPostId,
@@ -333,16 +315,8 @@ const ContentArea: React.FC<any> = ({
             )}
 
             {showPostIt ? (
-                <div className="h-full p-8 md:p-12 flex flex-col">
-                    <div className="flex-1 min-h-[calc(100vh-10rem)] bg-card rounded-3xl overflow-hidden border border-border shadow-xl">
-                        <iframe
-                            ref={iframeRef}
-                            src="https://gnava-postit.vercel.app/#"
-                            onLoad={syncAuthWithIframe}
-                            className="w-full h-full border-none"
-                            title="Gabriel's Post-it Board"
-                        />
-                    </div>
+                <div className="h-full bg-card overflow-hidden border border-border shadow-xl">
+                    <PostItBoard user={user} isAdmin={isAdmin} />
                 </div>
             ) : (
                 <MagazineGrid

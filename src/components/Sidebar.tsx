@@ -8,9 +8,11 @@ import {
     GripVertical,
     LayoutGrid,
     ChevronRight,
-    MoreHorizontal
+    MoreHorizontal,
+    Github,
+    Linkedin
 } from 'lucide-react';
-import Auth from './Auth';
+// import Auth from './Auth'; // Removed unused component
 import { supabase } from '../lib/supabase';
 import {
     DndContext,
@@ -54,6 +56,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from "@/components/ui/button"
 
 const sidebarItemVariants = {
     hidden: { opacity: 0, x: -10 },
@@ -265,9 +268,25 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         }
     };
 
+    const getRedirectUrl = () => {
+        if (typeof window !== 'undefined') {
+            return window.location.origin;
+        }
+        return "https://noteblog-self.vercel.app/";
+    };
+
+    const loginWithGithub = () => supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: { redirectTo: getRedirectUrl() }
+    });
+    const loginWithLinkedin = () => supabase.auth.signInWithOAuth({
+        provider: 'linkedin',
+        options: { redirectTo: getRedirectUrl() }
+    });
+
     return (
         <Sidebar className="border-r border-border bg-sidebar/50 backdrop-blur-sm">
-            <SidebarHeader className="p-6 pb-4">
+            <SidebarHeader className="p-4 pb-2">
                 <motion.div variants={sidebarItemVariants} initial="hidden" animate="show" className="flex items-center gap-3">
                     <Avatar className="h-14 w-14 bg-primary ring-2 ring-primary/10 transition-transform hover:scale-105">
                         <AvatarImage src={adminAvatar || '/GabrielPhoto.jpg'} alt="Gabriel" />
@@ -291,12 +310,12 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                                             isActive={!selectedTopic && !selectedPostId && !isSelectedPostIt}
                                             onClick={() => { onSelectPost(null); onSelectTopic(null); }}
                                             className={cn(
-                                                "py-6 px-4 h-12",
+                                                "py-4 px-4 h-10",
                                                 (!selectedTopic && !selectedPostId && !isSelectedPostIt) && "bg-primary/10 text-primary font-bold"
                                             )}
                                         >
-                                            <FileText className="mr-3 h-5 w-5" />
-                                            <span className="text-[1rem]">All Posts</span>
+                                            <FileText className="mr-3 h-4 w-4" />
+                                            <span className="text-[0.9rem]">All Posts</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </motion.div>
@@ -306,19 +325,19 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                                             isActive={isSelectedPostIt}
                                             onClick={() => onSelectPostIt?.()}
                                             className={cn(
-                                                "py-6 px-4 h-12",
+                                                "py-4 px-4 h-10",
                                                 isSelectedPostIt && "bg-primary/10 text-primary font-bold"
                                             )}
                                         >
-                                            <LayoutGrid className="mr-3 h-5 w-5" />
-                                            <span className="text-[1rem]">Gabriel's Post-it Board</span>
+                                            <LayoutGrid className="mr-3 h-4 w-4" />
+                                            <span className="text-[0.9rem]">Gabriel's Post-it Board</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </motion.div>
                             </SidebarMenu>
                         </SidebarGroup>
 
-                        <SidebarGroup className="mt-4">
+                        <SidebarGroup className="mt-1">
                             <motion.div variants={sidebarItemVariants}>
                                 <SidebarGroupLabel className="px-6 pb-2 text-[0.8rem] font-bold text-muted-foreground uppercase tracking-widest">
                                     Categories
@@ -388,8 +407,23 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                             </DropdownMenu>
                         </SidebarMenuItem>
                     ) : (
-                        <div className="py-4">
-                            <Auth />
+                        <div className="py-4 px-6 flex flex-col gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={loginWithGithub}
+                                className="w-full justify-start gap-2 h-10"
+                            >
+                                <Github className="w-4 h-4" />
+                                <span className="text-sm">GitHub Login</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={loginWithLinkedin}
+                                className="w-full justify-start gap-2 h-10"
+                            >
+                                <Linkedin className="w-4 h-4" />
+                                <span className="text-sm">LinkedIn Login</span>
+                            </Button>
                         </div>
                     )}
                 </SidebarMenu>
