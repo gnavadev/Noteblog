@@ -38,7 +38,9 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
     color = '#000000',
     lineWidth = 2,
     readOnly = false,
-    className = ""
+    className = "",
+    onMouseDown: onMouseDownProp,
+    onTouchStart: onTouchStartProp,
 }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -170,6 +172,10 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
         }
+
+        // Call interaction props
+        onMouseDownProp?.();
+        onTouchStartProp?.();
     };
 
     const draw = (e: React.MouseEvent | React.TouchEvent) => {

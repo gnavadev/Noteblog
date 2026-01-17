@@ -33,6 +33,9 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
     const [activePostItId, setActivePostItId] = useState<string | null>(null);
     const canvasRefs = useRef<{ [key: string]: DrawingCanvasHandle | null }>({});
 
+    const effectiveUserId = user?.id || (import.meta.env.DEV ? '00000000-0000-0000-0000-000000000000' : null);
+    const userHasPostIt = postIts.some(p => p.user_id === effectiveUserId);
+
     const fetchPostIts = useCallback(async () => {
         const { data, error } = await supabase
             .from('post_its')
@@ -47,6 +50,18 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
         }
         setLoading(false);
     }, [toast]);
+
+    useEffect(() => {
+        if (!activePostItId && postIts.length > 0) {
+            // If the user has their own post-it, default to that, otherwise first one
+            const userPostIt = postIts.find(p => p.user_id === effectiveUserId);
+            if (userPostIt) {
+                setActivePostItId(userPostIt.id);
+            } else if (postIts.length === 1) {
+                setActivePostItId(postIts[0].id);
+            }
+        }
+    }, [postIts, activePostItId, effectiveUserId]);
 
     useEffect(() => {
         fetchPostIts();
@@ -165,9 +180,6 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
             toast({ title: "Select a post-it to redo", description: "Click on a post-it first" });
         }
     };
-
-    const effectiveUserId = user?.id || (import.meta.env.DEV ? '00000000-0000-0000-0000-000000000000' : null);
-    const userHasPostIt = postIts.some(p => p.user_id === effectiveUserId);
 
     return (
         <div className="relative w-full h-full overflow-hidden bg-[#e5e5f7] dark:bg-[#1a1c24] border-inner shadow-inner flex flex-col">

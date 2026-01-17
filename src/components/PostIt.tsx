@@ -100,6 +100,7 @@ const PostIt = forwardRef<DrawingCanvasHandle, PostItProps>(({
                 position: 'absolute',
                 zIndex: isEditingText ? 50 : 10
             }}
+            onPointerDown={() => onInteract?.()}
             className={cn(
                 "w-64 h-64 p-4 shadow-xl flex flex-col group transition-shadow",
                 (canEdit || isAdmin) ? "cursor-grab active:cursor-grabbing" : "cursor-default",
