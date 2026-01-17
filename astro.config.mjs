@@ -2,18 +2,23 @@
 import { defineConfig } from 'astro/config';
 
 import react from '@astrojs/react';
-
 import mdx from '@astrojs/mdx';
-
 import vercel from '@astrojs/vercel';
-
 import tailwind from '@astrojs/tailwind';
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [react(), mdx(), tailwind({
-    applyBaseStyles: false,
-  })],
+  output: 'static',
+
+  site: 'https://noteblog-self.vercel.app',
+
+  integrations: [
+    react(),
+    mdx(),
+    tailwind({
+      applyBaseStyles: false,
+    })
+  ],
 
   vite: {
     ssr: {
@@ -29,5 +34,9 @@ export default defineConfig({
     }
   },
 
-  adapter: vercel()
+  adapter: vercel({
+    webAnalytics: {
+      enabled: true
+    }
+  })
 });
