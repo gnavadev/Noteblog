@@ -22,6 +22,8 @@ interface DrawingCanvasProps {
     className?: string;
 }
 
+const INTERNAL_RES = 500;
+
 const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     initialData = [],
     onChange,
@@ -72,14 +74,15 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: true });
         if (!ctx) return;
 
-        // Scale for high DPI
+        // Use fixed internal resolution for consistency across all screens
         const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
+        canvas.width = INTERNAL_RES * dpr;
+        canvas.height = INTERNAL_RES * dpr;
+
+        // Scale the context so our 500x500 logical space fits
         ctx.scale(dpr, dpr);
 
         drawStrokes(ctx, strokes);
@@ -101,8 +104,8 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
         }
 
         return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
+            x: ((clientX - rect.left) / rect.width) * INTERNAL_RES,
+            y: ((clientY - rect.top) / rect.height) * INTERNAL_RES
         };
     };
 
