@@ -11,6 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import ReactMarkdown from '@uiw/react-markdown-preview';
+import remarkGfm from 'remark-gfm';
+import rehypeExternalLinks from 'rehype-external-links';
 
 const contentVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -277,7 +279,11 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                         className="markdown-reader-content prose prose-neutral dark:prose-invert max-w-none min-h-[400px]"
                         data-color-mode={colorMode}
                     >
-                        <ReactMarkdown source={post.content} />
+                        <ReactMarkdown
+                            source={post.content}
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[[rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }]]}
+                        />
                     </div>
                 </motion.div>
 

@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Pencil, Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeExternalLinks from 'rehype-external-links';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -228,12 +230,14 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
 
                                     <div className="text-[0.85rem] text-muted-foreground leading-relaxed line-clamp-2 italic opacity-80">
                                         <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            rehypePlugins={[[rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }]]}
                                             components={{
                                                 p: ({ children }) => <span className="inline">{children} </span>,
                                                 strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                                                 em: ({ children }) => <em className="italic">{children}</em>,
                                                 code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-[0.9em] font-mono">{children}</code>,
-                                                a: ({ children, href }) => <a href={href} className="text-primary hover:underline" onClick={e => e.stopPropagation()}>{children}</a>
+                                                a: ({ children, href }) => <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>{children}</a>
                                             }}
                                         >
                                             {post.content}

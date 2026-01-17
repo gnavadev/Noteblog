@@ -55,18 +55,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
         const savedAvatar = localStorage.getItem('adminAvatar');
         if (savedAvatar) setAdminAvatar(savedAvatar);
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
-            if (currentUser?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1') {
-                const avatar = currentUser.user_metadata?.avatar_url;
-                if (avatar) {
-                    setAdminAvatar(avatar);
-                    localStorage.setItem('adminAvatar', avatar);
-                }
-            }
-        });
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const currentUser = session?.user ?? null;
             setUser(currentUser);
@@ -77,9 +65,22 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                     localStorage.setItem('adminAvatar', avatar);
                 }
             }
+            fetchPosts(currentUser);
         });
 
-        fetchPosts();
+        // Initialize session and then fetch posts
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+            if (currentUser?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1') {
+                const avatar = currentUser.user_metadata?.avatar_url;
+                if (avatar) {
+                    setAdminAvatar(avatar);
+                    localStorage.setItem('adminAvatar', avatar);
+                }
+            }
+            fetchPosts(currentUser);
+        });
 
         const dbChannel = supabase
             .channel('magazine_db_changes')
@@ -103,11 +104,19 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
         };
     }, []);
 
-    const fetchPosts = async () => {
-        const { data, error } = await supabase
+    const fetchPosts = async (currentUser = user) => {
+        const isAdmin = currentUser?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1';
+
+        let query = supabase
             .from('notes')
-            .select('*')
-            .order('created_at', { ascending: false });
+            .select('*');
+
+        // If not admin, only show public posts
+        if (!isAdmin) {
+            query = query.eq('is_public', true);
+        }
+
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         if (!error && data) {
             setPosts(data);

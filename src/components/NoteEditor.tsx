@@ -29,6 +29,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 
 import MDEditor from '@uiw/react-md-editor';
+import remarkGfm from 'remark-gfm';
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 
@@ -60,17 +61,41 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             if (postId) {
                 fetchPostData(postId);
             } else if (!hasBeenInitialized.current) {
-                setMarkdown('# Untitled Post\n\nStart writing here...');
-                setTitle('');
-                setTopic(availableTopics[0]?.name || 'Technology');
-                setIsPublic(false);
-                setFeaturedImage(null);
+                // Check for draft in localStorage
+                const savedDraft = localStorage.getItem('post-draft');
+                if (savedDraft) {
+                    try {
+                        const draft = JSON.parse(savedDraft);
+                        setTitle(draft.title || '');
+                        setTopic(draft.topic || availableTopics[0]?.name || 'Technology');
+                        setIsPublic(draft.isPublic || false);
+                        setFeaturedImage(draft.featuredImage || null);
+                        setMarkdown(draft.markdown || '# Untitled Post\n\nStart writing here...');
+                        toast({ title: "Draft restored", description: "Your unsaved changes were recovered." });
+                    } catch (e) {
+                        console.error('Failed to load draft:', e);
+                    }
+                } else {
+                    setMarkdown('# Untitled Post\n\nStart writing here...');
+                    setTitle('');
+                    setTopic(availableTopics[0]?.name || 'Technology');
+                    setIsPublic(false);
+                    setFeaturedImage(null);
+                }
                 hasBeenInitialized.current = true;
             }
         } else {
             hasBeenInitialized.current = false;
         }
     }, [open, postId]);
+
+    // Save draft to localStorage
+    useEffect(() => {
+        if (open && !postId && hasBeenInitialized.current) {
+            const draft = { title, topic, markdown, isPublic, featuredImage };
+            localStorage.setItem('post-draft', JSON.stringify(draft));
+        }
+    }, [title, topic, markdown, isPublic, featuredImage, open, postId]);
 
     const fetchPostData = async (id: string) => {
         setSaving(true);
@@ -173,6 +198,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             });
 
             toast({ title: "Post published successfully" });
+            localStorage.removeItem('post-draft');
             await onSave();
             onClose();
         } catch (error: any) {
@@ -195,7 +221,15 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
         <div className="fixed inset-0 z-[2000] bg-background flex flex-col text-foreground">
             <header className="px-6 py-4 bg-sidebar border-b border-border flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-6 flex-1 min-w-0">
-                    <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
+                    <Button variant="ghost" size="icon" onClick={() => {
+                        if (!postId && title.trim() && title.trim() !== 'Untitled Post') {
+                            if (confirm("You have unsaved changes. Are you sure you want to close? You can recover this draft later.")) {
+                                onClose();
+                            }
+                        } else {
+                            onClose();
+                        }
+                    }} className="shrink-0">
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
 
@@ -329,6 +363,9 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                     height="100%"
                     preview="live"
                     className="border-none bg-background h-full"
+                    previewOptions={{
+                        remarkPlugins: [remarkGfm]
+                    }}
                 />
             </main>
         </div>
