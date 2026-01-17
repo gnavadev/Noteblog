@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { motion, useDragControls } from 'framer-motion';
 import { Trash2, GripHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import DrawingCanvas from './DrawingCanvas';
+import DrawingCanvas, { type DrawingCanvasHandle } from './DrawingCanvas';
 import { cn } from '@/lib/utils';
 
 export interface PostItData {
@@ -18,26 +18,38 @@ export interface PostItData {
 interface PostItProps {
     data: PostItData;
     tool: 'text' | 'pencil' | 'eraser';
+    pencilSize: number;
+    eraserSize: number;
     canEdit: boolean;
     isAdmin: boolean;
     onUpdate: (id: string, updates: Partial<PostItData>) => void;
     onDelete: (id: string) => void;
     onDragEnd: (id: string, x: number, y: number) => void;
+    onInteract?: () => void;
 }
 
-const PostIt: React.FC<PostItProps> = ({
+const PostIt = forwardRef<DrawingCanvasHandle, PostItProps>(({
     data,
     tool,
+    pencilSize,
+    eraserSize,
     canEdit,
     isAdmin,
     onUpdate,
     onDelete,
-    onDragEnd
-}) => {
+    onDragEnd,
+    onInteract
+}, ref) => {
     const [isEditingText, setIsEditingText] = useState(false);
     const [localContent, setLocalContent] = useState(data.content);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const canvasRef = useRef<DrawingCanvasHandle>(null);
     const dragControls = useDragControls();
+
+    useImperativeHandle(ref, () => ({
+        undo: () => canvasRef.current?.undo(),
+        redo: () => canvasRef.current?.redo()
+    }));
 
     useEffect(() => {
         setLocalContent(data.content);
@@ -151,12 +163,15 @@ const PostIt: React.FC<PostItProps> = ({
                     (tool === 'pencil' || tool === 'eraser') && (canEdit || isAdmin) ? "pointer-events-auto" : "pointer-events-none"
                 )}>
                     <DrawingCanvas
+                        ref={canvasRef}
                         initialData={data.drawing_data}
                         onChange={handleDrawingChange}
                         tool={tool === 'eraser' ? 'eraser' : 'pencil'}
                         readOnly={!(canEdit || isAdmin) || tool === 'text'}
-                        lineWidth={tool === 'eraser' ? 10 : 3}
+                        lineWidth={tool === 'eraser' ? eraserSize : pencilSize}
                         color="#000000"
+                        onMouseDown={onInteract}
+                        onTouchStart={onInteract}
                     />
                 </div>
             </div>
@@ -165,6 +180,6 @@ const PostIt: React.FC<PostItProps> = ({
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/5" />
         </motion.div>
     );
-};
+});
 
 export default PostIt;

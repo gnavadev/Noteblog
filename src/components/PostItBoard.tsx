@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import PostIt from './PostIt';
 import type { PostItData } from './PostIt';
 import PostItToolbar from './PostItToolbar';
 import type { PostItTool } from './PostItToolbar';
+import type { DrawingCanvasHandle } from './DrawingCanvas';
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -27,6 +28,10 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
     const [activeTool, setActiveTool] = useState<PostItTool>('pencil');
+    const [pencilSize, setPencilSize] = useState(3);
+    const [eraserSize, setEraserSize] = useState(10);
+    const [activePostItId, setActivePostItId] = useState<string | null>(null);
+    const canvasRefs = useRef<{ [key: string]: DrawingCanvasHandle | null }>({});
 
     const fetchPostIts = useCallback(async () => {
         const { data, error } = await supabase
@@ -141,6 +146,23 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
             });
         } else {
             toast({ title: "Post-it deleted" });
+            if (activePostItId === id) setActivePostItId(null);
+        }
+    };
+
+    const handleUndo = () => {
+        if (activePostItId && canvasRefs.current[activePostItId]) {
+            canvasRefs.current[activePostItId]?.undo();
+        } else {
+            toast({ title: "Select a post-it to undo", description: "Click on a post-it first" });
+        }
+    };
+
+    const handleRedo = () => {
+        if (activePostItId && canvasRefs.current[activePostItId]) {
+            canvasRefs.current[activePostItId]?.redo();
+        } else {
+            toast({ title: "Select a post-it to redo", description: "Click on a post-it first" });
         }
     };
 
@@ -162,6 +184,12 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
                     onAddPostIt={handleAddPostIt}
                     canAdd={!userHasPostIt && !isAdding}
                     isAdmin={isAdmin}
+                    pencilSize={pencilSize}
+                    onPencilSizeChange={setPencilSize}
+                    eraserSize={eraserSize}
+                    onEraserSizeChange={setEraserSize}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
                 />
             </div>
 
@@ -171,13 +199,17 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
                     postIts.map(postIt => (
                         <PostIt
                             key={postIt.id}
+                            ref={el => { canvasRefs.current[postIt.id] = el; }}
                             data={postIt}
                             tool={activeTool}
+                            pencilSize={pencilSize}
+                            eraserSize={eraserSize}
                             canEdit={postIt.user_id === effectiveUserId}
                             isAdmin={isAdmin}
                             onUpdate={handleUpdatePostIt}
                             onDelete={handleDeletePostIt}
                             onDragEnd={(id, x, y) => handleUpdatePostIt(id, { position_x: x, position_y: y })}
+                            onInteract={() => setActivePostItId(postIt.id)}
                         />
                     ))
                 )}

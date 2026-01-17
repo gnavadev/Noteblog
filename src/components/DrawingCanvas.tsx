@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 
 interface Point {
     x: number;
@@ -20,11 +20,18 @@ interface DrawingCanvasProps {
     lineWidth?: number;
     readOnly?: boolean;
     className?: string;
+    onMouseDown?: () => void;
+    onTouchStart?: () => void;
+}
+
+export interface DrawingCanvasHandle {
+    undo: () => void;
+    redo: () => void;
 }
 
 const INTERNAL_RES = 500;
 
-const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
+const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(({
     initialData = [],
     onChange,
     tool,
@@ -32,11 +39,41 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     lineWidth = 2,
     readOnly = false,
     className = ""
-}) => {
+}, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
-    const [strokes, setStrokes] = useState<Stroke[]>(initialData);
+    const [history, setHistory] = useState<Stroke[][]>([initialData]);
+    const [historyIndex, setHistoryIndex] = useState(0);
+    const strokes = history[historyIndex] || [];
     const currentStrokeRef = useRef<Point[]>([]);
+
+    const setStrokesWithHistory = useCallback((newStrokes: Stroke[]) => {
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(newStrokes);
+        // Limit history to 50 steps
+        if (newHistory.length > 50) newHistory.shift();
+
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+        onChange?.(newStrokes);
+    }, [history, historyIndex, onChange]);
+
+    useImperativeHandle(ref, () => ({
+        undo: () => {
+            if (historyIndex > 0) {
+                const newIndex = historyIndex - 1;
+                setHistoryIndex(newIndex);
+                onChange?.(history[newIndex]);
+            }
+        },
+        redo: () => {
+            if (historyIndex < history.length - 1) {
+                const newIndex = historyIndex + 1;
+                setHistoryIndex(newIndex);
+                onChange?.(history[newIndex]);
+            }
+        }
+    }), [history, historyIndex, onChange]);
 
     // Initialize canvas with strokes
     const drawStrokes = useCallback((ctx: CanvasRenderingContext2D, strokesToDraw: Stroke[]) => {
@@ -161,8 +198,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
         };
 
         const updatedStrokes = [...strokes, newStroke];
-        setStrokes(updatedStrokes);
-        onChange?.(updatedStrokes);
+        setStrokesWithHistory(updatedStrokes);
         currentStrokeRef.current = [];
     };
 
@@ -179,6 +215,6 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
             onTouchEnd={endDrawing}
         />
     );
-};
+});
 
 export default DrawingCanvas;
