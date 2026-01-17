@@ -58,7 +58,7 @@ const containerVariants = {
 };
 
 const cardVariants = {
-    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    hidden: { opacity: 0, y: 20, scale: 0.98 },
     show: {
         opacity: 1,
         y: 0,
@@ -71,8 +71,8 @@ const cardVariants = {
     },
     exit: {
         opacity: 0,
-        scale: 0.9,
-        transition: { duration: 0.2 }
+        scale: 0.98,
+        transition: { duration: 0.15 }
     }
 };
 
@@ -147,7 +147,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                 animate="show"
                 className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-8 space-y-8"
             >
-                <AnimatePresence mode="popLayout">
+                <AnimatePresence mode="sync">
                     {displayPosts.map((post) => {
                         const isSelected = selectedPostId === post.id;
                         const topicColor = topics.find(t => t.name === post.topic)?.color || '#007aff';
@@ -164,13 +164,13 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                 id={post.id}
                                 onClick={() => onSelectPost(post.id)}
                                 className={cn(
-                                    "break-inside-avoid relative flex flex-col overflow-hidden cursor-pointer transition-all duration-300",
+                                    "break-inside-avoid relative flex flex-col overflow-hidden cursor-pointer transition-all duration-300 h-[280px]",
                                     "bg-card rounded-[24px] border border-border shadow-sm hover:shadow-xl",
                                     isSelected && "ring-2 ring-primary border-transparent shadow-primary/10"
                                 )}
                             >
                                 <div
-                                    className="h-40 w-full relative bg-muted"
+                                    className="h-28 w-full relative bg-muted"
                                     style={{
                                         backgroundImage: `url(${post.featured_image})`,
                                         backgroundPosition: 'center',
@@ -219,8 +219,8 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                     )}
                                 </div>
 
-                                <div className="p-6 flex-1 flex flex-col gap-3">
-                                    <h3 className="text-[1.1rem] font-extrabold leading-tight tracking-tight text-foreground">
+                                <div className="p-4 flex-1 flex flex-col gap-2.5">
+                                    <h3 className="text-base font-extrabold leading-tight tracking-tight text-foreground">
                                         {post.title}
                                     </h3>
 

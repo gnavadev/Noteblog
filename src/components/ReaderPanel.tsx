@@ -167,7 +167,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                     opacity: { duration: 0.5 }
                 }}
                 className={cn(
-                    "relative flex items-end p-8 transition-[height] duration-700 ease-[0.4,0,0.2,1]",
+                    "relative flex items-end p-8 transition-[height] duration-700 ease-in-out",
                     isExpanded ? "h-[45vh]" : "h-[25vh]"
                 )}
                 style={{
@@ -219,7 +219,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 initial="hidden"
                 animate="show"
                 className={cn(
-                    "mx-auto py-12 px-8 transition-all duration-700 ease-[0.4,0,0.2,1]",
+                    "mx-auto py-12 px-8 transition-all duration-700 ease-in-out",
                     isExpanded ? "max-w-[1000px]" : "max-w-[800px]"
                 )}
             >

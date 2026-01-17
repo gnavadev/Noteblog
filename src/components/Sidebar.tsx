@@ -151,6 +151,8 @@ const CollapsibleTopic: React.FC<{
     useEffect(() => {
         if (selectedTopic === topic.name) {
             setIsOpen(true);
+        } else {
+            setIsOpen(false);
         }
     }, [selectedTopic, topic.name]);
 

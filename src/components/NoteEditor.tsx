@@ -215,13 +215,12 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                                 </SelectTrigger>
                                 <SelectContent className="z-[2100]">
                                     <SelectGroup>
-                                        <SelectItem value="Random">Random</SelectItem>
                                         {availableTopics.map(t => (
                                             <SelectItem key={t.name} value={t.name}>
                                                 {t.name}
                                             </SelectItem>
                                         ))}
-                                        {topic && !availableTopics.find(t => t.name === topic) && topic !== 'Random' && (
+                                        {topic && !availableTopics.find(t => t.name === topic) && (
                                             <SelectItem value={topic}>{topic}</SelectItem>
                                         )}
                                     </SelectGroup>
