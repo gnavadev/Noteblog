@@ -389,11 +389,11 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                                 <DropdownMenuTrigger asChild>
                                     <SidebarMenuButton className="py-8 px-4 h-16">
                                         <Avatar className="h-10 w-10 mr-3 shrink-0">
-                                            <AvatarImage src={user.user_metadata?.avatar_url} />
+                                            <AvatarImage src={user.user_metadata?.avatar_url || user.user_metadata?.picture} />
                                             <AvatarFallback><User /></AvatarFallback>
                                         </Avatar>
                                         <span className="font-bold text-foreground truncate flex-1">
-                                            {user.user_metadata?.full_name || user.email}
+                                            {user.user_metadata?.full_name || user.user_metadata?.name || user.email}
                                         </span>
                                         <MoreHorizontal className="ml-2 h-4 w-4 opacity-50 shrink-0" />
                                     </SidebarMenuButton>
