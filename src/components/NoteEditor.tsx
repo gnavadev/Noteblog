@@ -27,6 +27,8 @@ import 'cherry-markdown/dist/cherry-markdown.css';
 // Plugin: Mermaid
 // @ts-ignore
 import CherryMermaidPlugin from 'cherry-markdown/dist/addons/cherry-code-block-mermaid-plugin';
+// @ts-ignore
+import CherryTableEchartsPlugin from 'cherry-markdown/dist/addons/advance/cherry-table-echarts-plugin';
 import mermaid from 'mermaid';
 
 // Register Plugins immediately
@@ -39,6 +41,7 @@ declare global {
         echarts: any;
         katex: any;
         MathJax: any;
+        mermaid: any;
     }
 }
 
@@ -104,6 +107,12 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
         if (editorInstanceRef.current) return;
 
         try {
+            // Register Plugins here to ensure window.mermaid is available
+            Cherry.usePlugin(CherryMermaidPlugin, {
+                mermaid: window.mermaid,
+            });
+            Cherry.usePlugin(CherryTableEchartsPlugin);
+
             editorInstanceRef.current = new Cherry({
                 id: 'cherry-markdown-container',
                 value: value,
@@ -163,6 +172,7 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                 toolbars: {
                     theme: colorMode === 'dark' ? 'dark' : 'light',
                     showToolbar: true,
+                    autoScroll: false, // Prevent toolbar from sticking/jumping
                     toolbar: [
                         'bold', 'italic',
                         { strikethrough: ['strikethrough', 'underline', 'sub', 'sup', 'ruby'] },
