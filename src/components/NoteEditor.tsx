@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-    X,
     Save,
     Image as ImageIcon,
     ArrowLeft,
@@ -18,251 +17,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import CherryEditor from './CherryEditor';
 
-// --- Cherry Markdown Configuration ---
-// Documentation: https://github.com/Tencent/cherry-markdown
-import Cherry from 'cherry-markdown/dist/cherry-markdown.core';
-import 'cherry-markdown/dist/cherry-markdown.css';
-
-// Plugin: Mermaid
-// @ts-ignore
-import CherryMermaidPlugin from 'cherry-markdown/dist/addons/cherry-code-block-mermaid-plugin';
-// @ts-ignore
-import CherryTableEchartsPlugin from 'cherry-markdown/dist/addons/advance/cherry-table-echarts-plugin';
-import mermaid from 'mermaid';
-
-// Register Plugins immediately (Global registration)
-// This must happen ONLY ONCE, before any Cherry instance is created.
-try {
-    Cherry.usePlugin(CherryMermaidPlugin, {
-        mermaid,
-    });
-    Cherry.usePlugin(CherryTableEchartsPlugin);
-} catch (e) {
-    console.warn("Plugins already registered or failed:", e);
-}
-
-
-
-declare global {
-    interface Window {
-        echarts: any;
-        katex: any;
-        MathJax: any;
-        mermaid: any;
-    }
-}
-
-interface CherryEditorProps {
-    value: string;
-    onChange: (value: string) => void;
-    onFileUpload: (file: File, callback: (url: string) => void) => void;
-    colorMode: 'light' | 'dark';
-}
-
-const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, colorMode }: CherryEditorProps) => {
-    const editorContainerRef = useRef<HTMLDivElement>(null);
-    const editorInstanceRef = useRef<any>(null);
-
-    const [dependenciesLoaded, setDependenciesLoaded] = useState(false);
-
-    // Stable refs for callbacks to prevent re-initialization
-    const onChangeRef = useRef(onChange);
-    const onFileUploadRef = useRef(onFileUpload);
-
-    useEffect(() => {
-        onChangeRef.current = onChange;
-        onFileUploadRef.current = onFileUpload;
-    }, [onChange, onFileUpload]);
-
-    // Load External Scripts (MathJax, ECharts) with Safety Timeout
-    useEffect(() => {
-        let isMounted = true;
-        const loadScript = (src: string, globalKey: string): Promise<void> => {
-            return new Promise((resolve) => {
-                if ((window as any)[globalKey]) {
-                    resolve();
-                    return;
-                }
-                const script = document.createElement('script');
-                script.src = src;
-                script.async = true;
-                script.onload = () => resolve();
-                script.onerror = () => {
-                    console.warn(`Failed to load ${src}, continuing...`);
-                    resolve(); // Resolve anyway to not block editor
-                };
-                document.head.appendChild(script);
-            });
-        };
-
-        const loadDependencies = async () => {
-            try {
-                // Race between loading and a 2-second timeout
-                await Promise.race([
-                    Promise.all([
-                        loadScript('https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js', 'echarts'),
-                        loadScript('https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', 'MathJax')
-                    ]),
-                    new Promise(resolve => setTimeout(resolve, 2000)) // Safety timeout
-                ]);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                if (isMounted) setDependenciesLoaded(true);
-            }
-        };
-
-        loadDependencies();
-        return () => { isMounted = false; };
-    }, []);
-
-    // Initialize Editor
-    useEffect(() => {
-        if (!dependenciesLoaded) return;
-        if (!editorContainerRef.current) return;
-        if (editorInstanceRef.current) return;
-
-        try {
-            editorInstanceRef.current = new Cherry({
-                id: 'cherry-markdown-container',
-                value: value,
-                locale: 'en_US',
-                // Draw.io Config Removed
-
-                // External dependencies
-                externals: {
-                    echarts: window.echarts,
-                    katex: window.katex,
-                    MathJax: window.MathJax,
-                },
-                // Engine Configuration
-                engine: {
-                    global: {
-                        urlProcessor(url: string, srcType: string) {
-                            return url;
-                        },
-                    },
-                    syntax: {
-                        codeBlock: {
-                            theme: 'twilight',
-                            wrap: true,
-                            lineNumber: true,
-                        },
-                        table: {
-                            enableChart: true,
-                        },
-                        fontEmphasis: {
-                            allowWhitespace: false, // Fix for CJK
-                        },
-                        strikethrough: {
-                            needWhitespace: false,
-                        },
-                        mathBlock: {
-                            engine: 'MathJax',
-                        },
-                        inlineMath: {
-                            engine: 'MathJax',
-                        },
-                        emoji: {
-                            useUnicode: true,
-                        },
-                    },
-                },
-                // Editor UI Settings
-                editor: {
-                    defaultModel: 'edit&preview',
-                    theme: colorMode === 'dark' ? 'dark' : 'light',
-                    height: '100%',
-                    showFullWidthMark: true,
-                    showSuggestList: true,
-                    convertWhenPaste: true,
-                },
-                // Toolbar Configuration (Full Model)
-                toolbars: {
-                    theme: colorMode === 'dark' ? 'dark' : 'light',
-                    showToolbar: true,
-                    autoScroll: false, // Prevent toolbar from sticking/jumping
-                    toolbar: [
-                        'bold', 'italic',
-                        { strikethrough: ['strikethrough', 'underline', 'sub', 'sup', 'ruby'] },
-                        'size', '|',
-                        'color', 'header', '|',
-                        'ol', 'ul', 'checklist', 'panel', 'justify', 'detail', '|',
-                        'formula',
-                        {
-                            insert: ['image', 'audio', 'video', 'link', 'hr', 'br', 'code', 'formula', 'toc', 'table', 'pdf', 'word', 'file']
-                        },
-                        'graph', 'togglePreview', 'settings', 'codeTheme', 'proTable', 'search', 'shortcutKey'
-                    ],
-                    toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount'],
-                    sidebar: ['mobilePreview', 'copy', 'theme', 'toc'],
-                    toc: {
-                        defaultModel: 'full',
-                    },
-                    // Bubble Toolbar (Selection)
-                    bubble: ['bold', 'italic', 'underline', 'strikethrough', 'sub', 'sup', 'quote', '|', 'size', 'color'],
-                    // Float Toolbar (New Line)
-                    float: ['h1', 'h2', 'h3', '|', 'checklist', 'quote', 'table', 'code'],
-                },
-                // File Upload Handling
-                fileModule: {
-                    fileUpload: (file: File, callback: (url: string) => void) => {
-                        if (onFileUploadRef.current) {
-                            onFileUploadRef.current(file, callback);
-                        }
-                    },
-                },
-                // Callbacks
-                callback: {
-                    afterChange: (markdown: string) => {
-                        if (onChangeRef.current) {
-                            onChangeRef.current(markdown);
-                        }
-                    },
-                    fileUpload: (file: File, callback: (url: string) => void) => {
-                        if (onFileUploadRef.current) {
-                            onFileUploadRef.current(file, callback);
-                        }
-                    },
-                },
-            });
-        } catch (err) {
-            console.error("Cherry Editor Init Failed:", err);
-        }
-
-        return () => {
-            // Cherry destructor if available
-            if (editorInstanceRef.current) {
-                // Check if destroy exists (it should, but safety first)
-                if (typeof editorInstanceRef.current.destroy === 'function') {
-                    // editorInstanceRef.current.destroy(); // Commented out to prevent aggressive cleanup issues, or check library specifics
-                }
-                editorInstanceRef.current = null;
-            }
-        };
-    }, [dependenciesLoaded]); // Only init when dependencies are ready. value/colorMode handled separately/initially.
-
-    // Handle Theme Changes
-    useEffect(() => {
-        if (editorInstanceRef.current && editorInstanceRef.current.setTheme) {
-            editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'light');
-            if (editorInstanceRef.current.toolbar && editorInstanceRef.current.toolbar.setTheme) {
-                editorInstanceRef.current.toolbar.setTheme(colorMode === 'dark' ? 'dark' : 'light');
-            }
-        }
-    }, [colorMode]);
-
-    if (!dependenciesLoaded) {
-        return <div className="h-full w-full flex items-center justify-center text-gray-400">Loading Editor Resources...</div>;
-    }
-
-    return <div id="cherry-markdown-container" ref={editorContainerRef} className="h-full w-full" />;
-});
-CherryEditorComponent.displayName = 'CherryEditorComponent';
-
-
-// --- Main Editor Application Component ---
 interface PostEditorProps {
     open: boolean;
     onClose: () => void;
@@ -529,7 +285,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                     </div>
                 ) : (
-                    <CherryEditorComponent
+                    <CherryEditor
                         value={markdown}
                         onChange={setMarkdown}
                         onFileUpload={handleFileUpload}
@@ -542,3 +298,4 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
 };
 
 export default PostEditor;
+

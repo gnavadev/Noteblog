@@ -183,13 +183,7 @@
   }
 }
 
-.glass {
-  background: var(--mac-bg);
-  backdrop-filter: blur(var(--mac-blur));
-  -webkit-backdrop-filter: blur(var(--mac-blur));
-  border: 1px solid var(--mac-border);
-  box-shadow: var(--mac-shadow);
-}
+
 
 /* Cherry Editor Preview Mermaid Overrides */
 .dark .cherry-previewer .mermaid svg,
