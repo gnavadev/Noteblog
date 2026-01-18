@@ -191,16 +191,24 @@
   color: inherit !important;
 }
 
-/* Mermaid Sizing and Alignment - More Restrictive */
+/* Mermaid Sizing and Alignment */
 .mermaid,
 .cherry-previewer .mermaid,
 [class*="language-mermaid"] {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  width: 100% !important;
-  margin: 1.5rem 0 !important;
+  display: block !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 1.5rem auto !important;
   background-color: transparent !important;
+  overflow: visible !important;
+}
+
+.mermaid svg,
+.cherry-previewer .mermaid svg,
+[class*="language-mermaid"] svg {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
 }
 
 /* Fix List Types in Reader (Restoring default styles overridden by Tailwind) */

@@ -232,12 +232,14 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             rehypePlugins={[[rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }]]}
+                                            allowedElements={['p', 'span', 'strong', 'em', 'a']}
+                                            unwrapDisallowed={true}
                                             components={{
                                                 p: ({ children }) => <span className="inline">{children} </span>,
                                                 strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                                                 em: ({ children }) => <em className="italic">{children}</em>,
-                                                code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-[0.9em] font-mono">{children}</code>,
-                                                a: ({ children, href }) => <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>{children}</a>
+                                                code: ({ children }) => <span className="bg-muted px-1.5 py-0.5 rounded text-[0.9em] font-mono">{children}</span>,
+                                                a: ({ children }) => <span className="text-primary">{children}</span>
                                             }}
                                         >
                                             {post.content}
