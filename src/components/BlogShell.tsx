@@ -224,10 +224,10 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
 
 
     return (
-        <div className="flex min-h-screen w-full bg-background transition-colors duration-300">
+        <div className="flex h-screen w-full bg-background transition-colors duration-300 overflow-hidden">
             <Sidebar {...sidebarProps} />
 
-            <SidebarInset className="flex-1 flex flex-col relative w-full overflow-hidden">
+            <SidebarInset className="flex-1 flex flex-col relative w-full h-full min-h-0 overflow-hidden">
                 <ContentArea
                     contentRef={contentRef}
                     isMobile={isMobile}
