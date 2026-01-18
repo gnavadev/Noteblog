@@ -74,8 +74,8 @@ const CherryEditor = React.memo(({ value, onChange, onFileUpload, colorMode }: C
                 // Race between loading and a 2-second timeout
                 await Promise.race([
                     Promise.all([
-                        loadScript('https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js', 'echarts'),
-                        loadScript('https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', 'MathJax')
+                        loadScript('/libs/echarts.min.js', 'echarts'),
+                        loadScript('/libs/tex-svg.js', 'MathJax')
                     ]),
                     new Promise(resolve => setTimeout(resolve, 2000)) // Safety timeout
                 ]);
