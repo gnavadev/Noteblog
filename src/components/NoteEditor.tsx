@@ -53,25 +53,40 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
     const editorContainerRef = useRef<HTMLDivElement>(null);
     const editorInstanceRef = useRef<any>(null);
 
+    const [dependenciesLoaded, setDependenciesLoaded] = useState(false);
+
     // Load External Scripts (MathJax, ECharts)
     useEffect(() => {
-        const loadScript = (src: string, id: string) => {
-            if (document.getElementById(id)) return;
-            const script = document.createElement('script');
-            script.src = src;
-            script.id = id;
-            script.async = true;
-            document.head.appendChild(script);
+        const loadScript = (src: string, globalKey: string): Promise<void> => {
+            return new Promise((resolve, reject) => {
+                if ((window as any)[globalKey]) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = true;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                document.head.appendChild(script);
+            });
         };
 
-        // ECharts
-        loadScript('https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js', 'echarts-script');
-        // MathJax
-        loadScript('https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', 'mathjax-script');
+        Promise.all([
+            loadScript('https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js', 'echarts'),
+            loadScript('https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', 'MathJax')
+        ]).then(() => {
+            setDependenciesLoaded(true);
+        }).catch(err => {
+            console.error("Failed to load Cherry dependencies", err);
+            // Fallback to loading anyway so editor works without charts
+            setDependenciesLoaded(true);
+        });
     }, []);
 
     // Initialize Editor
     useEffect(() => {
+        if (!dependenciesLoaded) return; // Wait for scripts
         if (!editorContainerRef.current) return;
         if (editorInstanceRef.current) return;
 
@@ -118,7 +133,7 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                         engine: 'MathJax',
                     },
                     inlineMath: {
-                        engine: 'MathJax',
+                        engine: 'MathJax', // Use MathJax engine
                     },
                     emoji: {
                         useUnicode: true,
@@ -149,7 +164,7 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                     {
                         insert: ['image', 'audio', 'video', 'link', 'hr', 'br', 'code', 'formula', 'toc', 'table', 'pdf', 'word', 'file']
                     },
-                    'graph', 'togglePreview', 'settings', 'codeTheme', 'proTable',
+                    'graph', 'togglePreview', 'settings', 'codeTheme', 'proTable', 'search', 'shortcutKey'
                 ],
                 toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount'],
                 sidebar: ['mobilePreview', 'copy', 'theme', 'toc'],
