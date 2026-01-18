@@ -31,6 +31,73 @@ import { useToast } from "@/hooks/use-toast"
 import CherryEditor from 'cherry-markdown/dist/cherry-markdown.core';
 import 'cherry-markdown/dist/cherry-markdown.css';
 
+interface CherryEditorWrapperProps {
+    initialValue: string;
+    onChange: (val: string) => void;
+    colorMode: 'light' | 'dark';
+    editorRef: React.MutableRefObject<any>;
+}
+
+// Memoized wrapper to prevent React from re-rendering the editor container
+const CherryEditorWrapper = React.memo(({ initialValue, onChange, colorMode, editorRef }: CherryEditorWrapperProps) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (containerRef.current && !editorRef.current) {
+            editorRef.current = new CherryEditor({
+                id: 'cherry-editor-instance',
+                value: initialValue,
+                locale: 'en_US',
+                externals: {
+                    echarts: false,
+                    katex: false,
+                    MathJax: false,
+                },
+                editor: {
+                    defaultModel: 'edit&preview',
+                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                    height: '100%',
+                },
+                toolbars: {
+                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                },
+                callback: {
+                    afterChange: (val: string) => {
+                        onChange(val);
+                    },
+                },
+            });
+        }
+
+        return () => {
+            if (editorRef.current) {
+                if (typeof editorRef.current.destroy === 'function') {
+                    editorRef.current.destroy();
+                }
+                editorRef.current = null;
+            }
+        };
+    }, []); // Only initialize once
+
+    // Update theme when colorMode changes
+    useEffect(() => {
+        if (editorRef.current) {
+            const theme = colorMode === 'dark' ? 'dark' : 'light';
+            editorRef.current.setTheme(theme);
+        }
+    }, [colorMode]);
+
+    return (
+        <div
+            id="cherry-editor-instance"
+            ref={containerRef}
+            className="h-full w-full"
+        />
+    );
+});
+
+CherryEditorWrapper.displayName = 'CherryEditorWrapper';
+
 interface PostEditorProps {
     open: boolean;
     onClose: () => void;
@@ -53,70 +120,12 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const [newTopicName, setNewTopicName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cherryRef = useRef<any>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
     const hasBeenInitialized = useRef(false);
-    const isInternalUpdate = useRef(false);
 
-    useEffect(() => {
-        if (open && containerRef.current && !cherryRef.current) {
-            cherryRef.current = new CherryEditor({
-                id: 'cherry-editor',
-                value: markdown,
-                locale: 'en_US',
-                externals: {
-                    echarts: false,
-                    katex: false,
-                    MathJax: false,
-                },
-                editor: {
-                    defaultModel: 'edit&preview',
-                    theme: colorMode === 'dark' ? 'dark' : 'light',
-                    height: '100%',
-                },
-                toolbars: {
-                    theme: colorMode === 'dark' ? 'dark' : 'light',
-                },
-                callback: {
-                    afterChange: (val: string) => {
-                        isInternalUpdate.current = true;
-                        setMarkdown(val);
-                        // Reset the ref after a tick to allow the useEffect to see it
-                        setTimeout(() => {
-                            isInternalUpdate.current = false;
-                        }, 0);
-                    },
-                },
-            });
-        }
-
-        return () => {
-            if (cherryRef.current) {
-                // If there's a destroy method, call it
-                if (typeof cherryRef.current.destroy === 'function') {
-                    cherryRef.current.destroy();
-                }
-                cherryRef.current = null;
-            }
-        };
-    }, [open]);
-
-    // Update value when markdown state changes (only from external sources)
-    useEffect(() => {
-        if (cherryRef.current && !isInternalUpdate.current) {
-            const currentValue = cherryRef.current.getValue();
-            if (markdown !== currentValue) {
-                cherryRef.current.setValue(markdown);
-            }
-        }
-    }, [markdown]);
-
-    // Update theme when colorMode changes
-    useEffect(() => {
-        if (cherryRef.current) {
-            const theme = colorMode === 'dark' ? 'dark' : 'light';
-            cherryRef.current.setTheme(theme);
-        }
-    }, [colorMode]);
+    // Stable callback for editor changes
+    const handleMarkdownChange = React.useCallback((val: string) => {
+        setMarkdown(val);
+    }, []);
 
     useEffect(() => {
         if (open) {
@@ -134,12 +143,15 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         setFeaturedImage(draft.featuredImage || null);
                         const content = draft.markdown || '# Untitled Post\n\nStart writing here...';
                         setMarkdown(content);
+                        if (cherryRef.current) cherryRef.current.setValue(content);
                         toast({ title: "Draft restored", description: "Your unsaved changes were recovered." });
                     } catch (e) {
                         console.error('Failed to load draft:', e);
                     }
                 } else {
-                    setMarkdown('# Untitled Post\n\nStart writing here...');
+                    const defaultContent = '# Untitled Post\n\nStart writing here...';
+                    setMarkdown(defaultContent);
+                    if (cherryRef.current) cherryRef.current.setValue(defaultContent);
                     setTitle('');
                     setTopic(availableTopics[0]?.name || 'Technology');
                     setIsPublic(false);
@@ -176,6 +188,9 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 setIsPublic(data.is_public);
                 setFeaturedImage(data.featured_image);
                 setMarkdown(data.content || '');
+                if (cherryRef.current) {
+                    cherryRef.current.setValue(data.content || '');
+                }
             }
         } catch (error: any) {
             toast({ title: "Failed to load post", description: error.message, variant: "destructive" });
@@ -213,7 +228,11 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 setFeaturedImage(publicUrl);
                 toast({ title: "Banner updated" });
             } else {
-                setMarkdown(prev => `${prev}\n![Image](${publicUrl})\n`);
+                const newMarkdown = `${markdown}\n![Image](${publicUrl})\n`;
+                setMarkdown(newMarkdown);
+                if (cherryRef.current) {
+                    cherryRef.current.setValue(newMarkdown);
+                }
                 toast({ title: "Image added" });
             }
         } catch (error: any) {
@@ -423,10 +442,11 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 className="flex-1 min-h-0"
                 data-color-mode={colorMode}
             >
-                <div
-                    id="cherry-editor"
-                    ref={containerRef}
-                    className="h-full w-full"
+                <CherryEditorWrapper
+                    initialValue={markdown}
+                    onChange={handleMarkdownChange}
+                    colorMode={colorMode}
+                    editorRef={cherryRef}
                 />
             </main>
         </div>
