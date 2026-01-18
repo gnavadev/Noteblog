@@ -30,6 +30,16 @@ import { useToast } from "@/hooks/use-toast"
 
 import CherryEditor from 'cherry-markdown/dist/cherry-markdown.core';
 import 'cherry-markdown/dist/cherry-markdown.css';
+// @ts-ignore
+import CherryMermaidPlugin from 'cherry-markdown/dist/addons/cherry-code-block-mermaid-plugin.js';
+import mermaid from 'mermaid';
+
+// Register the Mermaid plugin before instantiation
+if (CherryMermaidPlugin) {
+    CherryEditor.usePlugin(CherryMermaidPlugin, {
+        mermaid,
+    });
+}
 
 interface CherryEditorWrapperProps {
     initialValue: string;
@@ -65,6 +75,10 @@ const CherryEditorWrapper = React.memo(({ initialValue, onChange, colorMode, edi
                     afterChange: (val: string) => {
                         onChange(val);
                     },
+                    afterAsyncRender: (md: string, html: string) => {
+                        // Optional: handle post-async-render logic if needed
+                        // console.log('Async render finished');
+                    }
                 },
             });
         }
