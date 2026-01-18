@@ -1,0 +1,112 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { supabase } from "../../lib/supabase";
+import CherryMarkdownViewer from "../../components/CherryMarkdownViewer";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Clock, Calendar } from "lucide-react";
+
+const { id } = Astro.params;
+
+if (!id) {
+    return Astro.redirect("/404");
+}
+
+const { data: post, error } = await supabase
+    .from("notes")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+if (error || !post) {
+    return Astro.redirect("/404");
+}
+
+const topicColor = "#007aff"; // You might want to map this sharing logic with the main app if possible
+---
+
+<Layout
+    title={post.title}
+    description={post.content.slice(0, 160)}
+    image={post.featured_image}
+>
+    <div
+        class="min-h-screen bg-background text-foreground flex flex-col items-center py-10 px-4 md:px-0"
+    >
+        <div class="fixed top-6 left-6 z-50">
+            <a href="/">
+                <Button
+                    variant="outline"
+                    className="rounded-full gap-2 pl-3 pr-4 shadow-md bg-background/80 backdrop-blur-md hover:bg-background/100"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span class="font-bold">Grid</span>
+                </Button>
+            </a>
+        </div>
+
+        <main class="w-full max-w-[800px] mt-12 md:mt-0">
+            <header class="mb-10 flex flex-col gap-6 text-center md:text-left">
+                <div
+                    class="flex items-center gap-3 justify-center md:justify-start"
+                >
+                    <span
+                        class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white shadow-sm"
+                        style={`background-color: ${topicColor}`}
+                    >
+                        {post.topic}
+                    </span>
+                </div>
+
+                <h1
+                    class="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight"
+                >
+                    {post.title}
+                </h1>
+
+                <div
+                    class="flex items-center gap-6 text-sm font-semibold text-muted-foreground justify-center md:justify-start"
+                >
+                    <div class="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span
+                            >{
+                                new Date(post.created_at).toLocaleDateString()
+                            }</span
+                        >
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                        <span>{post.read_time_minutes} min read</span>
+                    </div>
+                </div>
+            </header>
+
+            <hr class="border-border/50 mb-10" />
+
+            <div class="min-h-[400px]">
+                <CherryMarkdownViewer
+                    content={post.content}
+                    colorMode="light"
+                    client:only="react"
+                />
+            </div>
+
+            <hr class="border-border/50 my-16" />
+
+            <footer
+                class="text-center text-sm font-medium text-muted-foreground opacity-50 py-8"
+            >
+                <p>
+                    © {new Date().getFullYear()} Gabriel Nava — Crafting Digital Experiences
+                </p>
+            </footer>
+        </main>
+    </div>
+</Layout>
+
+<script>
+    // Simple client-side theme sync
+    const theme = localStorage.getItem("blog-theme") || "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "dark") document.documentElement.classList.add("dark");
+</script>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
 import MagazineGrid from './MagazineGrid';
-import ReaderPanel from './ReaderPanel';
-import PostEditor from './NoteEditor';
 import PostItBoard from './PostItBoard';
+const ReaderPanel = React.lazy(() => import('./ReaderPanel'));
+const PostEditor = React.lazy(() => import('./NoteEditor'));
 import { Plus, Menu, Sun, Moon, User } from "lucide-react";
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,12 +16,26 @@ import { cn } from "@/lib/utils"
 import mermaid from 'mermaid';
 
 // Initialize mermaid with default options
-mermaid.initialize({
-    startOnLoad: true,
-    theme: 'default',
-    securityLevel: 'loose',
-    useMaxWidth: true,
-} as any);
+// Initialize mermaid with default options
+if (typeof window !== 'undefined') {
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'default',
+        securityLevel: 'loose',
+        flowchart: { useMaxWidth: true, htmlLabels: true },
+        sequence: { useMaxWidth: true },
+        gantt: { useMaxWidth: true },
+        journey: { useMaxWidth: true },
+        timeline: { useMaxWidth: true },
+        class: { useMaxWidth: true },
+        state: { useMaxWidth: true },
+        er: { useMaxWidth: true },
+        pie: { useMaxWidth: true },
+        quadrantChart: { useMaxWidth: true },
+        xyChart: { useMaxWidth: true },
+        requirement: { useMaxWidth: true },
+    } as any);
+}
 
 interface Post {
     id: string;
@@ -36,13 +50,14 @@ interface Post {
 interface BlogShellInnerProps {
     colorMode: 'light' | 'dark';
     toggleTheme: () => void;
+    initialPosts?: Post[];
 }
 
-const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme }) => {
+const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme, initialPosts = [] }) => {
     const { toast } = useToast();
-    const [posts, setPosts] = useState<Post[]>([]);
+    const [posts, setPosts] = useState<Post[]>(initialPosts);
     const [topics, setTopics] = useState<{ name: string; count: number; color: string }[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(initialPosts.length === 0);
     const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -114,23 +129,34 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
     }, []);
 
     // Handle Mermaid theme switching
+    // Handle Mermaid theme switching
     useEffect(() => {
         mermaid.initialize({
             theme: colorMode === 'dark' ? 'dark' : 'default',
-            useMaxWidth: true,
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+            },
+            sequence: { useMaxWidth: true },
+            gantt: { useMaxWidth: true },
+            journey: { useMaxWidth: true },
+            timeline: { useMaxWidth: true },
+            class: { useMaxWidth: true },
+            state: { useMaxWidth: true },
+            er: { useMaxWidth: true },
+            pie: { useMaxWidth: true },
+            quadrantChart: { useMaxWidth: true },
+            xyChart: { useMaxWidth: true },
+            requirement: { useMaxWidth: true },
             themeVariables: colorMode === 'dark' ? {
-                primaryColor: '#c6a0f6', // Mauve
-                primaryTextColor: '#cad3f5', // Text
-                primaryBorderColor: '#b8c0e0', // Overlay1
-                lineColor: '#939ab7', // Overlay0
-                secondaryColor: '#363a4f', // Surface1
-                tertiaryColor: '#24273a', // Surface0
+                primaryColor: '#c6a0f6',
+                primaryTextColor: '#cad3f5',
+                primaryBorderColor: '#b8c0e0',
+                lineColor: '#939ab7',
+                secondaryColor: '#363a4f',
+                tertiaryColor: '#24273a',
             } : {}
         } as any);
-
-        // Re-render diagrams if they are on the page
-        // Note: With ReactMarkdown, the components often re-render themselves
-        // but this ensures the global config is correct for future renders.
     }, [colorMode]);
 
     const fetchPosts = async (currentUser = user) => {
@@ -184,9 +210,27 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
         setSelectedTopic(null);
     };
 
+    // Handle browser back button
+    useEffect(() => {
+        const handlePopState = () => {
+            const path = window.location.pathname;
+            // If we went back to root, close the modal
+            if (path === '/' || path === '') {
+                setSelectedPostId(null);
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
     const handleSelectPost = (id: string | null) => {
         setSelectedPostId(id);
         setShowPostIt(false);
+        // If closing, revert URL to root
+        if (id === null) {
+            window.history.pushState({}, '', '/');
+        }
     };
 
     const handleSelectTopic = (topic: string | null) => {
@@ -280,18 +324,20 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
             </SidebarInset>
 
             {isEditorOpen && (
-                <PostEditor
-                    open={isEditorOpen}
-                    postId={editingPostId}
-                    onClose={() => setIsEditorOpen(false)}
-                    onSave={() => {
-                        fetchPosts();
-                        setIsEditorOpen(false);
-                    }}
-                    availableTopics={topics}
-                    colorMode={colorMode}
-                    toggleTheme={toggleTheme}
-                />
+                <React.Suspense fallback={null}>
+                    <PostEditor
+                        open={isEditorOpen}
+                        postId={editingPostId}
+                        onClose={() => setIsEditorOpen(false)}
+                        onSave={() => {
+                            fetchPosts();
+                            setIsEditorOpen(false);
+                        }}
+                        availableTopics={topics}
+                        colorMode={colorMode}
+                        toggleTheme={toggleTheme}
+                    />
+                </React.Suspense>
             )}
 
             <div className="fixed right-6 bottom-6 z-[200] flex flex-col gap-3">
@@ -403,15 +449,17 @@ const ContentArea: React.FC<any> = ({
                                 isReaderExpanded && "z-[5000]"
                             )}
                         >
-                            <ReaderPanel
-                                selectedPostId={selectedPostId}
-                                initialPost={posts.find((p: Post) => p.id === selectedPostId) || null}
-                                topics={topics}
-                                isExpanded={isReaderExpanded}
-                                onToggleExpand={() => setIsReaderExpanded(!isReaderExpanded)}
-                                onClose={() => handleSelectPost(null)}
-                                colorMode={colorMode}
-                            />
+                            <React.Suspense fallback={<div className="h-full w-full flex items-center justify-center p-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+                                <ReaderPanel
+                                    selectedPostId={selectedPostId}
+                                    initialPost={posts.find((p: Post) => p.id === selectedPostId) || null}
+                                    topics={topics}
+                                    isExpanded={isReaderExpanded}
+                                    onToggleExpand={() => setIsReaderExpanded(!isReaderExpanded)}
+                                    onClose={() => handleSelectPost(null)}
+                                    colorMode={colorMode}
+                                />
+                            </React.Suspense>
                         </motion.div>
                     </>
                 )}
@@ -420,7 +468,11 @@ const ContentArea: React.FC<any> = ({
     )
 }
 
-const BlogShell: React.FC = () => {
+interface BlogShellProps {
+    initialPosts?: Post[];
+}
+
+const BlogShell: React.FC<BlogShellProps> = ({ initialPosts }) => {
     const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
 
     useEffect(() => {
@@ -469,7 +521,7 @@ const BlogShell: React.FC = () => {
 
     return (
         <SidebarProvider>
-            <BlogShellInner colorMode={colorMode} toggleTheme={toggleTheme} />
+            <BlogShellInner colorMode={colorMode} toggleTheme={toggleTheme} initialPosts={initialPosts} />
             <Toaster />
         </SidebarProvider>
     );
