@@ -55,6 +55,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const cherryRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const hasBeenInitialized = useRef(false);
+    const isInternalUpdate = useRef(false);
 
     useEffect(() => {
         if (open && containerRef.current && !cherryRef.current) {
@@ -77,7 +78,12 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 },
                 callback: {
                     afterChange: (val: string) => {
+                        isInternalUpdate.current = true;
                         setMarkdown(val);
+                        // Reset the ref after a tick to allow the useEffect to see it
+                        setTimeout(() => {
+                            isInternalUpdate.current = false;
+                        }, 0);
                     },
                 },
             });
@@ -85,23 +91,30 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
 
         return () => {
             if (cherryRef.current) {
-                // cherryRef.current.destroy(); // Some versions use destroy
+                // If there's a destroy method, call it
+                if (typeof cherryRef.current.destroy === 'function') {
+                    cherryRef.current.destroy();
+                }
                 cherryRef.current = null;
             }
         };
     }, [open]);
 
-    // Update value when markdown state changes (e.g. from fetch)
+    // Update value when markdown state changes (only from external sources)
     useEffect(() => {
-        if (cherryRef.current && markdown !== cherryRef.current.getValue()) {
-            cherryRef.current.setValue(markdown);
+        if (cherryRef.current && !isInternalUpdate.current) {
+            const currentValue = cherryRef.current.getValue();
+            if (markdown !== currentValue) {
+                cherryRef.current.setValue(markdown);
+            }
         }
     }, [markdown]);
 
     // Update theme when colorMode changes
     useEffect(() => {
         if (cherryRef.current) {
-            cherryRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'light');
+            const theme = colorMode === 'dark' ? 'dark' : 'light';
+            cherryRef.current.setTheme(theme);
         }
     }, [colorMode]);
 
