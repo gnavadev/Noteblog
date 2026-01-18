@@ -64,12 +64,42 @@ const CherryEditorWrapper = React.memo(({ initialValue, onChange, colorMode, edi
                     MathJax: false,
                 },
                 editor: {
-                    defaultModel: 'edit&preview',
+                    defaultModel: 'edit&preview', // edit&preview, editOnly, previewOnly
                     theme: colorMode === 'dark' ? 'dark' : 'light',
                     height: '100%',
                 },
                 toolbars: {
                     theme: colorMode === 'dark' ? 'dark' : 'light',
+                    showToolbar: true,
+                    toolbar: [
+                        'bold',
+                        'italic',
+                        'strikethrough',
+                        '|',
+                        'color',
+                        'header',
+                        '|',
+                        'list',
+                        {
+                            insert: [
+                                'image',
+                                'audio',
+                                'video',
+                                'link',
+                                'hr',
+                                'br',
+                                'code',
+                                'formula',
+                                'toc',
+                                'table',
+                                'pdf',
+                                'word',
+                            ],
+                        },
+                        'graph',
+                        'settings',
+                    ],
+                    sidebar: ['mobilePreview', 'copy', 'theme', 'pdf', 'export'],
                 },
                 callback: {
                     afterChange: (val: string) => {
