@@ -28,10 +28,8 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 
-import MDEditor from '@uiw/react-md-editor';
-import remarkGfm from 'remark-gfm';
-import "@uiw/react-md-editor/markdown-editor.css";
-import "@uiw/react-markdown-preview/markdown.css";
+import CherryEditor from 'cherry-markdown/dist/cherry-markdown.core';
+import 'cherry-markdown/dist/cherry-markdown.css';
 
 interface PostEditorProps {
     open: boolean;
@@ -54,52 +52,56 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const { toast } = useToast();
     const [newTopicName, setNewTopicName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const editorRef = useRef<any>(null);
+    const cherryRef = useRef<any>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const hasBeenInitialized = useRef(false);
 
-    // Plugin to inject line numbers into the preview HTML
-    const remarkLineNumbers = () => (tree: any) => {
-        const walk = (node: any) => {
-            if (node.position) {
-                node.data = node.data || {};
-                node.data.hProperties = node.data.hProperties || {};
-                node.data.hProperties['data-line'] = node.position.start.line;
-            }
-            if (node.children) node.children.forEach(walk);
-        };
-        walk(tree);
-    };
-
-    const handlePreviewDoubleClick = (e: React.MouseEvent<HTMLElement>) => {
-        const target = e.target as HTMLElement;
-        const lineNode = target.closest('[data-line]');
-        if (!lineNode) return;
-
-        const lineNum = parseInt(lineNode.getAttribute('data-line') || '1');
-
-        if (editorRef.current) {
-            const textarea = editorRef.current.textarea;
-            if (textarea) {
-                const lines = markdown.split('\n');
-
-                // Calculate char offset for the start of the line
-                let offset = 0;
-                for (let i = 0; i < lineNum - 1; i++) {
-                    offset += lines[i].length + 1; // +1 for \n
-                }
-
-                // Textarea scrolling is tricky. We'll use a heuristic for fixed line-height
-                // most browsers use ~1.5 line-height for textareas
-                const lineHeight = 24;
-                textarea.scrollTop = (lineNum - 10) * lineHeight;
-
-                textarea.focus();
-                // Select the whole line
-                const lineContent = lines[lineNum - 1] || '';
-                textarea.setSelectionRange(offset, offset + lineContent.length);
-            }
+    useEffect(() => {
+        if (open && containerRef.current && !cherryRef.current) {
+            cherryRef.current = new CherryEditor({
+                id: 'cherry-editor',
+                value: markdown,
+                externals: {
+                    echarts: false,
+                    katex: false,
+                    MathJax: false,
+                },
+                editor: {
+                    defaultModel: 'edit&preview',
+                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                },
+                toolbars: {
+                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                },
+                callback: {
+                    afterChange: (val: string) => {
+                        setMarkdown(val);
+                    },
+                },
+            });
         }
-    };
+
+        return () => {
+            if (cherryRef.current) {
+                // cherryRef.current.destroy(); // Some versions use destroy
+                cherryRef.current = null;
+            }
+        };
+    }, [open]);
+
+    // Update value when markdown state changes (e.g. from fetch)
+    useEffect(() => {
+        if (cherryRef.current && markdown !== cherryRef.current.getValue()) {
+            cherryRef.current.setValue(markdown);
+        }
+    }, [markdown]);
+
+    // Update theme when colorMode changes
+    useEffect(() => {
+        if (cherryRef.current) {
+            cherryRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'light');
+        }
+    }, [colorMode]);
 
     useEffect(() => {
         if (open) {
@@ -115,7 +117,8 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         setTopic(draft.topic || availableTopics[0]?.name || 'Technology');
                         setIsPublic(draft.isPublic || false);
                         setFeaturedImage(draft.featuredImage || null);
-                        setMarkdown(draft.markdown || '# Untitled Post\n\nStart writing here...');
+                        const content = draft.markdown || '# Untitled Post\n\nStart writing here...';
+                        setMarkdown(content);
                         toast({ title: "Draft restored", description: "Your unsaved changes were recovered." });
                     } catch (e) {
                         console.error('Failed to load draft:', e);
@@ -402,25 +405,13 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             </header>
 
             <main
-                className="flex-1 overflow-hidden"
+                className="flex-1"
                 data-color-mode={colorMode}
-                onDoubleClick={handlePreviewDoubleClick}
             >
-                <MDEditor
-                    ref={editorRef}
-                    value={markdown}
-                    onChange={(val) => setMarkdown(val || '')}
-                    height="100%"
-                    preview="live"
-                    className="border-none bg-background h-full"
-                    textareaProps={{
-                        placeholder: "Start writing your post here...",
-                        className: "pt-8 px-8 pb-32 leading-relaxed"
-                    }}
-                    previewOptions={{
-                        remarkPlugins: [remarkGfm, remarkLineNumbers],
-                        className: "prose dark:prose-invert max-w-none pt-8 px-8 pb-32"
-                    }}
+                <div
+                    id="cherry-editor"
+                    ref={containerRef}
+                    className="h-full w-full"
                 />
             </main>
         </div>

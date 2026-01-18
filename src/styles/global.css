@@ -165,29 +165,42 @@
   box-shadow: var(--mac-shadow);
 }
 
-/* Markdown Editor Theme Blending */
-.w-md-editor {
+/* Cherry Markdown Editor Theme Blending */
+.cherry-editor {
+  border: 1px solid var(--mac-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
   background-color: var(--app-bg) !important;
-  color: var(--app-text) !important;
 }
 
-.w-md-editor-toolbar {
+.cherry-editor .cherry-toolbar {
   background-color: var(--app-sidebar) !important;
   border-bottom: 1px solid var(--mac-border) !important;
 }
 
-.w-md-editor-toolbar li button,
-.w-md-editor-toolbar li svg {
+.cherry-editor .cherry-toolbar-item svg {
   color: var(--app-text) !important;
   fill: var(--app-text) !important;
 }
 
-.w-md-editor-content {
+.cherry-editor .cherry-editor-content {
   background-color: var(--app-bg) !important;
 }
 
-.w-md-editor-area {
+.cherry-editor .cherry-previewer {
   background-color: var(--app-bg) !important;
+  color: var(--app-text) !important;
+}
+
+/* Ensure the editor textarea matches our theme */
+.cherry-editor .ace_editor,
+.cherry-editor .ace_gutter {
+  background-color: var(--app-bg) !important;
+  color: var(--app-text) !important;
+}
+
+.cherry-editor .ace_cursor {
+  color: var(--primary) !important;
 }
 
 .wmde-markdown {
