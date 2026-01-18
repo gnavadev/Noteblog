@@ -10,7 +10,7 @@ const { data: posts } = await supabase
 	.order("created_at", { ascending: false });
 ---
 
-<Layout title="Gabriel's Portfolio">
+<Layout title="Not Notes, Just Posts">
 	<BlogShell client:load initialPosts={posts || []} />
 </Layout>
 

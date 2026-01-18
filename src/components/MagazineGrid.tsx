@@ -264,7 +264,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                                     <AvatarFallback>G</AvatarFallback>
                                                 </Avatar>
                                                 <span className="opacity-80">
-                                                    {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                    {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
                                                 </span>
                                             </div>
                                             <span className="opacity-60">{post.read_time_minutes} min read</span>
