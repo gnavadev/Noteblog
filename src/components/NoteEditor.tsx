@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import {
     Select,
     SelectContent,
@@ -24,7 +23,6 @@ import {
     SelectTrigger,
     SelectValue,
     SelectGroup,
-    SelectLabel,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 
@@ -63,12 +61,52 @@ const CherryEditorWrapper = React.memo(({ initialValue, onChange, colorMode, edi
                     katex: false,
                     MathJax: false,
                 },
+                engine: {
+                    global: {
+                        urlProcessor(url: string, srcType: string) {
+                            return url;
+                        },
+                    },
+                    syntax: {
+                        codeBlock: {
+                            theme: 'twilight',
+                            wrap: true,
+                            lineNumber: true,
+                        },
+                        table: {
+                            enableChart: false,
+                        },
+                        fontEmphasis: {
+                            allowWhitespace: false,
+                        },
+                        strikethrough: {
+                            needWhitespace: false,
+                        },
+                        mathBlock: {
+                            engine: 'MathJax',
+                        },
+                        inlineMath: {
+                            engine: 'MathJax', // katex or MathJax
+                        },
+                        emoji: {
+                            useUnicode: true,
+                        },
+                        htmlBlock: {
+                            html2export: true,
+                        },
+                    },
+                },
                 editor: {
                     defaultModel: 'edit&preview', // edit&preview, editOnly, previewOnly
                     theme: colorMode === 'dark' ? 'dark' : 'light',
                     height: '100%',
                     showFullWidthMark: true,
                     showSuggestList: true,
+                    convertWhenPaste: true,
+                    codemirror: {
+                        // @ts-ignore
+                        theme: 'twilight',
+                    },
                 },
                 toolbars: {
                     theme: colorMode === 'dark' ? 'dark' : 'light',
@@ -115,19 +153,18 @@ const CherryEditorWrapper = React.memo(({ initialValue, onChange, colorMode, edi
                         'graph',
                         'settings',
                     ],
+                    toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount'],
                     sidebar: ['mobilePreview', 'copy', 'theme', 'toc'],
                     toc: {
                         defaultModel: 'full',
                     },
+                    bubble: ['bold', 'italic', 'underline', 'strikethrough', 'sub', 'sup', 'quote', '|', 'size', 'color'],
+                    float: ['h1', 'h2', 'h3', '|', 'checklist', 'quote', 'table', 'code'],
                 },
                 callback: {
                     afterChange: (val: string) => {
                         onChange(val);
                     },
-                    afterAsyncRender: (md: string, html: string) => {
-                        // Optional: handle post-async-render logic if needed
-                        // console.log('Async render finished');
-                    }
                 },
             });
         }
