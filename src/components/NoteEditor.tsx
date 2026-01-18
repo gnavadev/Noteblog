@@ -34,6 +34,14 @@ Cherry.usePlugin(CherryMermaidPlugin, {
     mermaid,
 });
 
+declare global {
+    interface Window {
+        echarts: any;
+        katex: any;
+        MathJax: any;
+    }
+}
+
 interface CherryEditorProps {
     value: string;
     onChange: (value: string) => void;
@@ -45,20 +53,44 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
     const editorContainerRef = useRef<HTMLDivElement>(null);
     const editorInstanceRef = useRef<any>(null);
 
+    // Load External Scripts (MathJax, ECharts)
+    useEffect(() => {
+        const loadScript = (src: string, id: string) => {
+            if (document.getElementById(id)) return;
+            const script = document.createElement('script');
+            script.src = src;
+            script.id = id;
+            script.async = true;
+            document.head.appendChild(script);
+        };
+
+        // ECharts
+        loadScript('https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js', 'echarts-script');
+        // MathJax
+        loadScript('https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', 'mathjax-script');
+    }, []);
+
     // Initialize Editor
     useEffect(() => {
         if (!editorContainerRef.current) return;
         if (editorInstanceRef.current) return;
 
+        // Wait slightly for externals to be available (or let Cherry handle lazy load if configed)
+        // Ideally we check window.echarts but Cherry can also be resilient. 
+        // We will pass the window objects in externals.
+
         editorInstanceRef.current = new Cherry({
             id: 'cherry-markdown-container',
             value: value,
             locale: 'en_US',
-            // External dependencies (disable to avoid auto-loading issues)
+            // Draw.io Config
+            drawioIframeUrl: 'https://embed.diagrams.net/?embed=1&ui=min&spin=1&modified=0&proto=json&configure=1',
+
+            // External dependencies
             externals: {
-                echarts: false,
-                katex: false,
-                MathJax: false,
+                echarts: window.echarts,
+                katex: window.katex,
+                MathJax: window.MathJax,
             },
             // Engine Configuration
             engine: {
@@ -117,7 +149,7 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                     {
                         insert: ['image', 'audio', 'video', 'link', 'hr', 'br', 'code', 'formula', 'toc', 'table', 'pdf', 'word', 'file']
                     },
-                    'graph', 'settings'
+                    'graph', 'togglePreview', 'settings', 'codeTheme', 'proTable',
                 ],
                 toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount'],
                 sidebar: ['mobilePreview', 'copy', 'theme', 'toc'],
@@ -184,6 +216,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const [isPublic, setIsPublic] = useState(false);
     const [featuredImage, setFeaturedImage] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [newTopicName, setNewTopicName] = useState('');
 
     // UI State
     const [isUploadingBanner, setIsUploadingBanner] = useState(false);
@@ -246,11 +279,15 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         const draft = JSON.parse(savedDraft);
                         setTitle(draft.title || '');
                         setTopic(draft.topic || availableTopics[0]?.name || 'Technology');
-                        setMarkdown(draft.markdown || '');
+                        setMarkdown(draft.markdown || '# New Post\n\nStart writing...');
+                        if (draft.featuredImage) setFeaturedImage(draft.featuredImage);
                         toast({ title: "Draft restored" });
                     } catch (e) { console.error(e) }
                 } else {
                     setTitle('');
+                    // Default Logic
+                    const initialTopic = availableTopics.length > 0 ? availableTopics[0].name : 'Technology';
+                    setTopic(initialTopic);
                     setMarkdown('# New Post\n\nStart writing...');
                 }
             }
@@ -266,6 +303,17 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             localStorage.setItem('post-draft', JSON.stringify({ title, topic, markdown, isPublic, featuredImage }));
         }
     }, [title, topic, markdown, isPublic, featuredImage, open, postId]);
+
+    // -- Close Handler --
+    const handleClose = () => {
+        if (!postId && (title || markdown.length > 50)) {
+            if (window.confirm("You have unsaved changes. Draft will be saved locally. Close anyway?")) {
+                onClose();
+            }
+        } else {
+            onClose();
+        }
+    };
 
     // -- Save / Publish --
     const handleSave = async () => {
@@ -324,6 +372,14 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
         });
     };
 
+    const handleAddTopic = () => {
+        if (newTopicName.trim()) {
+            setTopic(newTopicName);
+            setNewTopicName('');
+            toast({ title: `Topic set to ${newTopicName}` });
+        }
+    };
+
     if (!open) return null;
 
     // -- Render: Clean "Admin App" Layout --
@@ -332,28 +388,48 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             {/* Header */}
             <header className="h-14 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#252526] shrink-0">
                 <div className="flex items-center gap-4 flex-1">
-                    <Button variant="ghost" size="icon" onClick={onClose} title="Back">
+                    <Button variant="ghost" size="icon" onClick={handleClose} title="Back">
                         <ArrowLeft className="h-5 w-5 opacity-70" />
                     </Button>
                     <Input
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         placeholder="Post Title"
-                        className="max-w-[400px] bg-white dark:bg-[#333] border-gray-300 dark:border-gray-600 font-semibold"
+                        className="max-w-[300px] bg-white dark:bg-[#333] border-gray-300 dark:border-gray-600 font-semibold"
                     />
-                    <Select value={topic} onValueChange={setTopic}>
-                        <SelectTrigger className="w-[140px] bg-white dark:bg-[#333] border-gray-300 dark:border-gray-600">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableTopics.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+
+                    {/* Topics Selection + Creation */}
+                    <div className="flex items-center gap-2">
+                        <Select value={topic} onValueChange={setTopic}>
+                            <SelectTrigger className="w-[140px] bg-white dark:bg-[#333] border-gray-300 dark:border-gray-600">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableTopics.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}
+                                {topic && !availableTopics.find(t => t.name === topic) && (
+                                    <SelectItem value={topic}>{topic}</SelectItem>
+                                )}
+                            </SelectContent>
+                        </Select>
+
+                        <div className="flex items-center gap-1">
+                            <Input
+                                placeholder="New Topic"
+                                value={newTopicName}
+                                onChange={e => setNewTopicName(e.target.value)}
+                                className="w-24 h-9 text-xs bg-white dark:bg-[#333]"
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddTopic()}
+                            />
+                            <Button size="sm" variant="ghost" onClick={handleAddTopic} disabled={!newTopicName}>
+                                +
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full">
-                        <span className="text-xs font-medium uppercase opacity-50">Public</span>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full" title="If disabled, only Admin can view">
+                        <span className="text-xs font-medium uppercase opacity-50">{isPublic ? 'Public' : 'Private'}</span>
                         <Switch checked={isPublic} onCheckedChange={setIsPublic} className="scale-75" />
                     </div>
 
