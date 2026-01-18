@@ -169,13 +169,22 @@
 .cherry-editor {
   border: 1px solid var(--mac-border) !important;
   border-radius: 8px !important;
-  overflow: hidden !important;
   background-color: var(--app-bg) !important;
+  height: 100% !important;
+}
+
+/* Ensure internal scrollable areas are functional */
+.cherry-editor .cherry-editor-content,
+.cherry-editor .cherry-previewer {
+  overflow-y: auto !important;
+  height: calc(100% - 40px) !important;
+  /* Adjust for toolbar height */
 }
 
 .cherry-editor .cherry-toolbar {
   background-color: var(--app-sidebar) !important;
   border-bottom: 1px solid var(--mac-border) !important;
+  height: 40px !important;
 }
 
 .cherry-editor .cherry-toolbar-item svg {

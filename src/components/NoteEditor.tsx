@@ -69,6 +69,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 editor: {
                     defaultModel: 'edit&preview',
                     theme: colorMode === 'dark' ? 'dark' : 'light',
+                    height: '100%',
                 },
                 toolbars: {
                     theme: colorMode === 'dark' ? 'dark' : 'light',
@@ -405,7 +406,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             </header>
 
             <main
-                className="flex-1"
+                className="flex-1 min-h-0"
                 data-color-mode={colorMode}
             >
                 <div
