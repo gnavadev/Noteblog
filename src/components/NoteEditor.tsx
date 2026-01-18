@@ -57,24 +57,46 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const editorRef = useRef<any>(null);
     const hasBeenInitialized = useRef(false);
 
+    // Plugin to inject line numbers into the preview HTML
+    const remarkLineNumbers = () => (tree: any) => {
+        const walk = (node: any) => {
+            if (node.position) {
+                node.data = node.data || {};
+                node.data.hProperties = node.data.hProperties || {};
+                node.data.hProperties['data-line'] = node.position.start.line;
+            }
+            if (node.children) node.children.forEach(walk);
+        };
+        walk(tree);
+    };
+
     const handlePreviewDoubleClick = (e: React.MouseEvent<HTMLElement>) => {
         const target = e.target as HTMLElement;
-        // Only trigger if double clicked on the preview side
-        if (!target.closest('.w-md-editor-preview')) return;
+        const lineNode = target.closest('[data-line]');
+        if (!lineNode) return;
 
-        const text = target.innerText.trim();
-        if (!text) return;
+        const lineNum = parseInt(lineNode.getAttribute('data-line') || '1');
 
-        // Find the text in markdown
-        const index = markdown.indexOf(text);
-        if (index !== -1 && editorRef.current) {
+        if (editorRef.current) {
             const textarea = editorRef.current.textarea;
             if (textarea) {
-                const linesBefore = markdown.substring(0, index).split('\n').length;
+                const lines = markdown.split('\n');
+
+                // Calculate char offset for the start of the line
+                let offset = 0;
+                for (let i = 0; i < lineNum - 1; i++) {
+                    offset += lines[i].length + 1; // +1 for \n
+                }
+
+                // Textarea scrolling is tricky. We'll use a heuristic for fixed line-height
+                // most browsers use ~1.5 line-height for textareas
                 const lineHeight = 24;
-                textarea.scrollTop = (linesBefore - 5) * lineHeight;
+                textarea.scrollTop = (lineNum - 10) * lineHeight;
+
                 textarea.focus();
-                textarea.setSelectionRange(index, index + text.length);
+                // Select the whole line
+                const lineContent = lines[lineNum - 1] || '';
+                textarea.setSelectionRange(offset, offset + lineContent.length);
             }
         }
     };
@@ -391,8 +413,12 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                     height="100%"
                     preview="live"
                     className="border-none bg-background h-full"
+                    textareaProps={{
+                        placeholder: "Start writing your post here...",
+                        className: "pt-8 px-8 pb-32 leading-relaxed"
+                    }}
                     previewOptions={{
-                        remarkPlugins: [remarkGfm],
+                        remarkPlugins: [remarkGfm, remarkLineNumbers],
                         className: "prose dark:prose-invert max-w-none pt-8 px-8 pb-32"
                     }}
                 />
