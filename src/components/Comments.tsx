@@ -91,7 +91,7 @@ const Comments: React.FC<CommentsProps> = ({ postSlug }) => {
                                     {item.user_metadata?.full_name || 'Anonymous User'}
                                 </span>
                                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-                                    {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    {new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </span>
                             </div>
                             <p className="text-[0.95rem] text-muted-foreground leading-relaxed">

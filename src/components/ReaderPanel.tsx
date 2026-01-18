@@ -247,7 +247,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                                 <span className="block font-bold text-[1.05rem]">Gabriel Nava</span>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
                                     <Calendar className="h-3.5 w-3.5" />
-                                    <span>{new Date(post.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                                    <span>{new Date(post.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</span>
                                 </div>
                             </div>
                         </div>
