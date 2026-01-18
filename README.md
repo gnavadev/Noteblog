@@ -1,6 +1,7 @@
 # Gabriel's Blog
 
 A modern, full-featured blog platform built with Astro, React, and Supabase.
+Live build -> https://noteblog-self.vercel.app/
 
 ## Features
 
