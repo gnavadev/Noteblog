@@ -202,3 +202,35 @@
   margin: 1.5rem 0 !important;
   background-color: transparent !important;
 }
+
+/* Fix List Types in Reader (Restoring default styles overridden by Tailwind) */
+.cherry-viewer-wrapper ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.cherry-viewer-wrapper ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.cherry-viewer-wrapper li {
+  margin-bottom: 0.25rem;
+}
+
+/* Disable Interaction in Reader (Checkboxes, etc.) */
+.cherry-viewer-wrapper input[type="checkbox"],
+.cherry-viewer-wrapper .cherry-checkbox {
+  pointer-events: none !important;
+}
+
+/* Prevent any contenteditable behavior in viewer */
+.cherry-viewer-wrapper [contenteditable] {
+  outline: none !important;
+  cursor: default !important;
+  caret-color: transparent !important;
+}

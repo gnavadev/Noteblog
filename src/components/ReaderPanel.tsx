@@ -10,9 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
-import ReactMarkdown from '@uiw/react-markdown-preview';
-import remarkGfm from 'remark-gfm';
-import rehypeExternalLinks from 'rehype-external-links';
+import CherryMarkdownViewer from './CherryMarkdownViewer';
 
 const contentVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -277,13 +275,13 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
 
                 <motion.div variants={contentVariants}>
                     <div
-                        className="markdown-reader-content prose prose-neutral dark:prose-invert max-w-none min-h-[400px]"
+                        className="markdown-reader-content w-full min-h-[400px]"
                         data-color-mode={colorMode}
                     >
-                        <ReactMarkdown
-                            source={post.content}
-                            remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[[rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }]]}
+                        <CherryMarkdownViewer
+                            content={post.content}
+                            colorMode={colorMode}
+                            className="min-h-[400px]"
                         />
                     </div>
                 </motion.div>
