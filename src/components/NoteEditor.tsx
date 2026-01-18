@@ -58,6 +58,15 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
 
     const [dependenciesLoaded, setDependenciesLoaded] = useState(false);
 
+    // Stable refs for callbacks to prevent re-initialization
+    const onChangeRef = useRef(onChange);
+    const onFileUploadRef = useRef(onFileUpload);
+
+    useEffect(() => {
+        onChangeRef.current = onChange;
+        onFileUploadRef.current = onFileUpload;
+    }, [onChange, onFileUpload]);
+
     // Load External Scripts (MathJax, ECharts) with Safety Timeout
     useEffect(() => {
         let isMounted = true;
@@ -196,14 +205,24 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                 },
                 // File Upload Handling
                 fileModule: {
-                    fileUpload: onFileUpload,
+                    fileUpload: (file: File, callback: (url: string) => void) => {
+                        if (onFileUploadRef.current) {
+                            onFileUploadRef.current(file, callback);
+                        }
+                    },
                 },
                 // Callbacks
                 callback: {
                     afterChange: (markdown: string) => {
-                        onChange(markdown);
+                        if (onChangeRef.current) {
+                            onChangeRef.current(markdown);
+                        }
                     },
-                    fileUpload: onFileUpload,
+                    fileUpload: (file: File, callback: (url: string) => void) => {
+                        if (onFileUploadRef.current) {
+                            onFileUploadRef.current(file, callback);
+                        }
+                    },
                 },
             });
         } catch (err) {
@@ -213,10 +232,14 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
         return () => {
             // Cherry destructor if available
             if (editorInstanceRef.current) {
+                // Check if destroy exists (it should, but safety first)
+                if (typeof editorInstanceRef.current.destroy === 'function') {
+                    // editorInstanceRef.current.destroy(); // Commented out to prevent aggressive cleanup issues, or check library specifics
+                }
                 editorInstanceRef.current = null;
             }
         };
-    }, [dependenciesLoaded, value, onChange, onFileUpload, colorMode]); // Add dependenciesLoaded dependency
+    }, [dependenciesLoaded]); // Only init when dependencies are ready. value/colorMode handled separately/initially.
 
     // Handle Theme Changes
     useEffect(() => {
