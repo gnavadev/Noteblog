@@ -312,7 +312,7 @@ const ContentArea: React.FC<any> = ({
     return (
         <main
             ref={contentRef}
-            className="flex-1 h-screen overflow-x-hidden overflow-y-auto"
+            className="flex-1 h-full min-h-0 overflow-x-hidden overflow-y-auto"
             id="grid-scroll-container"
         >
             {isMobile && (
