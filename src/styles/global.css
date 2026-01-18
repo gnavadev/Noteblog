@@ -291,3 +291,60 @@
 [data-color-mode="light"] .style .token.string {
   color: #24292f !important;
 }
+
+/* Mermaid Dark Mode Polish */
+.dark .mermaid svg,
+[data-color-mode="dark"] .mermaid svg {
+  background-color: transparent !important;
+  filter: saturate(0.8) brightness(1.1);
+  /* Soften colors for dark mode */
+}
+
+/* Target Mermaid internal boxes and shapes */
+.dark .mermaid .node rect,
+.dark .mermaid .node circle,
+.dark .mermaid .node polygon,
+.dark .mermaid .node path,
+.dark .mermaid .cluster rect,
+[data-color-mode="dark"] .mermaid .node rect,
+[data-color-mode="dark"] .mermaid .node circle,
+[data-color-mode="dark"] .mermaid .node polygon,
+[data-color-mode="dark"] .mermaid .node path,
+[data-color-mode="dark"] .mermaid .cluster rect {
+  fill: hsl(var(--ctp-mocha-surface0)) !important;
+  stroke: hsl(var(--ctp-mocha-lavender)) !important;
+  stroke-width: 1px !important;
+}
+
+/* Target Mermaid text */
+.dark .mermaid .node .label,
+.dark .mermaid .node text,
+.dark .mermaid .edgeLabel,
+.dark .mermaid .labelText,
+.dark .mermaid .loopText,
+.dark .mermaid .sectionTitle,
+[data-color-mode="dark"] .mermaid .node .label,
+[data-color-mode="dark"] .mermaid .node text,
+[data-color-mode="dark"] .mermaid .edgeLabel,
+[data-color-mode="dark"] .mermaid .labelText,
+[data-color-mode="dark"] .mermaid .loopText,
+[data-color-mode="dark"] .mermaid .sectionTitle {
+  fill: hsl(var(--ctp-mocha-text)) !important;
+  color: hsl(var(--ctp-mocha-text)) !important;
+}
+
+/* Fix lines and arrows */
+.dark .mermaid path.link,
+.dark .mermaid .edgePath path,
+.dark .mermaid .marker,
+[data-color-mode="dark"] .mermaid path.link,
+[data-color-mode="dark"] .mermaid .edgePath path,
+[data-color-mode="dark"] .mermaid .marker {
+  stroke: hsl(var(--ctp-mocha-overlay0)) !important;
+}
+
+/* Cherry Editor Preview Mermaid Overrides */
+.dark .cherry-previewer .mermaid svg,
+[data-color-mode="dark"] .cherry-previewer .mermaid svg {
+  color: inherit !important;
+}

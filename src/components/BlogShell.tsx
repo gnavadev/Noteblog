@@ -13,6 +13,14 @@ import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import mermaid from 'mermaid';
+
+// Initialize mermaid with default options
+mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose',
+});
 
 interface Post {
     id: string;
@@ -103,6 +111,25 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
             supabase.removeChannel(broadcastChannel);
         };
     }, []);
+
+    // Handle Mermaid theme switching
+    useEffect(() => {
+        mermaid.initialize({
+            theme: colorMode === 'dark' ? 'dark' : 'default',
+            themeVariables: colorMode === 'dark' ? {
+                primaryColor: '#c6a0f6', // Mauve
+                primaryTextColor: '#cad3f5', // Text
+                primaryBorderColor: '#b8c0e0', // Overlay1
+                lineColor: '#939ab7', // Overlay0
+                secondaryColor: '#363a4f', // Surface1
+                tertiaryColor: '#24273a', // Surface0
+            } : {}
+        });
+
+        // Re-render diagrams if they are on the page
+        // Note: With ReactMarkdown, the components often re-render themselves
+        // but this ensures the global config is correct for future renders.
+    }, [colorMode]);
 
     const fetchPosts = async (currentUser = user) => {
         const isAdmin = currentUser?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1';
