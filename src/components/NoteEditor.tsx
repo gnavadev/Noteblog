@@ -67,6 +67,8 @@ const CherryEditorWrapper = React.memo(({ initialValue, onChange, colorMode, edi
                     defaultModel: 'edit&preview', // edit&preview, editOnly, previewOnly
                     theme: colorMode === 'dark' ? 'dark' : 'light',
                     height: '100%',
+                    showFullWidthMark: true,
+                    showSuggestList: true,
                 },
                 toolbars: {
                     theme: colorMode === 'dark' ? 'dark' : 'light',
@@ -74,12 +76,24 @@ const CherryEditorWrapper = React.memo(({ initialValue, onChange, colorMode, edi
                     toolbar: [
                         'bold',
                         'italic',
-                        'strikethrough',
+                        {
+                            strikethrough: ['strikethrough', 'underline', 'sub', 'sup', 'ruby'],
+                        },
+                        'size',
                         '|',
                         'color',
                         'header',
                         '|',
-                        'list',
+                        'drawIo',
+                        '|',
+                        'ol',
+                        'ul',
+                        'checklist',
+                        'panel',
+                        'align',
+                        'detail',
+                        '|',
+                        'formula',
                         {
                             insert: [
                                 'image',
@@ -89,17 +103,22 @@ const CherryEditorWrapper = React.memo(({ initialValue, onChange, colorMode, edi
                                 'hr',
                                 'br',
                                 'code',
+                                'inlineCode',
                                 'formula',
                                 'toc',
                                 'table',
                                 'pdf',
                                 'word',
+                                'file',
                             ],
                         },
                         'graph',
                         'settings',
                     ],
-                    sidebar: ['mobilePreview', 'copy', 'theme', 'pdf', 'export'],
+                    sidebar: ['mobilePreview', 'copy', 'theme', 'toc'],
+                    toc: {
+                        defaultModel: 'full',
+                    },
                 },
                 callback: {
                     afterChange: (val: string) => {
