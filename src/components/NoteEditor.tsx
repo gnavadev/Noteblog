@@ -54,7 +54,30 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const { toast } = useToast();
     const [newTopicName, setNewTopicName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const editorRef = useRef<any>(null);
     const hasBeenInitialized = useRef(false);
+
+    const handlePreviewDoubleClick = (e: React.MouseEvent<HTMLElement>) => {
+        const target = e.target as HTMLElement;
+        // Only trigger if double clicked on the preview side
+        if (!target.closest('.w-md-editor-preview')) return;
+
+        const text = target.innerText.trim();
+        if (!text) return;
+
+        // Find the text in markdown
+        const index = markdown.indexOf(text);
+        if (index !== -1 && editorRef.current) {
+            const textarea = editorRef.current.textarea;
+            if (textarea) {
+                const linesBefore = markdown.substring(0, index).split('\n').length;
+                const lineHeight = 24;
+                textarea.scrollTop = (linesBefore - 5) * lineHeight;
+                textarea.focus();
+                textarea.setSelectionRange(index, index + text.length);
+            }
+        }
+    };
 
     useEffect(() => {
         if (open) {
@@ -356,15 +379,21 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 </div>
             </header>
 
-            <main className="flex-1 overflow-hidden" data-color-mode={colorMode}>
+            <main
+                className="flex-1 overflow-hidden"
+                data-color-mode={colorMode}
+                onDoubleClick={handlePreviewDoubleClick}
+            >
                 <MDEditor
+                    ref={editorRef}
                     value={markdown}
                     onChange={(val) => setMarkdown(val || '')}
                     height="100%"
                     preview="live"
                     className="border-none bg-background h-full"
                     previewOptions={{
-                        remarkPlugins: [remarkGfm]
+                        remarkPlugins: [remarkGfm],
+                        className: "prose dark:prose-invert max-w-none pt-8 px-8 pb-32"
                     }}
                 />
             </main>
