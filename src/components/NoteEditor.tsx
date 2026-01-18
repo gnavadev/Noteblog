@@ -55,10 +55,11 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
 
     const [dependenciesLoaded, setDependenciesLoaded] = useState(false);
 
-    // Load External Scripts (MathJax, ECharts)
+    // Load External Scripts (MathJax, ECharts) with Safety Timeout
     useEffect(() => {
+        let isMounted = true;
         const loadScript = (src: string, globalKey: string): Promise<void> => {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 if ((window as any)[globalKey]) {
                     resolve();
                     return;
@@ -67,127 +68,139 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                 script.src = src;
                 script.async = true;
                 script.onload = () => resolve();
-                script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                script.onerror = () => {
+                    console.warn(`Failed to load ${src}, continuing...`);
+                    resolve(); // Resolve anyway to not block editor
+                };
                 document.head.appendChild(script);
             });
         };
 
-        Promise.all([
-            loadScript('https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js', 'echarts'),
-            loadScript('https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', 'MathJax')
-        ]).then(() => {
-            setDependenciesLoaded(true);
-        }).catch(err => {
-            console.error("Failed to load Cherry dependencies", err);
-            // Fallback to loading anyway so editor works without charts
-            setDependenciesLoaded(true);
-        });
+        const loadDependencies = async () => {
+            try {
+                // Race between loading and a 2-second timeout
+                await Promise.race([
+                    Promise.all([
+                        loadScript('https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js', 'echarts'),
+                        loadScript('https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', 'MathJax')
+                    ]),
+                    new Promise(resolve => setTimeout(resolve, 2000)) // Safety timeout
+                ]);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                if (isMounted) setDependenciesLoaded(true);
+            }
+        };
+
+        loadDependencies();
+        return () => { isMounted = false; };
     }, []);
 
     // Initialize Editor
     useEffect(() => {
-        if (!dependenciesLoaded) return; // Wait for scripts
+        if (!dependenciesLoaded) return;
         if (!editorContainerRef.current) return;
         if (editorInstanceRef.current) return;
 
-        // Wait slightly for externals to be available (or let Cherry handle lazy load if configed)
-        // Ideally we check window.echarts but Cherry can also be resilient. 
-        // We will pass the window objects in externals.
+        try {
+            editorInstanceRef.current = new Cherry({
+                id: 'cherry-markdown-container',
+                value: value,
+                locale: 'en_US',
+                // Draw.io Config
+                drawioIframeUrl: 'https://embed.diagrams.net/?embed=1&ui=min&spin=1&modified=0&proto=json&configure=1',
 
-        editorInstanceRef.current = new Cherry({
-            id: 'cherry-markdown-container',
-            value: value,
-            locale: 'en_US',
-            // Draw.io Config
-            drawioIframeUrl: 'https://embed.diagrams.net/?embed=1&ui=min&spin=1&modified=0&proto=json&configure=1',
-
-            // External dependencies
-            externals: {
-                echarts: window.echarts,
-                katex: window.katex,
-                MathJax: window.MathJax,
-            },
-            // Engine Configuration
-            engine: {
-                global: {
-                    urlProcessor(url: string, srcType: string) {
-                        return url;
+                // External dependencies
+                externals: {
+                    echarts: window.echarts,
+                    katex: window.katex,
+                    MathJax: window.MathJax,
+                },
+                // Engine Configuration
+                engine: {
+                    global: {
+                        urlProcessor(url: string, srcType: string) {
+                            return url;
+                        },
+                    },
+                    syntax: {
+                        codeBlock: {
+                            theme: 'twilight',
+                            wrap: true,
+                            lineNumber: true,
+                        },
+                        table: {
+                            enableChart: true,
+                        },
+                        fontEmphasis: {
+                            allowWhitespace: false, // Fix for CJK
+                        },
+                        strikethrough: {
+                            needWhitespace: false,
+                        },
+                        mathBlock: {
+                            engine: 'MathJax',
+                        },
+                        inlineMath: {
+                            engine: 'MathJax',
+                        },
+                        emoji: {
+                            useUnicode: true,
+                        },
                     },
                 },
-                syntax: {
-                    codeBlock: {
-                        theme: 'twilight',
-                        wrap: true,
-                        lineNumber: true,
-                    },
-                    table: {
-                        enableChart: true,
-                    },
-                    fontEmphasis: {
-                        allowWhitespace: false, // Fix for CJK
-                    },
-                    strikethrough: {
-                        needWhitespace: false,
-                    },
-                    mathBlock: {
-                        engine: 'MathJax',
-                    },
-                    inlineMath: {
-                        engine: 'MathJax', // Use MathJax engine
-                    },
-                    emoji: {
-                        useUnicode: true,
-                    },
+                // Editor UI Settings
+                editor: {
+                    defaultModel: 'edit&preview',
+                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                    height: '100%',
+                    showFullWidthMark: true,
+                    showSuggestList: true,
+                    convertWhenPaste: true,
                 },
-            },
-            // Editor UI Settings
-            editor: {
-                defaultModel: 'edit&preview',
-                theme: colorMode === 'dark' ? 'dark' : 'light',
-                height: '100%',
-                showFullWidthMark: true,
-                showSuggestList: true,
-                convertWhenPaste: true,
-            },
-            // Toolbar Configuration (Full Model)
-            toolbars: {
-                theme: colorMode === 'dark' ? 'dark' : 'light',
-                showToolbar: true,
-                toolbar: [
-                    'bold', 'italic',
-                    { strikethrough: ['strikethrough', 'underline', 'sub', 'sup', 'ruby'] },
-                    'size', '|',
-                    'color', 'header', '|',
-                    'drawIo', '|',
-                    'ol', 'ul', 'checklist', 'panel', 'justify', 'detail', '|',
-                    'formula',
-                    {
-                        insert: ['image', 'audio', 'video', 'link', 'hr', 'br', 'code', 'formula', 'toc', 'table', 'pdf', 'word', 'file']
+                // Toolbar Configuration (Full Model)
+                toolbars: {
+                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                    showToolbar: true,
+                    toolbar: [
+                        'bold', 'italic',
+                        { strikethrough: ['strikethrough', 'underline', 'sub', 'sup', 'ruby'] },
+                        'size', '|',
+                        'color', 'header', '|',
+                        'drawIo', '|',
+                        'ol', 'ul', 'checklist', 'panel', 'justify', 'detail', '|',
+                        'formula',
+                        {
+                            insert: ['image', 'audio', 'video', 'link', 'hr', 'br', 'code', 'formula', 'toc', 'table', 'pdf', 'word', 'file']
+                        },
+                        'graph', 'togglePreview', 'settings', 'codeTheme', 'proTable', 'search', 'shortcutKey'
+                    ],
+                    toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount'],
+                    sidebar: ['mobilePreview', 'copy', 'theme', 'toc'],
+                    toc: {
+                        defaultModel: 'full',
                     },
-                    'graph', 'togglePreview', 'settings', 'codeTheme', 'proTable', 'search', 'shortcutKey'
-                ],
-                toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount'],
-                sidebar: ['mobilePreview', 'copy', 'theme', 'toc'],
-                toc: {
-                    defaultModel: 'full',
+                    // Bubble Toolbar (Selection)
+                    bubble: ['bold', 'italic', 'underline', 'strikethrough', 'sub', 'sup', 'quote', '|', 'size', 'color'],
+                    // Float Toolbar (New Line)
+                    float: ['h1', 'h2', 'h3', '|', 'checklist', 'quote', 'table', 'code'],
                 },
-                // Bubble Toolbar (Selection)
-                bubble: ['bold', 'italic', 'underline', 'strikethrough', 'sub', 'sup', 'quote', '|', 'size', 'color'],
-                // Float Toolbar (New Line)
-                float: ['h1', 'h2', 'h3', '|', 'checklist', 'quote', 'table', 'code'],
-            },
-            // File Upload Handling
-            fileModule: {
-                fileUpload: onFileUpload,
-            },
-            // Callbacks
-            callback: {
-                afterChange: (markdown: string) => {
-                    onChange(markdown);
+                // File Upload Handling
+                fileModule: {
+                    fileUpload: onFileUpload,
                 },
-                fileUpload: onFileUpload,
-            },
-        });
+                // Callbacks
+                callback: {
+                    afterChange: (markdown: string) => {
+                        onChange(markdown);
+                    },
+                    fileUpload: onFileUpload,
+                },
+            });
+        } catch (err) {
+            console.error("Cherry Editor Init Failed:", err);
+        }
 
         return () => {
             // Cherry destructor if available
@@ -195,7 +208,7 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                 editorInstanceRef.current = null;
             }
         };
-    }, []);
+    }, [dependenciesLoaded, value, onChange, onFileUpload, colorMode]); // Add dependenciesLoaded dependency
 
     // Handle Theme Changes
     useEffect(() => {
@@ -206,6 +219,10 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
             }
         }
     }, [colorMode]);
+
+    if (!dependenciesLoaded) {
+        return <div className="h-full w-full flex items-center justify-center text-gray-400">Loading Editor Resources...</div>;
+    }
 
     return <div id="cherry-markdown-container" ref={editorContainerRef} className="h-full w-full" />;
 });
@@ -419,7 +436,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                             <SelectTrigger className="w-[140px] bg-white dark:bg-[#333] border-gray-300 dark:border-gray-600">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[3000]">
                                 {availableTopics.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}
                                 {topic && !availableTopics.find(t => t.name === topic) && (
                                     <SelectItem value={topic}>{topic}</SelectItem>
