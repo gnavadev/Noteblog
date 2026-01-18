@@ -147,9 +147,9 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
-                className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-8 space-y-8"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
             >
-                <AnimatePresence mode="sync">
+                <AnimatePresence mode="popLayout">
                     {displayPosts.map((post) => {
                         const isSelected = selectedPostId === post.id;
                         const topicColor = topics.find(t => t.name === post.topic)?.color || '#007aff';
@@ -166,13 +166,13 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                 id={post.id}
                                 onClick={() => onSelectPost(post.id)}
                                 className={cn(
-                                    "break-inside-avoid relative flex flex-col overflow-hidden cursor-pointer transition-all duration-300 h-[280px]",
+                                    "flex flex-col overflow-hidden cursor-pointer transition-all duration-300 h-full min-h-[320px]",
                                     "bg-card rounded-[24px] border border-border shadow-sm hover:shadow-xl",
                                     isSelected && "ring-2 ring-primary border-transparent shadow-primary/10"
                                 )}
                             >
                                 <div
-                                    className="h-28 w-full relative bg-muted"
+                                    className="aspect-video w-full relative bg-muted shrink-0"
                                     style={{
                                         backgroundImage: `url(${post.featured_image})`,
                                         backgroundPosition: 'center',
@@ -221,14 +221,14 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                     )}
                                 </div>
 
-                                <div className="p-4 flex-1 flex flex-col gap-2.5">
-                                    <h3 className="text-base font-extrabold leading-tight tracking-tight text-foreground">
+                                <div className="p-4 flex-1 flex flex-col gap-2">
+                                    <h3 className="text-base font-extrabold leading-tight tracking-tight text-foreground line-clamp-1 min-h-[1.25rem]">
                                         {post.title}
                                     </h3>
 
-                                    <div className="h-px w-full bg-gradient-to-r from-border to-transparent" />
+                                    <div className="h-px w-full bg-gradient-to-r from-border to-transparent opacity-50" />
 
-                                    <div className="text-[0.85rem] text-muted-foreground leading-relaxed line-clamp-2 italic opacity-80">
+                                    <div className="text-[0.75rem] text-muted-foreground leading-relaxed line-clamp-2 italic opacity-80 overflow-hidden">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             rehypePlugins={[[rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }]]}
@@ -244,17 +244,17 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                                         </ReactMarkdown>
                                     </div>
 
-                                    <div className="mt-auto pt-4 flex items-center justify-between text-[0.75rem] font-medium text-muted-foreground">
+                                    <div className="mt-auto pt-3 flex items-center justify-between text-[0.7rem] font-medium text-muted-foreground border-t border-border/10">
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-6 w-6 border border-border">
                                                 <AvatarImage src="/GabrielPhoto.jpg" />
                                                 <AvatarFallback>G</AvatarFallback>
                                             </Avatar>
-                                            <span>
-                                                {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            <span className="opacity-80">
+                                                {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                             </span>
                                         </div>
-                                        <span className="opacity-70">{post.read_time_minutes} min read</span>
+                                        <span className="opacity-60">{post.read_time_minutes} min read</span>
                                     </div>
                                 </div>
                             </motion.div>

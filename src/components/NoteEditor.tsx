@@ -61,6 +61,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             cherryRef.current = new CherryEditor({
                 id: 'cherry-editor',
                 value: markdown,
+                locale: 'en_US',
                 externals: {
                     echarts: false,
                     katex: false,
