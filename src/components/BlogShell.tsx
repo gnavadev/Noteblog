@@ -20,7 +20,8 @@ mermaid.initialize({
     startOnLoad: true,
     theme: 'default',
     securityLevel: 'loose',
-});
+    useMaxWidth: true,
+} as any);
 
 interface Post {
     id: string;
@@ -116,6 +117,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
     useEffect(() => {
         mermaid.initialize({
             theme: colorMode === 'dark' ? 'dark' : 'default',
+            useMaxWidth: true,
             themeVariables: colorMode === 'dark' ? {
                 primaryColor: '#c6a0f6', // Mauve
                 primaryTextColor: '#cad3f5', // Text
@@ -124,7 +126,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme 
                 secondaryColor: '#363a4f', // Surface1
                 tertiaryColor: '#24273a', // Surface0
             } : {}
-        });
+        } as any);
 
         // Re-render diagrams if they are on the page
         // Note: With ReactMarkdown, the components often re-render themselves

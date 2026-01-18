@@ -159,6 +159,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 opacity: { duration: 0.4 }
             }}
             className="bg-sidebar overflow-y-auto overflow-x-hidden flex-1 w-full relative h-full scroll-smooth"
+            data-is-expanded={isExpanded}
         >
             <motion.div
                 layout="position"
