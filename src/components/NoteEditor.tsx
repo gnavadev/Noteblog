@@ -31,10 +31,18 @@ import CherryMermaidPlugin from 'cherry-markdown/dist/addons/cherry-code-block-m
 import CherryTableEchartsPlugin from 'cherry-markdown/dist/addons/advance/cherry-table-echarts-plugin';
 import mermaid from 'mermaid';
 
-// Register Plugins immediately
-Cherry.usePlugin(CherryMermaidPlugin, {
-    mermaid,
-});
+// Register Plugins immediately (Global registration)
+// This must happen ONLY ONCE, before any Cherry instance is created.
+try {
+    Cherry.usePlugin(CherryMermaidPlugin, {
+        mermaid,
+    });
+    Cherry.usePlugin(CherryTableEchartsPlugin);
+} catch (e) {
+    console.warn("Plugins already registered or failed:", e);
+}
+
+
 
 declare global {
     interface Window {
@@ -116,12 +124,6 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
         if (editorInstanceRef.current) return;
 
         try {
-            // Register Plugins here to ensure window.mermaid is available
-            Cherry.usePlugin(CherryMermaidPlugin, {
-                mermaid: window.mermaid,
-            });
-            Cherry.usePlugin(CherryTableEchartsPlugin);
-
             editorInstanceRef.current = new Cherry({
                 id: 'cherry-markdown-container',
                 value: value,
