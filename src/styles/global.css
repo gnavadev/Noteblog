@@ -349,23 +349,14 @@
   color: inherit !important;
 }
 
-/* Mermaid Sizing and Alignment */
-.mermaid {
+/* Mermaid Sizing and Alignment - More Restrictive */
+.mermaid,
+.cherry-previewer .mermaid,
+[class*="language-mermaid"] {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
   width: 100% !important;
-  margin: 2rem 0 !important;
-  overflow-x: auto !important;
-}
-
-.mermaid svg {
-  max-width: 600px !important; /* Prevent small diagrams from scaling up too much */
-  height: auto !important;
-  transition: max-width 0.3s ease;
-}
-
-/* Allow larger diagrams when the reader is expanded */
-[data-is-expanded="true"] .mermaid svg {
-  max-width: 900px !important;
+  margin: 1.5rem 0 !important;
+  background-color: transparent !important;
 }
