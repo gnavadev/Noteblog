@@ -117,8 +117,7 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                 id: 'cherry-markdown-container',
                 value: value,
                 locale: 'en_US',
-                // Draw.io Config
-                drawioIframeUrl: 'https://embed.diagrams.net/?embed=1&ui=min&spin=1&modified=0&proto=json&configure=1',
+                // Draw.io Config Removed
 
                 // External dependencies
                 externals: {
@@ -178,7 +177,6 @@ const CherryEditorComponent = React.memo(({ value, onChange, onFileUpload, color
                         { strikethrough: ['strikethrough', 'underline', 'sub', 'sup', 'ruby'] },
                         'size', '|',
                         'color', 'header', '|',
-                        'drawIo', '|',
                         'ol', 'ul', 'checklist', 'panel', 'justify', 'detail', '|',
                         'formula',
                         {
@@ -258,6 +256,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const [isPublic, setIsPublic] = useState(false);
     const [featuredImage, setFeaturedImage] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); // Loading state
     const [newTopicName, setNewTopicName] = useState('');
 
     // UI State
@@ -299,41 +298,49 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     useEffect(() => {
         if (!open) {
             initialized.current = false;
+            setIsLoading(true); // Reset loading on close
             return;
         }
 
         const loadData = async () => {
-            if (postId) {
-                // Edit Mode
-                const { data, error } = await supabase.from('notes').select('*').eq('id', postId).single();
-                if (data) {
-                    setTitle(data.title);
-                    setTopic(data.topic);
-                    setIsPublic(data.is_public);
-                    setFeaturedImage(data.featured_image);
-                    setMarkdown(data.content || '');
+            setIsLoading(true);
+            try {
+                if (postId) {
+                    // Edit Mode
+                    const { data, error } = await supabase.from('notes').select('*').eq('id', postId).single();
+                    if (data) {
+                        setTitle(data.title);
+                        setTopic(data.topic);
+                        setIsPublic(data.is_public);
+                        setFeaturedImage(data.featured_image);
+                        setMarkdown(data.content || '');
+                    }
+                } else if (!initialized.current) {
+                    // New Post / Draft Mode
+                    const savedDraft = localStorage.getItem('post-draft');
+                    if (savedDraft) {
+                        try {
+                            const draft = JSON.parse(savedDraft);
+                            setTitle(draft.title || '');
+                            setTopic(draft.topic || availableTopics[0]?.name || 'Technology');
+                            setMarkdown(draft.markdown || '# New Post\n\nStart writing...');
+                            if (draft.featuredImage) setFeaturedImage(draft.featuredImage);
+                            toast({ title: "Draft restored" });
+                        } catch (e) { console.error(e) }
+                    } else {
+                        setTitle('');
+                        // Default Logic
+                        const initialTopic = availableTopics.length > 0 ? availableTopics[0].name : 'Technology';
+                        setTopic(initialTopic);
+                        setMarkdown('# New Post\n\nStart writing...');
+                    }
                 }
-            } else if (!initialized.current) {
-                // New Post / Draft Mode
-                const savedDraft = localStorage.getItem('post-draft');
-                if (savedDraft) {
-                    try {
-                        const draft = JSON.parse(savedDraft);
-                        setTitle(draft.title || '');
-                        setTopic(draft.topic || availableTopics[0]?.name || 'Technology');
-                        setMarkdown(draft.markdown || '# New Post\n\nStart writing...');
-                        if (draft.featuredImage) setFeaturedImage(draft.featuredImage);
-                        toast({ title: "Draft restored" });
-                    } catch (e) { console.error(e) }
-                } else {
-                    setTitle('');
-                    // Default Logic
-                    const initialTopic = availableTopics.length > 0 ? availableTopics[0].name : 'Technology';
-                    setTopic(initialTopic);
-                    setMarkdown('# New Post\n\nStart writing...');
-                }
+                initialized.current = true;
+            } catch (err) {
+                console.error("Error loading post:", err);
+            } finally {
+                setIsLoading(false);
             }
-            initialized.current = true;
         };
 
         loadData();
@@ -492,12 +499,18 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
 
             {/* Editor Body */}
             <div className="flex-1 w-full relative overflow-hidden">
-                <CherryEditorComponent
-                    value={markdown}
-                    onChange={setMarkdown}
-                    onFileUpload={handleFileUpload}
-                    colorMode={colorMode}
-                />
+                {isLoading ? (
+                    <div className="h-full w-full flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                    </div>
+                ) : (
+                    <CherryEditorComponent
+                        value={markdown}
+                        onChange={setMarkdown}
+                        onFileUpload={handleFileUpload}
+                        colorMode={colorMode}
+                    />
+                )}
             </div>
         </div>
     );
