@@ -301,7 +301,7 @@ const CommentList: React.FC<{
                         level={level}
                     />
                     {level === 0 && index < comments.length - 1 && (
-                        <Separator className="my-2 opacity-20" />
+                        <Separator className="my-1 opacity-20" />
                     )}
                 </React.Fragment>
             ))}
@@ -354,7 +354,7 @@ const CommentItem: React.FC<{
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn("group relative", level > 0 && "mt-2")}
+            className={cn("group relative", level > 0 && "mt-1.5")}
         >
             <div className="flex gap-4">
                 {/* Avatar Column */}
@@ -418,7 +418,7 @@ const CommentItem: React.FC<{
 
                     {/* Actions Toolbar & Show Replies (Below Card) */}
                     {!isEditing && (
-                        <div className="mt-1.5 flex items-center justify-between ml-1">
+                        <div className="mt-1 flex items-center justify-between ml-1">
                             {/* Left: Show Replies Button */}
                             <div>
                                 {isCollapsed && hasReplies && (
@@ -433,7 +433,7 @@ const CommentItem: React.FC<{
                             </div>
 
                             {/* Right: Action Buttons */}
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
                                 {isAdmin && isRoot && (
                                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onPin(comment.id, !comment.is_pinned)}>
                                         <Pin className={cn("h-3.5 w-3.5", comment.is_pinned ? "fill-yellow-600 text-yellow-600" : "text-muted-foreground")} />
