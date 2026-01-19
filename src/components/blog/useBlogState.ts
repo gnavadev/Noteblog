@@ -89,6 +89,7 @@ export function useBlogState(initialPosts: Post[] = []) {
         setLoading(false);
     }, [user]);
 
+    // Effect 1: Auth Session & Listener
     useEffect(() => {
         const savedAvatar = localStorage.getItem('adminAvatar');
         if (savedAvatar) setAdminAvatar(savedAvatar);
@@ -103,7 +104,6 @@ export function useBlogState(initialPosts: Post[] = []) {
                     localStorage.setItem('adminAvatar', avatar);
                 }
             }
-            fetchPosts(currentUser);
         });
 
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -116,8 +116,16 @@ export function useBlogState(initialPosts: Post[] = []) {
                     localStorage.setItem('adminAvatar', avatar);
                 }
             }
-            fetchPosts(currentUser);
         });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, []); // Run ONLY once on mount
+
+    // Effect 2: Data Refresh & Realtime Subscriptions
+    useEffect(() => {
+        fetchPosts();
 
         const dbChannel = supabase
             .channel('magazine_db_changes')
@@ -135,11 +143,10 @@ export function useBlogState(initialPosts: Post[] = []) {
             .subscribe();
 
         return () => {
-            subscription.unsubscribe();
             supabase.removeChannel(dbChannel);
             supabase.removeChannel(broadcastChannel);
         };
-    }, [fetchPosts]);
+    }, [user, fetchPosts]);
 
     // PopState handler for browser navigation
     useEffect(() => {

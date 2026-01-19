@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { TOPIC_COLOR_PALETTE } from '@/lib/constants';
 
@@ -48,7 +48,7 @@ export function TopicProvider({ children, initialTopics = [] }: { children: Reac
         fetchTopics();
     }, []);
 
-    const getTopicColor = (topicName: string): string => {
+    const getTopicColor = useCallback((topicName: string): string => {
         const existing = topics.find(t => t.name === topicName);
         if (existing) return existing.color;
 
@@ -59,9 +59,9 @@ export function TopicProvider({ children, initialTopics = [] }: { children: Reac
         }
         const index = Math.abs(hash) % TOPIC_COLOR_PALETTE.length;
         return TOPIC_COLOR_PALETTE[index];
-    };
+    }, [topics]);
 
-    const ensureTopicExists = async (topicName: string): Promise<string | null> => {
+    const ensureTopicExists = useCallback(async (topicName: string): Promise<string | null> => {
         if (!topicName) return null;
 
         const existing = topics.find(t => t.name === topicName);
@@ -87,15 +87,23 @@ export function TopicProvider({ children, initialTopics = [] }: { children: Reac
             console.error('Failed to ensure topic exists:', err);
             return null;
         }
-    };
+    }, [topics, getTopicColor]);
 
-    const refreshTopics = async () => {
+    const refreshTopics = useCallback(async () => {
         setLoading(true);
         await fetchTopics();
-    };
+    }, []);
+
+    const contextValue = useMemo(() => ({
+        topics,
+        loading,
+        getTopicColor,
+        refreshTopics,
+        ensureTopicExists
+    }), [topics, loading, getTopicColor, refreshTopics, ensureTopicExists]);
 
     return (
-        <TopicContext.Provider value={{ topics, loading, getTopicColor, refreshTopics, ensureTopicExists }}>
+        <TopicContext.Provider value={contextValue}>
             {children}
         </TopicContext.Provider>
     );
