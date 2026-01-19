@@ -58,32 +58,39 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
 
             {/* Board Content */}
             <div className="flex-1 relative overflow-auto p-20 min-h-[800px] min-w-[800px]">
-                {!loading && (
-                    postIts.map(postIt => (
-                        <PostIt
-                            key={postIt.id}
-                            ref={el => { canvasRefs.current[postIt.id] = el; }}
-                            data={postIt}
-                            tool={activeTool}
-                            pencilSize={pencilSize}
-                            eraserSize={eraserSize}
-                            canEdit={postIt.user_id === effectiveUserId}
-                            isAdmin={isAdmin}
-                            onUpdate={handleUpdatePostIt}
-                            onDelete={handleDeletePostIt}
-                            onDragEnd={(id, x, y) => handleUpdatePostIt(id, { position_x: Math.round(x), position_y: Math.round(y) })}
-                            onInteract={() => setActivePostItId(postIt.id)}
-                        />
-                    ))
-                )}
-
-                {postIts.length === 0 && !loading && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="text-center opacity-30 select-none">
-                            <h3 className="text-4xl font-bold mb-2">The board is empty</h3>
-                            <p className="text-xl">Be the first to leave a note!</p>
-                        </div>
+                {/* Initial Loading State */}
+                {loading && postIts.length === 0 ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
                     </div>
+                ) : (
+                    <>
+                        {postIts.map(postIt => (
+                            <PostIt
+                                key={postIt.id}
+                                ref={el => { canvasRefs.current[postIt.id] = el; }}
+                                data={postIt}
+                                tool={activeTool}
+                                pencilSize={pencilSize}
+                                eraserSize={eraserSize}
+                                canEdit={postIt.user_id === effectiveUserId}
+                                isAdmin={isAdmin}
+                                onUpdate={handleUpdatePostIt}
+                                onDelete={handleDeletePostIt}
+                                onDragEnd={(id, x, y) => handleUpdatePostIt(id, { position_x: Math.round(x), position_y: Math.round(y) })}
+                                onInteract={() => setActivePostItId(postIt.id)}
+                            />
+                        ))}
+
+                        {postIts.length === 0 && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="text-center opacity-30 select-none">
+                                    <h3 className="text-4xl font-bold mb-2">The board is empty</h3>
+                                    <p className="text-xl">Be the first to leave a note!</p>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

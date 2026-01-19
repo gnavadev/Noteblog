@@ -15,11 +15,18 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
     const [isAdding, setIsAdding] = useState(false);
     const [activePostItId, setActivePostItId] = useState<string | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    // Use a ref for internal tracking within the stable fetch callback
+    const hasUnsavedChangesRef = useRef(false);
+    useEffect(() => {
+        hasUnsavedChangesRef.current = hasUnsavedChanges;
+    }, [hasUnsavedChanges]);
+
     const canvasRefs = useRef<{ [key: string]: DrawingCanvasHandle | null }>({});
 
     const effectiveUserId = userId || (import.meta.env.DEV ? '00000000-0000-0000-0000-000000000000' : null);
     const userHasPostIt = postIts.some(p => p.user_id === effectiveUserId);
 
+    // Stable fetch function
     const fetchPostIts = useCallback(async () => {
         const { data, error } = await supabase
             .from('post_its')
@@ -30,9 +37,9 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
             console.error('Error fetching post-its:', error);
             toast({ title: "Error fetching post-its", variant: "destructive" });
         } else if (data) {
-            // Merge logic: If we have unsaved changes, keep the local version of our post-it
+            // Merge logic using functional update to get current local state
             setPostIts(prev => {
-                if (!hasUnsavedChanges) return data;
+                if (!hasUnsavedChangesRef.current) return data;
 
                 return data.map(remoteItem => {
                     if (remoteItem.user_id === effectiveUserId) {
@@ -44,7 +51,7 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
             });
         }
         setLoading(false);
-    }, [toast, hasUnsavedChanges, effectiveUserId]);
+    }, [toast, effectiveUserId]); // identity now depends only on userId, not hasUnsavedChanges
 
     // Set default active post-it
     useEffect(() => {
@@ -58,18 +65,22 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
         }
     }, [postIts, activePostItId, effectiveUserId]);
 
-    // Fetch + realtime subscription
+    // Initial fetch
     useEffect(() => {
         fetchPostIts();
+    }, [fetchPostIts]);
 
+    // Realtime subscription - perfectly stable
+    useEffect(() => {
         const channel = supabase
             .channel('post_its_changes')
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'post_its' },
                 () => {
                     // Only fetch if we don't have unsaved changes to avoid race conditions
-                    // or rely on our merge logic above.
-                    fetchPostIts();
+                    if (!hasUnsavedChangesRef.current) {
+                        fetchPostIts();
+                    }
                 }
             )
             .subscribe();
@@ -79,7 +90,7 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
         };
     }, [fetchPostIts]);
 
-    const handleAddPostIt = async () => {
+    const handleAddPostIt = useCallback(async () => {
         if (isAdding) return;
 
         let targetUserId = userId;
@@ -125,35 +136,29 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
         } finally {
             setTimeout(() => setIsAdding(false), 500);
         }
-    };
+    }, [userId, isAdding, fetchPostIts, toast]);
 
-    const handleUpdatePostIt = (id: string, updates: Partial<PostItData>) => {
-        const postIt = postIts.find(p => p.id === id);
-        if (!postIt) return;
+    const handleUpdatePostIt = useCallback((id: string, updates: Partial<PostItData>) => {
+        setPostIts(prev => {
+            const postIt = prev.find(p => p.id === id);
+            if (!postIt) return prev;
 
-        // Check if user has permission to update this post-it
-        const canEdit = postIt.user_id === effectiveUserId || isAdmin;
+            const canEdit = postIt.user_id === effectiveUserId || isAdmin;
+            if (canEdit) {
+                setHasUnsavedChanges(true);
+            }
 
-        setPostIts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+            return prev.map(p => p.id === id ? { ...p, ...updates } : p);
+        });
+    }, [effectiveUserId, isAdmin]);
 
-        // Only show "unsaved changes" if the user actually has permission to save them
-        if (canEdit) {
-            setHasUnsavedChanges(true);
-        }
-    };
-
-    const handleSaveAll = async () => {
-        // Collect all post-its that the user has modified AND has permission to save
-        // For admins, this could be anything; for users, only their own.
+    const handleSaveAll = useCallback(async () => {
         const modifiedPostIts = postIts.filter(p => p.user_id === effectiveUserId || isAdmin);
 
         if (modifiedPostIts.length === 0) return;
 
         setLoading(true);
         try {
-            // In a batch update scenario, we could use upsert or multiple updates.
-            // For now, let's just save the primary ones. If multiple, we can loop or use a single RPC.
-            // But usually, a standard user only has ONE post-it.
             const savePromises = modifiedPostIts.map(p =>
                 supabase
                     .from('post_its')
@@ -181,9 +186,9 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [effectiveUserId, isAdmin, fetchPostIts, toast, postIts]);
 
-    const handleDeletePostIt = async (id: string) => {
+    const handleDeletePostIt = useCallback(async (id: string) => {
         const { error } = await supabase
             .from('post_its')
             .delete()
@@ -196,24 +201,25 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
             toast({ title: "Post-it deleted" });
             setHasUnsavedChanges(false);
             if (activePostItId === id) setActivePostItId(null);
+            fetchPostIts();
         }
-    };
+    }, [activePostItId, fetchPostIts, toast]);
 
-    const handleUndo = () => {
+    const handleUndo = useCallback(() => {
         if (activePostItId && canvasRefs.current[activePostItId]) {
             canvasRefs.current[activePostItId]?.undo();
         } else {
             toast({ title: "Select a post-it to undo", description: "Click on a post-it first" });
         }
-    };
+    }, [activePostItId, toast]);
 
-    const handleRedo = () => {
+    const handleRedo = useCallback(() => {
         if (activePostItId && canvasRefs.current[activePostItId]) {
             canvasRefs.current[activePostItId]?.redo();
         } else {
             toast({ title: "Select a post-it to redo", description: "Click on a post-it first" });
         }
-    };
+    }, [activePostItId, toast]);
 
     return {
         postIts,

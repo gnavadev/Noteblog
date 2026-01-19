@@ -158,16 +158,13 @@ const PostItToolbar: React.FC<PostItToolbarProps> = ({
                                 size="sm"
                                 className={cn(
                                     "rounded-full h-8 px-3 relative transition-all duration-300",
-                                    hasChanges && "bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] scale-105"
+                                    hasChanges && "bg-blue-600 hover:bg-blue-700 text-white"
                                 )}
                                 onClick={onSave}
                                 disabled={!hasChanges}
                             >
                                 <Save className={cn("h-4 w-4", hasChanges && "mr-2")} />
                                 {hasChanges && <span className="text-xs font-bold whitespace-nowrap hidden md:inline">SAVE CHANGES</span>}
-                                {hasChanges && (
-                                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-800" />
-                                )}
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>{hasChanges ? "Save your masterpiece!" : "No changes to save"}</TooltipContent>
