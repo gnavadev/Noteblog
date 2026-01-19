@@ -104,8 +104,6 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
         // 3. Sort roots: Pinned first, then by date
         return roots.sort((a, b) => {
             if (a.is_pinned === b.is_pinned) {
-                // If pin status is same, sort by date (newest first for roots usually, or oldest first?)
-                // Chat apps usually oldest at top. Blog comments usually oldest at top. keeping structure.
                 return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
             }
             return (a.is_pinned ? -1 : 1);
@@ -190,8 +188,6 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
     };
 
     const handlePinComment = async (commentId: string, isPinned: boolean) => {
-        // Only allow pinning root comments logic is handled by UI hiding button, but helpful to enforce here if possible.
-        // But for simplicity assume UI handles the "only root items" restriction for now or we check parent_id.
         const { error } = await supabase
             .from('comments')
             .update({ is_pinned: isPinned })
@@ -341,7 +337,7 @@ const CommentItem: React.FC<{
     level: number;
 }> = ({ comment, user, isAdmin, onReply, onEdit, onDelete, onPin, level }) => {
     const hasReplies = comment.replies && comment.replies.length > 0;
-    const [isCollapsed, setIsCollapsed] = useState(hasReplies); // Default to collapsed if has replies
+    const [isCollapsed, setIsCollapsed] = useState(hasReplies);
 
     const [isReplying, setIsReplying] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -357,7 +353,7 @@ const CommentItem: React.FC<{
         onReply(replyContent, comment.id);
         setReplyContent('');
         setIsReplying(false);
-        setIsCollapsed(false); // Auto-expand on reply
+        setIsCollapsed(false);
     };
 
     const handleEditSubmit = () => {
@@ -366,17 +362,15 @@ const CommentItem: React.FC<{
         setIsEditing(false);
     };
 
-
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn("group relative", level > 0 && "mt-4")}
         >
-            <div className="flex gap-4">
+            <div className="flex gap-3">
                 {/* Avatar Column */}
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center shrink-0">
                     <Avatar className={cn("border border-border z-10", isRoot ? "h-10 w-10" : "h-8 w-8")}>
                         <AvatarImage src={comment.user_metadata?.avatar_url || comment.user_metadata?.picture} />
                         <AvatarFallback className="bg-muted text-muted-foreground font-bold">
@@ -384,30 +378,24 @@ const CommentItem: React.FC<{
                         </AvatarFallback>
                     </Avatar>
 
-                    {/* Thread Line & Collapse Trigger */}
-                    {hasReplies && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full hover:bg-muted text-muted-foreground"
-                            onClick={() => setIsCollapsed(!isCollapsed)}
-                            title={isCollapsed ? "Show replies" : "Hide replies"}
-                        >
-                            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                    )}
-
+                    {/* Thread Line (Only visible when expanded) */}
                     {hasReplies && !isCollapsed && (
-                        <div className="w-px h-full bg-border/50 group-hover:bg-border/80 transition-colors" />
+                        <div className="flex-1 w-full flex justify-center cursor-pointer group/line" onClick={() => setIsCollapsed(true)}>
+                            <div className="w-px h-full bg-border/50 group-hover/line:bg-primary/50 transition-colors mt-2 mb-2 relative">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 opacity-0 group-hover/line:opacity-100 transition-opacity bg-background border border-border rounded-full p-0.5 mt-1">
+                                    <Minus className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="bg-muted/30 p-4 rounded-2xl rounded-tl-sm border border-border/50 relative group/card transition-all hover:bg-muted/50 hover:shadow-sm">
+                    <div className="bg-muted/30 p-4 rounded-xl border border-border/40 relative group/card hover:bg-muted/40 transition-all">
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1.5">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-foreground truncate">
+                                <span className={cn("text-sm font-bold truncate", isRoot ? "text-foreground" : "text-foreground/90")}>
                                     {comment.user_metadata?.full_name || comment.user_metadata?.name || 'Anonymous User'}
                                 </span>
                                 {isOwner && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">YOU</span>}
@@ -415,17 +403,9 @@ const CommentItem: React.FC<{
                                 {comment.is_pinned && <span className="flex items-center gap-1 text-[10px] bg-yellow-500/10 text-yellow-600 px-1.5 py-0.5 rounded-full font-bold"><Pin className="h-3 w-3 fill-yellow-600" /> PINNED</span>}
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest hidden sm:inline-block">
-                                    {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </span>
-                                {/* Collapse Button (Mobile/Desktop Header alternative) */}
-                                {hasReplies && (
-                                    <Button variant="ghost" size="icon" className="h-5 w-5 md:hidden" onClick={() => setIsCollapsed(!isCollapsed)}>
-                                        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                                    </Button>
-                                )}
-                            </div>
+                            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+                                {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
                         </div>
 
                         {/* Content */}
@@ -442,44 +422,43 @@ const CommentItem: React.FC<{
                                 </div>
                             </div>
                         ) : (
-                            <div className={cn("text-[0.95rem] text-foreground/90 leading-relaxed whitespace-pre-wrap font-medium break-words", isCollapsed && "line-clamp-2 opacity-50")}>
+                            <div className="text-[0.95rem] text-foreground/90 leading-relaxed whitespace-pre-wrap font-medium break-words">
                                 {comment.content}
                             </div>
                         )}
 
-                        {/* Actions Bar (Bottom Right) */}
-                        {!isCollapsed && !isEditing && (
-                            <div className="flex justify-end items-center gap-1 mt-3 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                {/* Admin Pin (Root only) */}
-                                {isAdmin && isRoot && !isEditing && (
-                                    <Button size="icon" variant="ghost" className={cn("h-7 w-7", comment.is_pinned ? "text-yellow-600 bg-yellow-500/10" : "text-muted-foreground hover:text-foreground")} onClick={() => onPin(comment.id, !comment.is_pinned)} title={comment.is_pinned ? "Unpin" : "Pin"}>
-                                        <Pin className="h-3.5 w-3.5" />
+                        {/* Actions Bar */}
+                        {!isEditing && (
+                            <div className="flex justify-end items-center gap-1 mt-2.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                {isAdmin && isRoot && (
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onPin(comment.id, !comment.is_pinned)}>
+                                        <Pin className={cn("h-3.5 w-3.5", comment.is_pinned ? "fill-yellow-600 text-yellow-600" : "text-muted-foreground")} />
                                     </Button>
                                 )}
 
                                 {user && (
-                                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => setIsReplying(!isReplying)}>
-                                        <Reply className="h-3.5 w-3.5" /> Reply
+                                    <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => setIsReplying(!isReplying)}>
+                                        <Reply className="h-3 w-3" /> Reply
                                     </Button>
                                 )}
 
                                 {isOwner && (
-                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setIsEditing(true)}>
-                                        <Edit2 className="h-3.5 w-3.5" />
+                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => setIsEditing(true)}>
+                                        <Edit2 className="h-3 w-3" />
                                     </Button>
                                 )}
 
                                 {canDelete && (
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10">
-                                                <Trash2 className="h-3.5 w-3.5" />
+                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10">
+                                                <Trash2 className="h-3 w-3" />
                                             </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent className="z-[9999]">
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Delete comment?</AlertDialogTitle>
-                                                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                                <AlertDialogDescription>This will permanently remove this comment.</AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -490,11 +469,22 @@ const CommentItem: React.FC<{
                                 )}
                             </div>
                         )}
+
+                        {/* Collapsed "Show Replies" Button (Inside card, bottom) */}
+                        {isCollapsed && hasReplies && (
+                            <button
+                                onClick={() => setIsCollapsed(false)}
+                                className="flex items-center gap-2 mt-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                            >
+                                <PlusCircle className="h-3.5 w-3.5" />
+                                Show {comment.replies?.length} replies
+                            </button>
+                        )}
                     </div>
 
                     {/* Reply Input */}
-                    {isReplying && !isCollapsed && (
-                        <div className="flex gap-3 mt-3 animate-in fade-in slide-in-from-top-1">
+                    {isReplying && (
+                        <div className="flex gap-3 mt-3 animate-in fade-in slide-in-from-top-1 ml-2">
                             <div className="flex-1 space-y-2">
                                 <Textarea
                                     autoFocus
@@ -511,18 +501,11 @@ const CommentItem: React.FC<{
                         </div>
                     )}
 
-                    {/* Collapsed State Indicator */}
-                    {isCollapsed && hasReplies && (
-                        <Button variant="ghost" size="sm" className="mt-2 h-6 text-xs text-muted-foreground" onClick={() => setIsCollapsed(false)}>
-                            <PlusCircle className="h-3 w-3 mr-1.5" /> Show {comment.replies?.length} replies
-                        </Button>
-                    )}
-
                     {/* Nested Replies */}
-                    {!isCollapsed && comment.replies && comment.replies.length > 0 && (
-                        <div className="mt-4">
+                    {!isCollapsed && hasReplies && (
+                        <div className="mt-3">
                             <CommentList
-                                comments={comment.replies}
+                                comments={comment.replies!}
                                 user={user}
                                 isAdmin={isAdmin}
                                 onReply={onReply}
