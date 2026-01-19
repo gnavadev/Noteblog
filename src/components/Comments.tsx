@@ -288,18 +288,22 @@ const CommentList: React.FC<{
 }> = ({ comments, user, isAdmin, onReply, onEdit, onDelete, onPin, level }) => {
     return (
         <AnimatePresence initial={false}>
-            {comments.map((comment) => (
-                <CommentItem
-                    key={comment.id}
-                    comment={comment}
-                    user={user}
-                    isAdmin={isAdmin}
-                    onReply={onReply}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onPin={onPin}
-                    level={level}
-                />
+            {comments.map((comment, index) => (
+                <React.Fragment key={comment.id}>
+                    <CommentItem
+                        comment={comment}
+                        user={user}
+                        isAdmin={isAdmin}
+                        onReply={onReply}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onPin={onPin}
+                        level={level}
+                    />
+                    {level === 0 && index < comments.length - 1 && (
+                        <Separator className="my-2 opacity-20" />
+                    )}
+                </React.Fragment>
             ))}
         </AnimatePresence>
     );
@@ -350,7 +354,7 @@ const CommentItem: React.FC<{
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn("group relative", level > 0 && "mt-4")}
+            className={cn("group relative", level > 0 && "mt-2")}
         >
             <div className="flex gap-4">
                 {/* Avatar Column */}
@@ -375,7 +379,7 @@ const CommentItem: React.FC<{
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="bg-muted/30 p-4 rounded-xl border border-border/40 relative group/card hover:bg-muted/40 transition-all">
+                    <div className="bg-muted/30 p-3 rounded-xl border border-border/40 relative group/card hover:bg-muted/50 hover:border-border transition-all duration-200">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-1.5">
                             <div className="flex items-center gap-2">
@@ -414,7 +418,7 @@ const CommentItem: React.FC<{
 
                     {/* Actions Toolbar & Show Replies (Below Card) */}
                     {!isEditing && (
-                        <div className="mt-2 flex items-center justify-between ml-1">
+                        <div className="mt-1.5 flex items-center justify-between ml-1">
                             {/* Left: Show Replies Button */}
                             <div>
                                 {isCollapsed && hasReplies && (
