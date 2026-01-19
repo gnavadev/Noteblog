@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 declare global {
     interface Window {
@@ -16,49 +16,50 @@ declare global {
 export function useCherryDependencies() {
     const [dependenciesLoaded, setDependenciesLoaded] = useState(false);
 
-    useEffect(() => {
-        let isMounted = true;
-
-        const loadScript = (src: string, globalKey: string): Promise<void> => {
-            return new Promise((resolve) => {
-                if ((window as any)[globalKey]) {
-                    resolve();
-                    return;
-                }
-                const script = document.createElement('script');
-                script.src = src;
-                script.async = true;
-                script.onload = () => resolve();
-                script.onerror = () => {
-                    console.warn(`Failed to load ${src}, continuing...`);
-                    resolve(); // Resolve anyway to not block editor
-                };
-                document.head.appendChild(script);
-            });
-        };
-
-        const loadDependencies = async () => {
-            try {
-                // Race between loading and a 2-second timeout
-                await Promise.race([
-                    Promise.all([
-                        loadScript('/libs/echarts.min.js', 'echarts'),
-                        loadScript('/libs/tex-svg.js', 'MathJax')
-                    ]),
-                    new Promise(resolve => setTimeout(resolve, 2000)) // Safety timeout
-                ]);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                if (isMounted) setDependenciesLoaded(true);
+    const loadScript = useCallback((src: string, globalKey: string): Promise<void> => {
+        return new Promise((resolve) => {
+            if (typeof window === 'undefined') {
+                resolve();
+                return;
             }
-        };
-
-        loadDependencies();
-        return () => { isMounted = false; };
+            if ((window as any)[globalKey]) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => {
+                console.warn(`Failed to load ${src}, continuing...`);
+                resolve(); // Resolve anyway to not block editor
+            };
+            document.head.appendChild(script);
+        });
     }, []);
 
-    return { dependenciesLoaded };
+    const loadDependencies = useCallback(async () => {
+        try {
+            // Race between loading and a 2-second timeout
+            await Promise.race([
+                Promise.all([
+                    loadScript('/libs/echarts.min.js', 'echarts'),
+                    loadScript('/libs/tex-svg.js', 'MathJax')
+                ]),
+                new Promise(resolve => setTimeout(resolve, 2000)) // Safety timeout
+            ]);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setDependenciesLoaded(true);
+        }
+    }, [loadScript]);
+
+    useEffect(() => {
+        loadDependencies();
+    }, [loadDependencies]);
+
+    return { dependenciesLoaded, loadDependencies };
 }
 
 export default useCherryDependencies;

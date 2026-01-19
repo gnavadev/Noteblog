@@ -37,15 +37,19 @@ export function usePost({ selectedPostId, initialPost }: UsePostOptions): UsePos
 
     // Handle initial post or fetch by ID
     useEffect(() => {
-        if (initialPost) {
+        // If we have an initial post and it has content, use it immediately
+        if (initialPost && initialPost.content) {
             setPost(initialPost);
+            setLoading(false);
             return;
         }
 
+        // If we have an ID but no content (or no initialPost), fetch it
         if (selectedPostId) {
             fetchPost(selectedPostId);
         } else {
             setPost(null);
+            setLoading(false);
         }
     }, [selectedPostId, initialPost]);
 

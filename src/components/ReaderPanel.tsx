@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
-import CherryMarkdownViewer from './CherryMarkdownViewer';
+const CherryMarkdownViewer = React.lazy(() => import('./CherryMarkdownViewer'));
 import Comments from './comments/Comments';
 import { usePost, PostHeader, contentVariants, staggerContainer } from './reader';
 import type { ReaderPanelProps } from './reader/types';
@@ -139,11 +139,22 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                         className="markdown-reader-content w-full min-h-[400px]"
                         data-color-mode={colorMode}
                     >
-                        <CherryMarkdownViewer
-                            content={post.content}
-                            colorMode={colorMode}
-                            className="min-h-[400px]"
-                        />
+                        <React.Suspense fallback={
+                            <div className="space-y-4 animate-pulse pt-10 px-4">
+                                <div className="h-4 bg-muted rounded w-3/4" />
+                                <div className="h-4 bg-muted rounded w-full" />
+                                <div className="h-4 bg-muted rounded w-5/6" />
+                                <div className="h-4 bg-muted rounded w-2/3" />
+                                <div className="h-4 bg-muted rounded w-full mt-10" />
+                                <div className="h-4 bg-muted rounded w-3/4" />
+                            </div>
+                        }>
+                            <CherryMarkdownViewer
+                                content={post.content}
+                                colorMode={colorMode}
+                                className="min-h-[400px]"
+                            />
+                        </React.Suspense>
                     </div>
                 </motion.div>
 

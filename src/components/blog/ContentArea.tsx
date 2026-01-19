@@ -5,7 +5,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import MagazineGrid from '../MagazineGrid';
 import PostItBoard from '../PostItBoard';
-const ReaderPanel = React.lazy(() => import('../ReaderPanel'));
+import ReaderPanel from '../ReaderPanel';
 import type { Post, Topic } from './types';
 
 interface ContentAreaProps {
@@ -109,18 +109,16 @@ const ContentArea: React.FC<ContentAreaProps> = ({
                                 isReaderExpanded && "z-[5000]"
                             )}
                         >
-                            <React.Suspense fallback={<div className="h-full w-full flex items-center justify-center p-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
-                                <ReaderPanel
-                                    selectedPostId={selectedPostId}
-                                    initialPost={posts.find((p: Post) => p.id === selectedPostId) || null}
-                                    topics={topics}
-                                    isExpanded={isReaderExpanded}
-                                    onToggleExpand={() => setIsReaderExpanded(!isReaderExpanded)}
-                                    onClose={() => handleSelectPost(null)}
-                                    colorMode={colorMode}
-                                    isAdmin={isAdmin}
-                                />
-                            </React.Suspense>
+                            <ReaderPanel
+                                selectedPostId={selectedPostId}
+                                initialPost={posts.find((p: Post) => p.id === selectedPostId) || null}
+                                topics={topics}
+                                isExpanded={isReaderExpanded}
+                                onToggleExpand={() => setIsReaderExpanded(!isReaderExpanded)}
+                                onClose={() => handleSelectPost(null)}
+                                colorMode={colorMode}
+                                isAdmin={isAdmin}
+                            />
                         </motion.div>
                     </>
                 )}

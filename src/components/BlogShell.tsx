@@ -12,6 +12,7 @@ import { ContentArea, useBlogState, useTheme } from './blog';
 import type { Post } from './blog';
 import ErrorBoundary from './ErrorBoundary';
 import { TopicProvider } from './TopicProvider';
+import { useCherryDependencies } from './cherry';
 
 interface BlogShellInnerProps {
     colorMode: 'light' | 'dark';
@@ -64,6 +65,26 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
         isSelectedPostIt: showPostIt,
         onSelectPostIt: handleSelectPostIt
     };
+
+    // Immediate Asynchronous Preloading
+    const { loadDependencies } = useCherryDependencies();
+    useEffect(() => {
+        const warmUp = () => {
+            // 1. Fire off dependency loading (non-blocking)
+            loadDependencies?.();
+            // 2. Start fetching ReaderPanel component chunks
+            import('./ReaderPanel');
+        };
+
+        if (typeof window !== 'undefined') {
+            if ('requestIdleCallback' in window) {
+                (window as any).requestIdleCallback(warmUp);
+            } else {
+                // Fallback to immediate execution if idle callback isn't supported
+                setTimeout(warmUp, 1);
+            }
+        }
+    }, [loadDependencies]);
 
     return (
         <div className="flex h-screen w-full bg-background transition-colors duration-300 overflow-hidden">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 import { isAdmin as checkAdmin } from '@/lib/auth-utils';
@@ -124,8 +124,16 @@ export function useBlogState(initialPosts: Post[] = []) {
     }, []); // Run ONLY once on mount
 
     // Effect 2: Data Refresh & Realtime Subscriptions
+    const hasInitialFetch = useRef(initialPosts.length > 0);
+
     useEffect(() => {
-        fetchPosts();
+        // Skip fetch on mount if we already have initial posts from server
+        if (!hasInitialFetch.current) {
+            fetchPosts();
+        } else {
+            // Reset for future manual refreshes or user changes
+            hasInitialFetch.current = false;
+        }
 
         const dbChannel = supabase
             .channel('magazine_db_changes')

@@ -70,16 +70,31 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
         fetchPostIts();
     }, [fetchPostIts]);
 
-    // Realtime subscription - perfectly stable
+    // Realtime subscription - handles data directly to save network requests
     useEffect(() => {
         const channel = supabase
             .channel('post_its_changes')
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'post_its' },
-                () => {
-                    // Only fetch if we don't have unsaved changes to avoid race conditions
-                    if (!hasUnsavedChangesRef.current) {
-                        fetchPostIts();
+                (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        const newItem = payload.new as PostItData;
+                        setPostIts(prev => {
+                            if (prev.find(p => p.id === newItem.id)) return prev;
+                            return [...prev, newItem];
+                        });
+                    } else if (payload.eventType === 'UPDATE') {
+                        const updated = payload.new as PostItData;
+                        setPostIts(prev => {
+                            // Merge logic: If we have unsaved changes for this post-it, ignore remote update
+                            // to avoid overwriting the user's current interaction.
+                            if (updated.user_id === effectiveUserId && hasUnsavedChangesRef.current) {
+                                return prev;
+                            }
+                            return prev.map(p => p.id === updated.id ? updated : p);
+                        });
+                    } else if (payload.eventType === 'DELETE') {
+                        setPostIts(prev => prev.filter(p => p.id !== payload.old.id));
                     }
                 }
             )
@@ -88,7 +103,7 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchPostIts]);
+    }, [effectiveUserId]);
 
     const handleAddPostIt = useCallback(async () => {
         if (isAdding) return;
@@ -128,8 +143,6 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
                 } else {
                     toast({ title: "Failed to add post-it", variant: "destructive" });
                 }
-            } else {
-                fetchPostIts();
             }
         } catch (err) {
             console.error('Unexpected error:', err);
@@ -200,9 +213,8 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
             toast({ title: "Post-it deleted" });
             setHasUnsavedChanges(false);
             if (activePostItId === id) setActivePostItId(null);
-            fetchPostIts();
         }
-    }, [activePostItId, fetchPostIts, toast]);
+    }, [activePostItId, toast]);
 
     const handleUndo = useCallback(() => {
         if (activePostItId && canvasRefs.current[activePostItId]) {
