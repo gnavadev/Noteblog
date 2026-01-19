@@ -53,6 +53,7 @@ interface ReaderPanelProps {
     onToggleExpand: () => void;
     onClose: () => void;
     colorMode: 'light' | 'dark';
+    isAdmin: boolean;
 }
 
 const ReaderPanel: React.FC<ReaderPanelProps> = ({
@@ -62,7 +63,8 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
     isExpanded,
     onToggleExpand,
     onClose,
-    colorMode
+    colorMode,
+    isAdmin
 }) => {
     const [post, setPost] = useState<Post | null>(null);
     const [loading, setLoading] = useState(false);
@@ -292,7 +294,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 </motion.div>
 
                 <motion.div variants={contentVariants}>
-                    <Comments postId={post.id} />
+                    <Comments postId={post.id} isAdmin={isAdmin} />
                 </motion.div>
 
                 <motion.div variants={contentVariants}>

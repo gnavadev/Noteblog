@@ -458,6 +458,7 @@ const ContentArea: React.FC<any> = ({
                                     onToggleExpand={() => setIsReaderExpanded(!isReaderExpanded)}
                                     onClose={() => handleSelectPost(null)}
                                     colorMode={colorMode}
+                                    isAdmin={isAdmin}
                                 />
                             </React.Suspense>
                         </motion.div>
