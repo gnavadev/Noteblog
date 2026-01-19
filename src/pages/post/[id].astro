@@ -2,8 +2,10 @@
 import Layout from "../../layouts/Layout.astro";
 import { supabase } from "../../lib/supabase";
 import CherryMarkdownViewer from "../../components/CherryMarkdownViewer";
+import Comments from "../../components/comments/Comments";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
+import { TOPIC_COLOR_PALETTE } from "../../lib/constants";
 
 const { id } = Astro.params;
 
@@ -11,17 +13,48 @@ if (!id) {
     return Astro.redirect("/404");
 }
 
-const { data: post, error } = await supabase
-    .from("notes")
-    .select("*")
-    .eq("id", id)
-    .single();
+// Fetch post and topics in parallel
+const [postResult, topicsResult] = await Promise.all([
+    supabase.from("notes").select("*").eq("id", id).single(),
+    supabase.from("topics").select("id, name, color"),
+]);
+
+const { data: post, error } = postResult;
 
 if (error || !post) {
     return Astro.redirect("/404");
 }
 
-const topicColor = "#007aff"; // You might want to map this sharing logic with the main app if possible
+// Get topic color from database or derive from name hash
+let topicColor = "#007aff";
+const topics = topicsResult.data;
+
+if (topics && topics.length > 0) {
+    // Prioritize matching by ID, fallback to name for legacy data
+    const matchingTopic = topics.find(
+        (t: { id: string; name: string; color: string }) =>
+            (post.topic_id && t.id === post.topic_id) ||
+            (!post.topic_id && t.name === post.topic),
+    );
+    topicColor = matchingTopic?.color || topicColor;
+} else {
+    // Stable color based on name hash (fallback if topics table is empty)
+    const topicName = post.topic || "";
+    let hash = 0;
+    for (let i = 0; i < topicName.length; i++) {
+        hash = topicName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % TOPIC_COLOR_PALETTE.length;
+    topicColor = TOPIC_COLOR_PALETTE[index];
+}
+
+// Format date consistently with UTC timezone
+const formattedDate = new Date(post.created_at).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+});
 ---
 
 <Layout
@@ -68,11 +101,7 @@ const topicColor = "#007aff"; // You might want to map this sharing logic with t
                 >
                     <div class="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        <span
-                            >{
-                                new Date(post.created_at).toLocaleDateString()
-                            }</span
-                        >
+                        <span>{formattedDate}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-primary" />
@@ -93,6 +122,11 @@ const topicColor = "#007aff"; // You might want to map this sharing logic with t
 
             <hr class="border-border/50 my-16" />
 
+            <!-- Comments Section -->
+            <Comments postId={post.id} isAdmin={false} client:load />
+
+            <hr class="border-border/50 my-16" />
+
             <footer
                 class="text-center text-sm font-medium text-muted-foreground opacity-50 py-8"
             >
@@ -103,10 +137,3 @@ const topicColor = "#007aff"; // You might want to map this sharing logic with t
         </main>
     </div>
 </Layout>
-
-<script>
-    // Simple client-side theme sync
-    const theme = localStorage.getItem("blog-theme") || "light";
-    document.documentElement.setAttribute("data-theme", theme);
-    if (theme === "dark") document.documentElement.classList.add("dark");
-</script>

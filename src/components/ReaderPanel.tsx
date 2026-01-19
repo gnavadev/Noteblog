@@ -1,60 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Share2, Maximize2, Minimize2, X, Loader2, BookOpen } from 'lucide-react';
+import React from 'react';
+import { Clock, Calendar, Maximize2, Minimize2, Loader2, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabase';
-
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
 
 import CherryMarkdownViewer from './CherryMarkdownViewer';
-import Comments from './Comments';
-
-const contentVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: {
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.6,
-            ease: [0.22, 1, 0.36, 1] as const
-        }
-    }
-};
-
-const staggerContainer = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1
-        }
-    }
-};
-
-interface Post {
-    id: string;
-    title: string;
-    content: string;
-    topic: string;
-    created_at: string;
-    read_time_minutes: number;
-    featured_image?: string;
-}
-
-interface ReaderPanelProps {
-    selectedPostId: string | null;
-    initialPost: Post | null;
-    topics: { name: string; color: string }[];
-    isExpanded: boolean;
-    onToggleExpand: () => void;
-    onClose: () => void;
-    colorMode: 'light' | 'dark';
-    isAdmin: boolean;
-}
+import Comments from './comments/Comments';
+import { usePost, PostHeader, contentVariants, staggerContainer } from './reader';
+import type { ReaderPanelProps } from './reader/types';
 
 const ReaderPanel: React.FC<ReaderPanelProps> = ({
     selectedPostId,
@@ -66,56 +21,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
     colorMode,
     isAdmin
 }) => {
-    const [post, setPost] = useState<Post | null>(null);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (initialPost) {
-            setPost(initialPost);
-            return;
-        }
-
-        if (selectedPostId) {
-            fetchPost(selectedPostId);
-        } else {
-            setPost(null);
-        }
-    }, [selectedPostId, initialPost]);
-
-    const fetchPost = async (id: string) => {
-        setLoading(true);
-        try {
-            const { data, error } = await supabase
-                .from('notes')
-                .select('*')
-                .eq('id', id)
-                .single();
-
-            if (!error && data) {
-                setPost(data);
-            }
-        } catch (err) {
-            console.error('Failed to fetch post:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        const channel = supabase
-            .channel('reader_updates')
-            .on('broadcast', { event: 'refresh' }, (payload: { payload: { postId: string } }) => {
-                if (selectedPostId && payload.payload.postId === selectedPostId) {
-                    fetchPost(selectedPostId);
-                }
-            })
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [selectedPostId]);
-
+    const { post, loading } = usePost({ selectedPostId, initialPost });
 
     if (loading && !post) {
         return (
@@ -146,6 +52,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
             </div>
         );
     }
+
     const topicColor = topics.find(t => t.name === post.topic)?.color || '#007aff';
 
     return (
@@ -161,61 +68,13 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
             className="bg-sidebar overflow-y-auto overflow-x-hidden flex-1 w-full relative h-full scroll-smooth"
             data-is-expanded={isExpanded}
         >
-            <motion.div
-                layout="position"
-                initial={{ opacity: 0, scale: 1.05 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                    layout: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
-                    opacity: { duration: 0.5 }
-                }}
-                className={cn(
-                    "relative flex items-end p-8 transition-[height] duration-700 ease-in-out",
-                    isExpanded ? "h-[45vh]" : "h-[25vh]"
-                )}
-                style={{
-                    background: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${post.featured_image}) center/cover no-repeat`,
-                }}
-            >
-                <div className="absolute top-6 right-6 flex items-center gap-3">
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        className="rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-none h-10 w-10"
-                    >
-                        <Share2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        className="rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-none h-10 w-10"
-                        onClick={onToggleExpand}
-                    >
-                        {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        className="rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-none h-10 w-10"
-                        onClick={onClose}
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                >
-                    <Badge
-                        className="mb-4 font-extrabold px-4 py-1.5 rounded-lg text-sm uppercase tracking-wider backdrop-blur-md shadow-lg border-none"
-                        style={{ backgroundColor: `${topicColor}dd`, color: 'white' }}
-                    >
-                        {post.topic}
-                    </Badge>
-                </motion.div>
-            </motion.div>
+            <PostHeader
+                post={post}
+                topicColor={topicColor}
+                isExpanded={isExpanded}
+                onToggleExpand={onToggleExpand}
+                onClose={onClose}
+            />
 
             <motion.div
                 variants={staggerContainer}

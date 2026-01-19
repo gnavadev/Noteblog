@@ -1,18 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    FileText,
-    Mail,
-    LogOut,
-    User,
-    GripVertical,
-    LayoutGrid,
-    ChevronRight,
-    MoreHorizontal,
-    Github,
-    Linkedin
-} from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { FileText, LayoutGrid } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -27,9 +15,7 @@ import {
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
-    useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import {
     Sidebar,
@@ -41,186 +27,18 @@ import {
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuButton,
-    SidebarMenuSub,
-    SidebarMenuSubItem,
-    SidebarMenuSubButton,
-} from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+// Import from sidebar subfolder
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-
-const sidebarItemVariants = {
-    hidden: { opacity: 0, x: -10 },
-    show: {
-        opacity: 1,
-        x: 0,
-        transition: { type: "spring" as const, stiffness: 300, damping: 24 }
-    }
-};
-
-const sidebarContainerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.08,
-            delayChildren: 0.2
-        }
-    }
-};
-
-interface Post {
-    id: string;
-    title: string;
-    topic: string;
-}
-
-interface SidebarProps {
-    onNewPost: () => void;
-    selectedPostId: string | null;
-    onSelectPost: (id: string | null) => void;
-    selectedTopic: string | null;
-    onSelectTopic: (topic: string | null) => void;
-    posts: Post[];
-    topics: { name: string; count: number; color: string }[];
-    isAdmin: boolean;
-    onUpdateTopicOrder?: (newOrder: string[]) => void;
-    adminAvatar: string | null;
-    isSelectedPostIt?: boolean;
-    onSelectPostIt?: () => void;
-}
-
-const SortableMenuItem: React.FC<{
-    id: string;
-    label: React.ReactNode;
-    isAdmin: boolean;
-}> = ({ id, label, isAdmin }) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging
-    } = useSortable({ id, disabled: !isAdmin });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 1000 : 1,
-        position: 'relative' as const,
-        cursor: isAdmin ? 'grab' : 'default',
-        width: '100%'
-    };
-
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            className="flex items-center w-full group/sortable"
-        >
-            {isAdmin && (
-                <div {...listeners} className="mr-1 p-1 -ml-1 cursor-grab active:cursor-grabbing hover:bg-accent rounded opacity-0 group-hover/sortable:opacity-100 transition-opacity">
-                    <GripVertical className="h-3.5 w-3.5 opacity-50 shrink-0" />
-                </div>
-            )}
-            <div className="flex-1">{label}</div>
-        </div>
-    );
-};
-
-const CollapsibleTopic: React.FC<{
-    topic: { name: string; count: number; color: string };
-    posts: Post[];
-    selectedTopic: string | null;
-    selectedPostId: string | null;
-    onSelectTopic: (topic: string | null) => void;
-    onSelectPost: (id: string | null) => void;
-    isAdmin: boolean;
-}> = ({ topic, posts, selectedTopic, selectedPostId, onSelectTopic, onSelectPost, isAdmin }) => {
-    const [isOpen, setIsOpen] = useState(selectedTopic === topic.name);
-
-    useEffect(() => {
-        if (selectedTopic === topic.name) {
-            setIsOpen(true);
-        } else {
-            setIsOpen(false);
-        }
-    }, [selectedTopic, topic.name]);
-
-    const topicPosts = useMemo(() => posts.filter(p => p.topic === topic.name), [posts, topic.name]);
-
-    return (
-        <SidebarMenuItem>
-            <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group/collapsible">
-                <SortableMenuItem
-                    id={topic.name}
-                    isAdmin={isAdmin}
-                    label={
-                        <div className="flex items-center w-full">
-                            <CollapsibleTrigger asChild>
-                                <SidebarMenuButton
-                                    className={cn(
-                                        "w-full justify-start h-9 transition-colors",
-                                        selectedTopic === topic.name && "bg-primary/5 text-primary font-bold"
-                                    )}
-                                    onClick={() => onSelectTopic(topic.name)}
-                                >
-                                    <div className="w-2 h-2 rounded-full mr-3 shrink-0" style={{ backgroundColor: topic.color }} />
-                                    <span className="flex-1 truncate">{topic.name}</span>
-                                    <span className="text-[11px] font-bold opacity-60 ml-2 shrink-0">{topic.count}</span>
-                                    <ChevronRight className="h-4 w-4 ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                                </SidebarMenuButton>
-                            </CollapsibleTrigger>
-                        </div>
-                    }
-                />
-                <CollapsibleContent asChild forceMount>
-                    <AnimatePresence initial={false}>
-                        {isOpen && (
-                            <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{
-                                    height: { type: "spring", stiffness: 300, damping: 30 },
-                                    opacity: { duration: 0.2 }
-                                }}
-                                className="overflow-hidden"
-                            >
-                                <SidebarMenuSub>
-                                    {topicPosts.map(post => (
-                                        <SidebarMenuSubItem key={post.id}>
-                                            <SidebarMenuSubButton
-                                                isActive={selectedPostId === post.id}
-                                                onClick={() => onSelectPost(post.id)}
-                                                className={cn(
-                                                    "text-[13px] py-1 h-auto min-h-[1.75rem]",
-                                                    selectedPostId === post.id ? "text-primary font-semibold" : "font-normal text-muted-foreground"
-                                                )}
-                                            >
-                                                {post.title}
-                                            </SidebarMenuSubButton>
-                                        </SidebarMenuSubItem>
-                                    ))}
-                                </SidebarMenuSub>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </CollapsibleContent>
-            </Collapsible>
-        </SidebarMenuItem>
-    );
-};
+    CollapsibleTopic,
+    UserSection,
+    sidebarItemVariants,
+    sidebarContainerVariants,
+    type SidebarProps
+} from './sidebar-parts';
 
 const SidebarComponent: React.FC<SidebarProps> = ({
     onNewPost,
@@ -236,25 +54,12 @@ const SidebarComponent: React.FC<SidebarProps> = ({
     isSelectedPostIt,
     onSelectPostIt
 }) => {
-    const [user, setUser] = useState<any>(null);
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -264,22 +69,6 @@ const SidebarComponent: React.FC<SidebarProps> = ({
             onUpdateTopicOrder?.(arrayMove(topics, oldIndex, newIndex).map(t => t.name));
         }
     };
-
-    const getRedirectUrl = () => {
-        if (typeof window !== 'undefined') {
-            return window.location.origin;
-        }
-        return "https://noteblog-self.vercel.app/";
-    };
-
-    const loginWithGithub = () => supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: { redirectTo: getRedirectUrl() }
-    });
-    const loginWithLinkedin = () => supabase.auth.signInWithOAuth({
-        provider: 'linkedin_oidc',
-        options: { redirectTo: getRedirectUrl() }
-    });
 
     return (
         <Sidebar className="border-r border-border bg-sidebar/50 backdrop-blur-sm">
@@ -370,60 +159,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
             </SidebarContent>
 
             <SidebarFooter className="p-0 border-t border-border mt-auto bg-sidebar/50">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            onClick={() => window.open('https://linktr.ee/gabrielnavainfo', '_blank')}
-                            className="py-6 px-4 h-12"
-                        >
-                            <Mail className="mr-3 h-5 w-5" />
-                            <span className="text-[1rem]">Contact</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    {user ? (
-                        <SidebarMenuItem>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <SidebarMenuButton className="py-8 px-4 h-16">
-                                        <Avatar className="h-10 w-10 mr-3 shrink-0">
-                                            <AvatarImage src={user.user_metadata?.avatar_url || user.user_metadata?.picture} />
-                                            <AvatarFallback><User /></AvatarFallback>
-                                        </Avatar>
-                                        <span className="font-bold text-foreground truncate flex-1">
-                                            {user.user_metadata?.full_name || user.user_metadata?.name || user.email}
-                                        </span>
-                                        <MoreHorizontal className="ml-2 h-4 w-4 opacity-50 shrink-0" />
-                                    </SidebarMenuButton>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent side="top" align="start" className="w-[--radix-popper-anchor-width] z-[1000]">
-                                    <DropdownMenuItem onClick={() => supabase.auth.signOut()} className="cursor-pointer text-destructive focus:text-destructive">
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        <span>Logout</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </SidebarMenuItem>
-                    ) : (
-                        <div className="py-4 px-6 flex flex-col gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={loginWithGithub}
-                                className="w-full justify-start gap-2 h-10"
-                            >
-                                <Github className="w-4 h-4" />
-                                <span className="text-sm">GitHub Login</span>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={loginWithLinkedin}
-                                className="w-full justify-start gap-2 h-10"
-                            >
-                                <Linkedin className="w-4 h-4" />
-                                <span className="text-sm">LinkedIn Login</span>
-                            </Button>
-                        </div>
-                    )}
-                </SidebarMenu>
+                <UserSection />
             </SidebarFooter>
         </Sidebar>
     );

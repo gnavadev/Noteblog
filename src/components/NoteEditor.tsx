@@ -1,43 +1,22 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-    Save,
-    Image as ImageIcon,
-    ArrowLeft,
-    Loader2
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 import CherryEditor from './CherryEditor';
-
-interface PostEditorProps {
-    open: boolean;
-    onClose: () => void;
-    onSave: () => void;
-    postId?: string | null;
-    availableTopics: { name: string; color: string }[];
-    colorMode: 'light' | 'dark';
-    toggleTheme: () => void;
-}
+import { EditorHeader } from './editor';
+import { useTopics } from './TopicProvider';
+import type { PostEditorProps } from './editor/types';
 
 const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, availableTopics, colorMode, toggleTheme }) => {
     // App State
+    const { ensureTopicExists } = useTopics();
     const [markdown, setMarkdown] = useState('# New Post\n\nStart writing...');
     const [title, setTitle] = useState('');
     const [topic, setTopic] = useState('Technology');
     const [isPublic, setIsPublic] = useState(false);
     const [featuredImage, setFeaturedImage] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
-    const [isLoading, setIsLoading] = useState(true); // Loading state
+    const [isLoading, setIsLoading] = useState(true);
     const [newTopicName, setNewTopicName] = useState('');
 
     // UI State
@@ -79,7 +58,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     useEffect(() => {
         if (!open) {
             initialized.current = false;
-            setIsLoading(true); // Reset loading on close
+            setIsLoading(true);
             return;
         }
 
@@ -87,7 +66,6 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
             setIsLoading(true);
             try {
                 if (postId) {
-                    // Edit Mode
                     const { data, error } = await supabase.from('notes').select('*').eq('id', postId).single();
                     if (data) {
                         setTitle(data.title);
@@ -97,7 +75,6 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         setMarkdown(data.content || '');
                     }
                 } else if (!initialized.current) {
-                    // New Post / Draft Mode
                     const savedDraft = localStorage.getItem('post-draft');
                     if (savedDraft) {
                         try {
@@ -110,7 +87,6 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                         } catch (e) { console.error(e) }
                     } else {
                         setTitle('');
-                        // Default Logic
                         const initialTopic = availableTopics.length > 0 ? availableTopics[0].name : 'Technology';
                         setTopic(initialTopic);
                         setMarkdown('# New Post\n\nStart writing...');
@@ -134,7 +110,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
         }
     }, [title, topic, markdown, isPublic, featuredImage, open, postId]);
 
-    // -- Close Handler --
+    // -- Handlers --
     const handleClose = () => {
         if (!postId && (title || markdown.length > 50)) {
             if (window.confirm("You have unsaved changes. Draft will be saved locally. Close anyway?")) {
@@ -145,18 +121,21 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
         }
     };
 
-    // -- Save / Publish --
     const handleSave = async () => {
         if (!title.trim()) return toast({ title: "Title required", variant: "destructive" });
 
         setSaving(true);
         try {
+            // First ensure the topic exists in the DB so it has a stable color and ID
+            const topicId = await ensureTopicExists(topic);
+
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('Not authenticated');
 
             const payload = {
                 title,
-                topic,
+                topic, // keeping 'topic' string for legacy/fallback but topic_id is primary now
+                topic_id: topicId,
                 content: markdown,
                 user_id: session.user.id,
                 is_public: isPublic,
@@ -187,7 +166,6 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
         }
     };
 
-    // -- Header Manual Upload Helper --
     const handleHeaderUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -210,70 +188,32 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
         }
     };
 
+    const handleUploadBanner = () => {
+        setIsUploadingBanner(true);
+        fileInputRef.current?.click();
+    };
+
     if (!open) return null;
 
-    // -- Render: Clean "Admin App" Layout --
     return (
         <div className="fixed inset-0 z-[2000] flex flex-col bg-white dark:bg-[#1e1e1e] text-slate-900 dark:text-slate-100">
-            {/* Header */}
-            <header className="h-14 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#252526] shrink-0">
-                <div className="flex items-center gap-4 flex-1">
-                    <Button variant="ghost" size="icon" onClick={handleClose} title="Back">
-                        <ArrowLeft className="h-5 w-5 opacity-70" />
-                    </Button>
-                    <Input
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
-                        placeholder="Post Title"
-                        className="max-w-[300px] bg-white dark:bg-[#333] border-gray-300 dark:border-gray-600 font-semibold"
-                    />
-
-                    {/* Topics Selection + Creation */}
-                    <div className="flex items-center gap-2">
-                        <Select value={topic} onValueChange={setTopic}>
-                            <SelectTrigger className="w-[140px] bg-white dark:bg-[#333] border-gray-300 dark:border-gray-600">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="z-[3000]">
-                                {availableTopics.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}
-                                {topic && !availableTopics.find(t => t.name === topic) && (
-                                    <SelectItem value={topic}>{topic}</SelectItem>
-                                )}
-                            </SelectContent>
-                        </Select>
-
-                        <div className="flex items-center gap-1">
-                            <Input
-                                placeholder="New Topic"
-                                value={newTopicName}
-                                onChange={e => setNewTopicName(e.target.value)}
-                                className="w-24 h-9 text-xs bg-white dark:bg-[#333]"
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddTopic()}
-                            />
-                            <Button size="sm" variant="ghost" onClick={handleAddTopic} disabled={!newTopicName}>
-                                +
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full" title="If disabled, only Admin can view">
-                        <span className="text-xs font-medium uppercase opacity-50">{isPublic ? 'Public' : 'Private'}</span>
-                        <Switch checked={isPublic} onCheckedChange={setIsPublic} className="scale-75" />
-                    </div>
-
-                    <Button variant="outline" size="sm" onClick={() => { setIsUploadingBanner(true); fileInputRef.current?.click(); }}>
-                        <ImageIcon className="h-4 w-4 mr-2" />
-                        {featuredImage ? 'Change Cover' : 'Add Cover'}
-                    </Button>
-
-                    <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-                        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        Publish
-                    </Button>
-                </div>
-            </header>
+            <EditorHeader
+                title={title}
+                onTitleChange={setTitle}
+                topic={topic}
+                onTopicChange={setTopic}
+                availableTopics={availableTopics}
+                isPublic={isPublic}
+                onPublicChange={setIsPublic}
+                featuredImage={featuredImage}
+                saving={saving}
+                newTopicName={newTopicName}
+                onNewTopicNameChange={setNewTopicName}
+                onAddTopic={handleAddTopic}
+                onClose={handleClose}
+                onSave={handleSave}
+                onUploadBanner={handleUploadBanner}
+            />
 
             {/* Hidden Input for Header Buttons */}
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleHeaderUpload} />
@@ -298,4 +238,3 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
 };
 
 export default PostEditor;
-

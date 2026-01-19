@@ -1,12 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from "@/hooks/use-toast";
-import { Separator } from '@/components/ui/separator';
-import { MessageSquare, Send, Github, Trash2, Edit2, Reply, X, Pin, Linkedin, ChevronDown, ChevronRight, Minus } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2, Edit2, Reply, Pin, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
     AlertDialog,
@@ -18,299 +15,28 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import CommentList from './CommentList';
+import { PlusCircleIcon } from './PlusCircleIcon';
+import type { Comment, CommentActionsProps } from './types';
 
-interface Comment {
-    id: string;
-    content: string;
-    created_at: string;
-    user_id: string;
-    user_metadata: any;
-    parent_id: string | null;
-    is_pinned?: boolean;
-    replies?: Comment[];
-}
-
-interface CommentsProps {
-    postId: string;
-    isAdmin: boolean;
-}
-
-const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [newComment, setNewComment] = useState('');
-    const [user, setUser] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const { toast } = useToast();
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-
-        fetchComments();
-
-        const channel = supabase
-            .channel('public:comments')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` }, () => {
-                fetchComments();
-            })
-            .subscribe();
-
-        return () => {
-            subscription.unsubscribe();
-            supabase.removeChannel(channel);
-        };
-    }, [postId]);
-
-    const fetchComments = async () => {
-        const { data, error } = await supabase
-            .from('comments')
-            .select('*')
-            .eq('post_id', postId)
-            .order('created_at', { ascending: true });
-
-        if (error) {
-            console.error('Error fetching comments:', error);
-        } else if (data) {
-            const nested = buildCommentTree(data);
-            setComments(nested);
-        }
-    };
-
-    const buildCommentTree = (flatComments: any[]): Comment[] => {
-        const commentMap: { [key: string]: Comment } = {};
-        const roots: Comment[] = [];
-
-        flatComments.forEach(c => {
-            commentMap[c.id] = { ...c, replies: [] };
-        });
-
-        flatComments.forEach(c => {
-            if (c.parent_id && commentMap[c.parent_id]) {
-                commentMap[c.parent_id].replies?.push(commentMap[c.id]);
-            } else {
-                roots.push(commentMap[c.id]);
-            }
-        });
-
-        return roots.sort((a, b) => {
-            if (a.is_pinned && !b.is_pinned) return -1;
-            if (!a.is_pinned && b.is_pinned) return 1;
-            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        });
-    };
-
-
-    const handlePostComment = async (content: string, parentId: string | null = null) => {
-        if (!content.trim() || !user) return;
-
-        if (!parentId) setLoading(true);
-
-        const { error } = await supabase.from('comments').insert([
-            {
-                post_id: postId,
-                content: content,
-                user_id: user.id,
-                user_metadata: user.user_metadata,
-                parent_id: parentId
-            },
-        ]);
-
-        if (!parentId) setLoading(false);
-
-        if (error) {
-            toast({ title: "Failed to post", description: error.message, variant: "destructive" });
-        } else {
-            if (!parentId) setNewComment('');
-            toast({ title: parentId ? "Reply added!" : "Comment posted!" });
-            fetchComments();
-        }
-    };
-
-    const handleEditComment = async (commentId: string, newContent: string) => {
-        const { error } = await supabase
-            .from('comments')
-            .update({ content: newContent })
-            .eq('id', commentId);
-
-        if (error) {
-            toast({ title: "Update failed", description: error.message, variant: "destructive" });
-        } else {
-            toast({ title: "Comment updated" });
-            fetchComments();
-        }
-    };
-
-    const handleDeleteComment = async (commentId: string) => {
-        const { error } = await supabase.from('comments').delete().eq('id', commentId);
-
-        if (error) {
-            console.error('Error deleting comment:', error);
-            toast({ title: "Delete failed", description: error.message, variant: "destructive" });
-        } else {
-            toast({ title: "Comment deleted" });
-            fetchComments();
-        }
-    };
-
-    const handlePinComment = async (commentId: string, isPinned: boolean) => {
-        const { error } = await supabase
-            .from('comments')
-            .update({ is_pinned: isPinned })
-            .eq('id', commentId);
-
-        if (error) {
-            toast({ title: "Action failed", description: error.message, variant: "destructive" });
-        } else {
-            toast({ title: isPinned ? "Comment Pinned" : "Comment Unpinned" });
-            fetchComments();
-        }
-    }
-
-
-    // -- Auth --
-    const handleLogin = (provider: 'github' | 'linkedin_oidc') => {
-        const redirectUrl = typeof window !== 'undefined' ? window.location.origin : undefined;
-        supabase.auth.signInWithOAuth({
-            provider,
-            options: {
-                redirectTo: redirectUrl,
-                scopes: 'openid profile email'
-            }
-        });
-    };
-
-    return (
-        <div className="mt-16 space-y-8 max-w-3xl mx-auto">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                    <MessageSquare className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold tracking-tight">Community Discussion</h3>
-            </div>
-
-            <div className="space-y-6">
-                {/* Main Logic: Recursively render comments */}
-                <CommentList
-                    comments={comments}
-                    user={user}
-                    isAdmin={isAdmin}
-                    onReply={handlePostComment}
-                    onEdit={handleEditComment}
-                    onDelete={handleDeleteComment}
-                    onPin={handlePinComment}
-                    level={0}
-                />
-
-                {comments.length === 0 && (
-                    <div className="py-12 flex flex-col items-center justify-center text-center gap-3 bg-muted/20 rounded-2xl border-2 border-dashed border-border/60">
-                        <MessageSquare className="h-8 w-8 text-muted-foreground/30" />
-                        <p className="text-sm font-medium text-muted-foreground">No thoughts shared yet.</p>
-                    </div>
-                )}
-            </div>
-
-            <Separator className="my-8 opacity-50" />
-
-            {/* Root Comment Box */}
-            {user ? (
-                <div className="flex gap-4 items-start animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-sm">
-                        <AvatarImage src={user.user_metadata?.avatar_url || user.user_metadata?.picture} />
-                        <AvatarFallback>ME</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-4">
-                        <Textarea
-                            rows={3}
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Share your perspective..."
-                            className="resize-none bg-background border-border focus-visible:ring-primary/20 rounded-xl min-h-[100px] shadow-sm p-4 text-base"
-                        />
-                        <div className="flex justify-end">
-                            <Button
-                                onClick={() => handlePostComment(newComment)}
-                                disabled={loading || !newComment.trim()}
-                                className="rounded-full px-6 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-                            >
-                                {loading ? <span className="animate-spin mr-2">⏳</span> : <Send className="h-4 w-4 mr-2" />}
-                                Post Comment
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="p-8 text-center bg-gradient-to-br from-muted/50 to-muted/10 rounded-3xl border border-border shadow-sm flex flex-col items-center gap-6">
-                    <div className="space-y-2">
-                        <h4 className="font-bold text-lg">Join the Conversation</h4>
-                        <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                            Sign in to share your thoughts, ask questions, and connect with the community.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap gap-3 justify-center">
-                        <Button variant="outline" onClick={() => handleLogin('github')} className="rounded-full h-11 px-6 gap-2 bg-background hover:bg-muted/80 border-border shadow-sm">
-                            <Github className="h-4 w-4" /> <span>GitHub</span>
-                        </Button>
-                        <Button variant="outline" onClick={() => handleLogin('linkedin_oidc')} className="rounded-full h-11 px-6 gap-2 bg-background hover:bg-muted/80 border-border shadow-sm">
-                            <Linkedin className="h-4 w-4" /> <span>LinkedIn</span>
-                        </Button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-// --- Sub-components ---
-
-const CommentList: React.FC<{
-    comments: Comment[];
-    user: any;
-    isAdmin: boolean;
-    onReply: (content: string, parentId: string) => void;
-    onEdit: (id: string, content: string) => void;
-    onDelete: (id: string) => void;
-    onPin: (id: string, isPinned: boolean) => void;
-    level: number;
-}> = ({ comments, user, isAdmin, onReply, onEdit, onDelete, onPin, level }) => {
-    return (
-        <AnimatePresence initial={false}>
-            {comments.map((comment, index) => (
-                <React.Fragment key={comment.id}>
-                    <CommentItem
-                        comment={comment}
-                        user={user}
-                        isAdmin={isAdmin}
-                        onReply={onReply}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onPin={onPin}
-                        level={level}
-                    />
-                    {level === 0 && index < comments.length - 1 && (
-                        <Separator className="my-1 opacity-20" />
-                    )}
-                </React.Fragment>
-            ))}
-        </AnimatePresence>
-    );
-};
-
-const CommentItem: React.FC<{
+interface CommentItemProps extends CommentActionsProps {
     comment: Comment;
     user: any;
     isAdmin: boolean;
-    onReply: (content: string, parentId: string) => void;
-    onEdit: (id: string, content: string) => void;
-    onDelete: (id: string) => void;
-    onPin: (id: string, isPinned: boolean) => void;
     level: number;
-}> = ({ comment, user, isAdmin, onReply, onEdit, onDelete, onPin, level }) => {
+}
+
+const CommentItem: React.FC<CommentItemProps> = ({
+    comment,
+    user,
+    isAdmin,
+    onReply,
+    onEdit,
+    onDelete,
+    onPin,
+    level
+}) => {
     const hasReplies = comment.replies && comment.replies.length > 0;
     const [isCollapsed, setIsCollapsed] = useState(hasReplies);
 
@@ -414,7 +140,7 @@ const CommentItem: React.FC<{
                                             onClick={() => setIsCollapsed(false)}
                                             className="flex items-center gap-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
                                         >
-                                            <PlusCircle className="h-4 w-4" />
+                                            <PlusCircleIcon className="h-4 w-4" />
                                             Show {comment.replies?.length} replies
                                         </button>
                                     )}
@@ -507,9 +233,4 @@ const CommentItem: React.FC<{
     );
 };
 
-// Simple Icon for expand
-const PlusCircle = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
-)
-
-export default Comments;
+export default CommentItem;

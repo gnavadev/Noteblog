@@ -28,14 +28,7 @@ const {
 					} else {
 						document.documentElement.classList.remove("dark");
 					}
-					console.log(
-						"[THEME INIT] Applied theme:",
-						theme,
-						"from localStorage:",
-						savedTheme,
-					);
 				} catch (e) {
-					console.error("Theme init error:", e);
 					document.documentElement.setAttribute(
 						"data-theme",
 						"light",

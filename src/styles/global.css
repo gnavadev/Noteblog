@@ -191,6 +191,36 @@
   color: inherit !important;
 }
 
+/* Cherry Markdown Theme Fixes */
+.cherry-viewer-wrapper .cherry {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.cherry-viewer-wrapper .cherry-previewer {
+  background-color: transparent !important;
+}
+
+/* Ensure text colors are correct in dark mode */
+.dark .cherry-viewer-wrapper .cherry-previewer {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .cherry-viewer-wrapper .cherry-previewer h1,
+.dark .cherry-viewer-wrapper .cherry-previewer h2,
+.dark .cherry-viewer-wrapper .cherry-previewer h3,
+.dark .cherry-viewer-wrapper .cherry-previewer h4,
+.dark .cherry-viewer-wrapper .cherry-previewer h5,
+.dark .cherry-viewer-wrapper .cherry-previewer h6 {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .cherry-viewer-wrapper .cherry-previewer p,
+.dark .cherry-viewer-wrapper .cherry-previewer li,
+.dark .cherry-viewer-wrapper .cherry-previewer blockquote {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
 /* Mermaid Sizing and Alignment */
 .mermaid,
 .cherry-previewer .mermaid,

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Cherry from 'cherry-markdown/dist/cherry-markdown.core';
 import 'cherry-markdown/dist/cherry-markdown.css';
 // @ts-ignore
@@ -7,24 +7,14 @@ import CherryMermaidPlugin from 'cherry-markdown/dist/addons/cherry-code-block-m
 import CherryTableEchartsPlugin from 'cherry-markdown/dist/addons/advance/cherry-table-echarts-plugin';
 import mermaid from 'mermaid';
 import { cn } from '@/lib/utils';
+import { useCherryDependencies } from './cherry';
 
 // Register Plugins immediately (Global registration)
 try {
-    Cherry.usePlugin(CherryMermaidPlugin, {
-        mermaid,
-    });
+    Cherry.usePlugin(CherryMermaidPlugin, { mermaid });
     Cherry.usePlugin(CherryTableEchartsPlugin);
 } catch (e) {
-    // console.warn("Plugins already registered or failed:", e);
-}
-
-declare global {
-    interface Window {
-        echarts: any;
-        katex: any;
-        MathJax: any;
-        mermaid: any;
-    }
+    // Plugins already registered or failed
 }
 
 interface CherryMarkdownViewerProps {
@@ -36,50 +26,8 @@ interface CherryMarkdownViewerProps {
 const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: CherryMarkdownViewerProps) => {
     const editorContainerRef = useRef<HTMLDivElement>(null);
     const editorInstanceRef = useRef<any>(null);
-    const [dependenciesLoaded, setDependenciesLoaded] = useState(false);
+    const { dependenciesLoaded } = useCherryDependencies();
     const uniqueId = useRef(`cherry-viewer-${Math.random().toString(36).substring(2, 9)}`).current;
-
-    // Load External Scripts (MathJax, ECharts) with Safety Timeout
-    useEffect(() => {
-        let isMounted = true;
-        const loadScript = (src: string, globalKey: string): Promise<void> => {
-            return new Promise((resolve) => {
-                if ((window as any)[globalKey]) {
-                    resolve();
-                    return;
-                }
-                const script = document.createElement('script');
-                script.src = src;
-                script.async = true;
-                script.onload = () => resolve();
-                script.onerror = () => {
-                    console.warn(`Failed to load ${src}, continuing...`);
-                    resolve(); // Resolve anyway to not block editor
-                };
-                document.head.appendChild(script);
-            });
-        };
-
-        const loadDependencies = async () => {
-            try {
-                // Race between loading and a 2-second timeout
-                await Promise.race([
-                    Promise.all([
-                        loadScript('/libs/echarts.min.js', 'echarts'),
-                        loadScript('/libs/tex-svg.js', 'MathJax')
-                    ]),
-                    new Promise(resolve => setTimeout(resolve, 2000)) // Safety timeout
-                ]);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                if (isMounted) setDependenciesLoaded(true);
-            }
-        };
-
-        loadDependencies();
-        return () => { isMounted = false; };
-    }, []);
 
     // Initialize Editor (Read-Only Mode)
     useEffect(() => {
@@ -88,7 +36,6 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
 
         // Clean up previous instance if it exists
         if (editorInstanceRef.current) {
-            // Manual cleanup since destroy() might not be perfect or exist on all versions
             editorInstanceRef.current = null;
             if (editorContainerRef.current) {
                 editorContainerRef.current.innerHTML = '';
@@ -112,39 +59,23 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                         },
                     },
                     syntax: {
-                        codeBlock: {
-                            theme: 'twilight',
-                            wrap: true,
-                            lineNumber: false, // Cleaner for reading
-                        },
-                        table: {
-                            enableChart: true,
-                        },
-                        fontEmphasis: {
-                            allowWhitespace: false,
-                        },
-                        strikethrough: {
-                            needWhitespace: false,
-                        },
-                        mathBlock: {
-                            engine: 'MathJax',
-                        },
-                        inlineMath: {
-                            engine: 'MathJax',
-                        },
-                        emoji: {
-                            useUnicode: true,
-                        },
+                        codeBlock: { theme: 'twilight', wrap: true, lineNumber: false },
+                        table: { enableChart: true },
+                        fontEmphasis: { allowWhitespace: false },
+                        strikethrough: { needWhitespace: false },
+                        mathBlock: { engine: 'MathJax' },
+                        inlineMath: { engine: 'MathJax' },
+                        emoji: { useUnicode: true },
                     },
                 },
                 editor: {
-                    defaultModel: 'previewOnly', // Pure Preview Mode
+                    defaultModel: 'previewOnly',
                     theme: colorMode === 'dark' ? 'dark' : 'light',
                     height: '100%',
                     showFullWidthMark: false,
                 },
                 toolbars: {
-                    showToolbar: false, // Hide Toolbar
+                    showToolbar: false,
                     theme: colorMode === 'dark' ? 'dark' : 'light',
                 },
             });
@@ -153,7 +84,6 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
         }
 
         return () => {
-            // Cleanup on unmount or re-run
             if (editorInstanceRef.current) {
                 editorInstanceRef.current = null;
             }
@@ -161,14 +91,14 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                 editorContainerRef.current.innerHTML = '';
             }
         };
-    }, [dependenciesLoaded, uniqueId]); // Removed colorMode to prevent re-init
+    }, [dependenciesLoaded, uniqueId]);
 
     // Handle Theme Changes via Instance API
     useEffect(() => {
-        if (editorInstanceRef.current && editorInstanceRef.current.setTheme) {
+        if (editorInstanceRef.current) {
             editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'light');
         }
-    }, [colorMode]);
+    }, [colorMode, dependenciesLoaded]);
 
     // Handle Content Updates
     useEffect(() => {

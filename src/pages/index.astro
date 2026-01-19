@@ -3,15 +3,21 @@ import Layout from "../layouts/Layout.astro";
 import BlogShell from "../components/BlogShell";
 import { supabase } from "../lib/supabase";
 
-const { data: posts } = await supabase
-	.from("notes")
-	.select("*")
-	.eq("is_public", true)
-	.order("created_at", { ascending: false });
+const [postsResult, topicsResult] = await Promise.all([
+	supabase
+		.from("notes")
+		.select("*")
+		.eq("is_public", true)
+		.order("created_at", { ascending: false }),
+	supabase.from("topics").select("*").order("order", { ascending: true }),
+]);
+
+const posts = postsResult.data || [];
+const topics = topicsResult.data || [];
 ---
 
 <Layout title="Not Notes, Just Posts">
-	<BlogShell client:load initialPosts={posts || []} />
+	<BlogShell client:load initialPosts={posts} initialTopics={topics} />
 </Layout>
 
 <style is:global>
