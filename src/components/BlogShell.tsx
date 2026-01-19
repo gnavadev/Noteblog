@@ -194,6 +194,15 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
 
     const isAdmin = checkAdmin(user?.id);
 
+    // Debug log to help identify ID mismatches
+    useEffect(() => {
+        if (user) {
+            console.log('DEBUG: Current User ID:', user.id);
+            console.log('DEBUG: Authorized Admin IDs:', import.meta.env.PUBLIC_ADMIN_USER_ID);
+            console.log('DEBUG: Is Admin Result:', isAdmin);
+        }
+    }, [user, isAdmin]);
+
     const handleUpdateTopicOrder = (newOrder: string[]) => {
         localStorage.setItem('topicOrder', JSON.stringify(newOrder));
         setTopics(prev => [...prev].sort((a, b) => {

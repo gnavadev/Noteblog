@@ -434,7 +434,10 @@ const CommentItem: React.FC<{
                                 </div>
 
                                 {/* Right: Action Buttons */}
-                                <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                <div className={cn(
+                                    "flex items-center gap-1 transition-opacity",
+                                    isAdmin ? "opacity-100" : "opacity-0 group-hover/item:opacity-100"
+                                )}>
                                     {isAdmin && isRoot && (
                                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onPin(comment.id, !comment.is_pinned)}>
                                             <Pin className={cn("h-3.5 w-3.5", comment.is_pinned ? "fill-yellow-600 text-yellow-600" : "text-muted-foreground")} />
