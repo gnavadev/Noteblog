@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import CherryMarkdownViewer from './CherryMarkdownViewer';
+import Comments from './Comments';
 
 const contentVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -284,6 +285,14 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                             className="min-h-[400px]"
                         />
                     </div>
+                </motion.div>
+
+                <motion.div variants={contentVariants}>
+                    <Separator className="my-16" />
+                </motion.div>
+
+                <motion.div variants={contentVariants}>
+                    <Comments postId={post.id} />
                 </motion.div>
 
                 <motion.div variants={contentVariants}>
