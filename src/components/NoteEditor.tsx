@@ -9,7 +9,7 @@ import type { PostEditorProps } from './editor/types';
 
 const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, availableTopics, colorMode, toggleTheme }) => {
     // App State
-    const { ensureTopicExists } = useTopics();
+    const { ensureTopicExists, deleteTopicIfEmpty } = useTopics();
     const [markdown, setMarkdown] = useState('# New Post\n\nStart writing...');
     const [title, setTitle] = useState('');
     const [topic, setTopic] = useState('Technology');
@@ -143,11 +143,21 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 read_time_minutes: Math.max(1, Math.ceil(markdown.split(/\s+/).length / 200))
             };
 
+            let oldTopic = null;
+            if (postId) {
+                const { data: currentPost } = await supabase.from('notes').select('topic').eq('id', postId).single();
+                oldTopic = currentPost?.topic;
+            }
+
             const { error } = postId
                 ? await supabase.from('notes').update(payload).eq('id', postId)
                 : await supabase.from('notes').insert([payload]);
 
             if (error) throw error;
+
+            if (oldTopic && oldTopic !== topic) {
+                await deleteTopicIfEmpty(oldTopic);
+            }
 
             await supabase.channel('blog_updates').send({
                 type: 'broadcast',

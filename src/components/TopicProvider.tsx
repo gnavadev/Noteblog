@@ -14,6 +14,7 @@ interface TopicContextValue {
     getTopicColor: (topicName: string) => string;
     refreshTopics: () => Promise<void>;
     ensureTopicExists: (topicName: string) => Promise<string | null>;
+    deleteTopicIfEmpty: (topicName: string) => Promise<void>;
 }
 
 const TopicContext = createContext<TopicContextValue | null>(null);
@@ -89,6 +90,33 @@ export function TopicProvider({ children, initialTopics = [] }: { children: Reac
         }
     }, [topics, getTopicColor]);
 
+    const deleteTopicIfEmpty = useCallback(async (topicName: string) => {
+        if (!topicName) return;
+
+        try {
+            // Check if any notes still use this topic
+            const { count, error: countError } = await supabase
+                .from('notes')
+                .select('*', { count: 'exact', head: true })
+                .eq('topic', topicName);
+
+            if (countError) throw countError;
+
+            if (count === 0) {
+                console.log(`Topic "${topicName}" has 0 posts. Deleting from topics table.`);
+                const { error: deleteError } = await supabase
+                    .from('topics')
+                    .delete()
+                    .eq('name', topicName);
+
+                if (deleteError) throw deleteError;
+                await fetchTopics();
+            }
+        } catch (err) {
+            console.error('Failed to cleanup empty topic:', err);
+        }
+    }, [fetchTopics]);
+
     const refreshTopics = useCallback(async () => {
         setLoading(true);
         await fetchTopics();
@@ -99,8 +127,9 @@ export function TopicProvider({ children, initialTopics = [] }: { children: Reac
         loading,
         getTopicColor,
         refreshTopics,
-        ensureTopicExists
-    }), [topics, loading, getTopicColor, refreshTopics, ensureTopicExists]);
+        ensureTopicExists,
+        deleteTopicIfEmpty
+    }), [topics, loading, getTopicColor, refreshTopics, ensureTopicExists, deleteTopicIfEmpty]);
 
     return (
         <TopicContext.Provider value={contextValue}>

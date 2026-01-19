@@ -8,7 +8,7 @@ import { useTopics } from '../TopicProvider';
 
 export function useBlogState(initialPosts: Post[] = []) {
     const { toast } = useToast();
-    const { topics: dbTopics, getTopicColor } = useTopics();
+    const { topics: dbTopics, getTopicColor, deleteTopicIfEmpty } = useTopics();
     const [posts, setPosts] = useState<Post[]>(initialPosts);
     const [loading, setLoading] = useState(initialPosts.length === 0);
     const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -211,9 +211,15 @@ export function useBlogState(initialPosts: Post[] = []) {
 
     const handleDeletePost = useCallback(async (id: string) => {
         try {
+            const postToDelete = posts.find(p => p.id === id);
             const { error } = await supabase.from('notes').delete().eq('id', id);
             if (error) throw error;
             if (selectedPostId === id) setSelectedPostId(null);
+
+            if (postToDelete?.topic) {
+                await deleteTopicIfEmpty(postToDelete.topic);
+            }
+
             await supabase.channel('blog_updates').send({
                 type: 'broadcast',
                 event: 'refresh',
@@ -225,7 +231,7 @@ export function useBlogState(initialPosts: Post[] = []) {
             console.error('Failure deleting post:', error);
             toast({ title: "Delete failed", description: error.message, variant: "destructive" });
         }
-    }, [selectedPostId, fetchPosts, toast]);
+    }, [selectedPostId, fetchPosts, toast, posts, deleteTopicIfEmpty]);
 
     const closeEditor = useCallback(() => {
         setIsEditorOpen(false);
