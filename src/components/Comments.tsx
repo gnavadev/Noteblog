@@ -155,39 +155,14 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
     };
 
     const handleDeleteComment = async (commentId: string) => {
-        try {
-            // Pseudo-cascade: 1. Fetch children ids (BFS/DFS)
-            const getDescendantIds = async (rootId: string): Promise<string[]> => {
-                const { data } = await supabase.from('comments').select('id, parent_id').eq('parent_id', rootId);
-                let ids = data?.map(c => c.id) || [];
-                for (const childId of ids) {
-                    const grandChildren = await getDescendantIds(childId);
-                    ids = [...ids, ...grandChildren];
-                }
-                return ids;
-            };
+        const { error } = await supabase.from('comments').delete().eq('id', commentId);
 
-            const descendants = await getDescendantIds(commentId);
-
-            // 2. Delete descendants SEQUENTIALLY from bottom to top to respect constraints
-            const reversed = [...descendants].reverse();
-            for (const id of reversed) {
-                const { error: childError } = await supabase.from('comments').delete().eq('id', id);
-                if (childError) {
-                    console.error("Failed to delete descendant:", id, childError);
-                    throw childError; // Fail fast so user knows
-                }
-            }
-
-            // 3. Delete target
-            const { error } = await supabase.from('comments').delete().eq('id', commentId);
-            if (error) throw error;
-
+        if (error) {
+            console.error('Error deleting comment:', error);
+            toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+        } else {
             toast({ title: "Comment deleted" });
             fetchComments();
-
-        } catch (error: any) {
-            toast({ title: "Delete failed", description: error.message, variant: "destructive" });
         }
     };
 
@@ -372,7 +347,7 @@ const CommentItem: React.FC<{
             animate={{ opacity: 1, y: 0 }}
             className={cn("group relative", level > 0 && "mt-4")}
         >
-            <div className="flex gap-3">
+            <div className="flex gap-4">
                 {/* Avatar Column */}
                 <div className="flex flex-col items-center shrink-0">
                     <Avatar className={cn("border border-border z-10", isRoot ? "h-10 w-10" : "h-8 w-8")}>
@@ -475,15 +450,17 @@ const CommentItem: React.FC<{
                         )}
                     </div>
 
-                    {/* Show Replies Button (Outside Card) */}
+                    {/* Show Replies Button (Sibling of Card) */}
                     {isCollapsed && hasReplies && (
-                        <button
-                            onClick={() => setIsCollapsed(false)}
-                            className="flex items-center gap-2 mt-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors ml-1"
-                        >
-                            <PlusCircle className="h-4 w-4" />
-                            Show {comment.replies?.length} replies
-                        </button>
+                        <div className="mt-2 text-xs font-bold text-primary transition-colors ml-1">
+                            <button
+                                onClick={() => setIsCollapsed(false)}
+                                className="flex items-center gap-2 hover:text-primary/80"
+                            >
+                                <PlusCircle className="h-4 w-4" />
+                                Show {comment.replies?.length} replies
+                            </button>
+                        </div>
                     )}
 
                     {/* Reply Input */}
