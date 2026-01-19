@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import mermaid from 'mermaid';
 import { isAdmin as checkAdmin } from '@/lib/auth-utils';
-import { TOPIC_COLOR_PALETTE } from '@/lib/constants';
+import { TOPIC_COLOR_PALETTE, ADMIN_USER_IDS } from '@/lib/constants';
 import { getMermaidConfig } from '@/lib/mermaid-config';
 
 
@@ -198,7 +198,8 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
     useEffect(() => {
         if (user) {
             console.log('DEBUG: Current User ID:', user.id);
-            console.log('DEBUG: Authorized Admin IDs:', import.meta.env.PUBLIC_ADMIN_USER_ID);
+            console.log('DEBUG: Authorized Admin IDs (env):', import.meta.env.PUBLIC_ADMIN_USER_ID);
+            console.log('DEBUG: Processed Admin IDs (array):', ADMIN_USER_IDS);
             console.log('DEBUG: Is Admin Result:', isAdmin);
         }
     }, [user, isAdmin]);
