@@ -18,9 +18,19 @@ interface BlogShellInnerProps {
     colorMode: 'light' | 'dark';
     toggleTheme: () => void;
     initialPosts?: Post[];
+    initialSelectedPostId?: string | null;
+    initialTopic?: string | null;
+    initialShowPostIt?: boolean;
 }
 
-const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme, initialPosts = [] }) => {
+const BlogShellInner: React.FC<BlogShellInnerProps> = ({
+    colorMode,
+    toggleTheme,
+    initialPosts = [],
+    initialSelectedPostId = null,
+    initialTopic = null,
+    initialShowPostIt = false
+}) => {
     const isMobile = useIsMobile();
     const {
         posts,
@@ -45,7 +55,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
         handleDeletePost,
         closeEditor,
         onEditorSave,
-    } = useBlogState(initialPosts);
+    } = useBlogState(initialPosts, initialSelectedPostId, initialTopic, initialShowPostIt);
 
     useEffect(() => {
         mermaid.initialize(getMermaidConfig(colorMode) as any);
@@ -157,15 +167,31 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
 interface BlogShellProps {
     initialPosts?: Post[];
     initialTopics?: any[];
+    initialSelectedPostId?: string | null;
+    initialTopic?: string | null;
+    initialShowPostIt?: boolean;
 }
 
-const BlogShell: React.FC<BlogShellProps> = ({ initialPosts, initialTopics }) => {
+const BlogShell: React.FC<BlogShellProps> = ({
+    initialPosts,
+    initialTopics,
+    initialSelectedPostId,
+    initialTopic,
+    initialShowPostIt
+}) => {
     const { colorMode, toggleTheme } = useTheme();
 
     return (
         <TopicProvider initialTopics={initialTopics}>
             <SidebarProvider>
-                <BlogShellInner colorMode={colorMode} toggleTheme={toggleTheme} initialPosts={initialPosts} />
+                <BlogShellInner
+                    colorMode={colorMode}
+                    toggleTheme={toggleTheme}
+                    initialPosts={initialPosts}
+                    initialSelectedPostId={initialSelectedPostId}
+                    initialTopic={initialTopic}
+                    initialShowPostIt={initialShowPostIt}
+                />
                 <Toaster />
             </SidebarProvider>
         </TopicProvider>

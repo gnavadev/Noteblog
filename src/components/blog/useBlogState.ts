@@ -6,19 +6,24 @@ import { TOPIC_COLOR_PALETTE } from '@/lib/constants';
 import type { Post, Topic } from './types';
 import { useTopics } from '../TopicProvider';
 
-export function useBlogState(initialPosts: Post[] = []) {
+export function useBlogState(
+    initialPosts: Post[] = [],
+    initialSelectedPostId: string | null = null,
+    initialTopic: string | null = null,
+    initialShowPostIt: boolean = false
+) {
     const { toast } = useToast();
     const { topics: dbTopics, getTopicColor, deleteTopicIfEmpty } = useTopics();
     const [posts, setPosts] = useState<Post[]>(initialPosts);
     const [loading, setLoading] = useState(initialPosts.length === 0);
-    const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
-    const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+    const [selectedPostId, setSelectedPostId] = useState<string | null>(initialSelectedPostId);
+    const [selectedTopic, setSelectedTopic] = useState<string | null>(initialTopic);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [user, setUser] = useState<any>(null);
     const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
-    const [isReaderExpanded, setIsReaderExpanded] = useState(false);
-    const [showPostIt, setShowPostIt] = useState(false);
+    const [isReaderExpanded, setIsReaderExpanded] = useState(!!initialSelectedPostId);
+    const [showPostIt, setShowPostIt] = useState(initialShowPostIt);
 
     const isAdmin = checkAdmin(user?.id);
 
@@ -162,6 +167,22 @@ export function useBlogState(initialPosts: Post[] = []) {
             const path = window.location.pathname;
             if (path === '/' || path === '') {
                 setSelectedPostId(null);
+                setSelectedTopic(null);
+                setShowPostIt(false);
+            } else if (path.startsWith('/post/')) {
+                const id = path.replace('/post/', '');
+                setSelectedPostId(id);
+                setSelectedTopic(null);
+                setShowPostIt(false);
+            } else if (path.startsWith('/topic/')) {
+                const topic = decodeURIComponent(path.replace('/topic/', ''));
+                setSelectedTopic(topic);
+                setSelectedPostId(null);
+                setShowPostIt(false);
+            } else if (path === '/board') {
+                setShowPostIt(true);
+                setSelectedPostId(null);
+                setSelectedTopic(null);
             }
         };
 
@@ -173,6 +194,7 @@ export function useBlogState(initialPosts: Post[] = []) {
         setShowPostIt(true);
         setSelectedPostId(null);
         setSelectedTopic(null);
+        window.history.pushState({}, '', '/board');
     }, []);
 
     const handleSelectPost = useCallback((id: string | null) => {
@@ -180,12 +202,19 @@ export function useBlogState(initialPosts: Post[] = []) {
         setShowPostIt(false);
         if (id === null) {
             window.history.pushState({}, '', '/');
+        } else {
+            window.history.pushState({}, '', `/post/${id}`);
         }
     }, []);
 
     const handleSelectTopic = useCallback((topic: string | null) => {
         setSelectedTopic(topic);
         setShowPostIt(false);
+        if (topic === null) {
+            window.history.pushState({}, '', '/');
+        } else {
+            window.history.pushState({}, '', `/topic/${encodeURIComponent(topic)}`);
+        }
     }, []);
 
     const handleUpdateTopicOrder = useCallback((newOrder: string[]) => {

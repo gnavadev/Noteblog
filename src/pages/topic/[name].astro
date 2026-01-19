@@ -3,14 +3,12 @@ import Layout from "../../layouts/Layout.astro";
 import { supabase } from "../../lib/supabase";
 import BlogShell from "../../components/BlogShell";
 
-const { id } = Astro.params;
+const { name } = Astro.params;
 
-if (!id) {
+if (!name) {
     return Astro.redirect("/404");
 }
 
-// Fetch EVERYTHING needed for the full shell (topics and all posts)
-// to ensure a seamless "Back to grid" or "Quick navigation" experience
 const [postsResult, topicsResult] = await Promise.all([
     supabase
         .from("notes")
@@ -22,22 +20,23 @@ const [postsResult, topicsResult] = await Promise.all([
 
 const posts = postsResult.data || [];
 const topics = topicsResult.data || [];
-const post = posts.find((p) => p.id === id);
+const topicName = decodeURIComponent(name);
 
-if (!post) {
+// Basic check to see if topic is valid
+const topicExists =
+    topics.some((t) => t.name === topicName) ||
+    posts.some((p) => p.topic === topicName);
+
+if (!topicExists) {
     return Astro.redirect("/404");
 }
 ---
 
-<Layout
-    title={post.title}
-    description={post.content.slice(0, 160)}
-    image={post.featured_image}
->
+<Layout title={`Stories in ${topicName}`}>
     <BlogShell
         client:load
         initialPosts={posts}
         initialTopics={topics}
-        initialSelectedPostId={id}
+        initialTopic={topicName}
     />
 </Layout>

@@ -1,0 +1,26 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { supabase } from "../lib/supabase";
+import BlogShell from "../components/BlogShell";
+
+const [postsResult, topicsResult] = await Promise.all([
+    supabase
+        .from("notes")
+        .select("*")
+        .eq("is_public", true)
+        .order("created_at", { ascending: false }),
+    supabase.from("topics").select("*").order("order", { ascending: true }),
+]);
+
+const posts = postsResult.data || [];
+const topics = topicsResult.data || [];
+---
+
+<Layout title="Gabriel's Post-it Board">
+    <BlogShell
+        client:load
+        initialPosts={posts}
+        initialTopics={topics}
+        initialShowPostIt={true}
+    />
+</Layout>
