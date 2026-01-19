@@ -161,7 +161,14 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                 editorContainerRef.current.innerHTML = '';
             }
         };
-    }, [dependenciesLoaded, uniqueId, colorMode]); // Include colorMode to force re-init
+    }, [dependenciesLoaded, uniqueId]); // Removed colorMode to prevent re-init
+
+    // Handle Theme Changes via Instance API
+    useEffect(() => {
+        if (editorInstanceRef.current && editorInstanceRef.current.setTheme) {
+            editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'light');
+        }
+    }, [colorMode]);
 
     // Handle Content Updates
     useEffect(() => {
@@ -176,34 +183,6 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
 
     return (
         <div className={cn("cherry-viewer-wrapper", className)}>
-            <style>{`
-                /* Override Cherry Default Backgrounds to match App Theme */
-                #${uniqueId} .cherry-previewer,
-                #${uniqueId} .cherry-editor {
-                    background-color: transparent !important;
-                    color: hsl(var(--foreground)) !important;
-                }
-                
-                /* Ensure logic matches site theme */
-                #${uniqueId} p, 
-                #${uniqueId} h1, #${uniqueId} h2, #${uniqueId} h3, 
-                #${uniqueId} h4, #${uniqueId} h5, #${uniqueId} h6,
-                #${uniqueId} li, #${uniqueId} span {
-                    color: inherit !important;
-                }
-
-                /* Fix Code Blocks to blend better or use a compatible dark styling */
-                #${uniqueId} code {
-                   background-color: hsl(var(--muted)) !important; 
-                   color: hsl(var(--primary)) !important;
-                }
-                
-                #${uniqueId} pre {
-                    background-color: hsl(var(--card)) !important;
-                    border: 1px solid hsl(var(--border)) !important;
-                    border-radius: var(--radius) !important;
-                }
-            `}</style>
             <div id={uniqueId} ref={editorContainerRef} />
         </div>
     );
