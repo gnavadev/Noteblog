@@ -323,6 +323,11 @@ const CommentItem: React.FC<{
     const [replyContent, setReplyContent] = useState('');
     const [editContent, setEditContent] = useState(comment.content);
 
+    // Sync editContent when comment.content changes (after database update)
+    useEffect(() => {
+        setEditContent(comment.content);
+    }, [comment.content]);
+
     const isOwner = user?.id === comment.user_id;
     const canDelete = isOwner || isAdmin;
     const isRoot = level === 0;
