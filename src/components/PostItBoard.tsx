@@ -25,7 +25,9 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
         handleUpdatePostIt,
         handleDeletePostIt,
         handleUndo,
-        handleRedo
+        handleRedo,
+        handleSaveAll,
+        hasUnsavedChanges
     } = usePostItBoard({ userId: user?.id, isAdmin });
 
     return (
@@ -49,6 +51,8 @@ const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
                     onEraserSizeChange={setEraserSize}
                     onUndo={handleUndo}
                     onRedo={handleRedo}
+                    onSave={handleSaveAll}
+                    hasChanges={hasUnsavedChanges}
                 />
             </div>
 

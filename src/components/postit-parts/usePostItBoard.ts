@@ -14,6 +14,7 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
     const [activePostItId, setActivePostItId] = useState<string | null>(null);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const canvasRefs = useRef<{ [key: string]: DrawingCanvasHandle | null }>({});
 
     const effectiveUserId = userId || (import.meta.env.DEV ? '00000000-0000-0000-0000-000000000000' : null);
@@ -29,10 +30,21 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
             console.error('Error fetching post-its:', error);
             toast({ title: "Error fetching post-its", variant: "destructive" });
         } else if (data) {
-            setPostIts(data);
+            // Merge logic: If we have unsaved changes, keep the local version of our post-it
+            setPostIts(prev => {
+                if (!hasUnsavedChanges) return data;
+
+                return data.map(remoteItem => {
+                    if (remoteItem.user_id === effectiveUserId) {
+                        const localItem = prev.find(p => p.user_id === effectiveUserId);
+                        return localItem || remoteItem;
+                    }
+                    return remoteItem;
+                });
+            });
         }
         setLoading(false);
-    }, [toast]);
+    }, [toast, hasUnsavedChanges, effectiveUserId]);
 
     // Set default active post-it
     useEffect(() => {
@@ -54,7 +66,11 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
             .channel('post_its_changes')
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'post_its' },
-                () => fetchPostIts()
+                () => {
+                    // Only fetch if we don't have unsaved changes to avoid race conditions
+                    // or rely on our merge logic above.
+                    fetchPostIts();
+                }
             )
             .subscribe();
 
@@ -68,7 +84,7 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
 
         let targetUserId = userId;
         if (!targetUserId && import.meta.env.DEV) {
-            targetUserId = '00000000-0000-0000-0000-000000000000';
+            targetUserId = '00000000-0000-0000-0000-000000000001';
         }
 
         if (!targetUserId) {
@@ -111,17 +127,59 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
         }
     };
 
-    const handleUpdatePostIt = async (id: string, updates: Partial<PostItData>) => {
-        const { error } = await supabase
-            .from('post_its')
-            .update(updates)
-            .eq('id', id);
+    const handleUpdatePostIt = (id: string, updates: Partial<PostItData>) => {
+        const postIt = postIts.find(p => p.id === id);
+        if (!postIt) return;
 
-        if (error) {
-            console.error('Error updating post-it:', error);
+        // Check if user has permission to update this post-it
+        const canEdit = postIt.user_id === effectiveUserId || isAdmin;
+
+        setPostIts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+
+        // Only show "unsaved changes" if the user actually has permission to save them
+        if (canEdit) {
+            setHasUnsavedChanges(true);
+        }
+    };
+
+    const handleSaveAll = async () => {
+        // Collect all post-its that the user has modified AND has permission to save
+        // For admins, this could be anything; for users, only their own.
+        const modifiedPostIts = postIts.filter(p => p.user_id === effectiveUserId || isAdmin);
+
+        if (modifiedPostIts.length === 0) return;
+
+        setLoading(true);
+        try {
+            // In a batch update scenario, we could use upsert or multiple updates.
+            // For now, let's just save the primary ones. If multiple, we can loop or use a single RPC.
+            // But usually, a standard user only has ONE post-it.
+            const savePromises = modifiedPostIts.map(p =>
+                supabase
+                    .from('post_its')
+                    .update({
+                        content: p.content,
+                        drawing_data: p.drawing_data,
+                        position_x: p.position_x,
+                        position_y: p.position_y,
+                        color: p.color
+                    })
+                    .eq('id', p.id)
+            );
+
+            const results = await Promise.all(savePromises);
+            const firstError = results.find(r => r.error)?.error;
+
+            if (firstError) throw firstError;
+
+            setHasUnsavedChanges(false);
+            toast({ title: "Changes saved successfully" });
+            await fetchPostIts();
+        } catch (error: any) {
+            console.error('Error saving post-it:', error);
             toast({ title: "Failed to save changes", description: error.message, variant: "destructive" });
-        } else {
-            fetchPostIts();
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -136,6 +194,7 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
             toast({ title: "Failed to delete post-it", description: error.message, variant: "destructive" });
         } else {
             toast({ title: "Post-it deleted" });
+            setHasUnsavedChanges(false);
             if (activePostItId === id) setActivePostItId(null);
         }
     };
@@ -167,9 +226,11 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
         canvasRefs,
         handleAddPostIt,
         handleUpdatePostIt,
+        handleSaveAll,
         handleDeletePostIt,
         handleUndo,
-        handleRedo
+        handleRedo,
+        hasUnsavedChanges
     };
 }
 

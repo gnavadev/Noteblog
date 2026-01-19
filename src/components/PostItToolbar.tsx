@@ -16,6 +16,8 @@ interface PostItToolbarProps {
     onEraserSizeChange: (size: number) => void;
     onUndo: () => void;
     onRedo: () => void;
+    onSave: () => void;
+    hasChanges: boolean;
     onAddPostIt: () => void;
     canAdd: boolean;
     isAdmin?: boolean;
@@ -31,6 +33,8 @@ const PostItToolbar: React.FC<PostItToolbarProps> = ({
     onEraserSizeChange,
     onUndo,
     onRedo,
+    onSave,
+    hasChanges,
     onAddPostIt,
     canAdd,
     isAdmin = false,
@@ -51,7 +55,10 @@ const PostItToolbar: React.FC<PostItToolbarProps> = ({
                                 onPressedChange={() => onToolChange('text')}
                                 aria-label="Text tool"
                                 size="sm"
-                                className="rounded-full"
+                                className={cn(
+                                    "rounded-full transition-all duration-200",
+                                    activeTool === 'text' && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md scale-110"
+                                )}
                             >
                                 <Type className="h-4 w-4" />
                             </Toggle>
@@ -66,7 +73,10 @@ const PostItToolbar: React.FC<PostItToolbarProps> = ({
                                 onPressedChange={() => onToolChange('pencil')}
                                 aria-label="Pencil tool"
                                 size="sm"
-                                className="rounded-full"
+                                className={cn(
+                                    "rounded-full transition-all duration-200",
+                                    activeTool === 'pencil' && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md scale-110"
+                                )}
                             >
                                 <Pencil className="h-4 w-4" />
                             </Toggle>
@@ -81,7 +91,10 @@ const PostItToolbar: React.FC<PostItToolbarProps> = ({
                                 onPressedChange={() => onToolChange('eraser')}
                                 aria-label="Eraser tool"
                                 size="sm"
-                                className="rounded-full"
+                                className={cn(
+                                    "rounded-full transition-all duration-200",
+                                    activeTool === 'eraser' && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md scale-110"
+                                )}
                             >
                                 <Eraser className="h-4 w-4" />
                             </Toggle>
@@ -99,8 +112,8 @@ const PostItToolbar: React.FC<PostItToolbarProps> = ({
                             size="icon"
                             className={cn(
                                 "h-7 w-7 rounded-full p-0 flex items-center justify-center transition-all",
-                                activeTool === 'pencil' && pencilSize === size && "bg-primary text-primary-foreground hover:bg-primary/90",
-                                activeTool === 'eraser' && eraserSize === size && "bg-primary text-primary-foreground hover:bg-primary/90",
+                                activeTool === 'pencil' && pencilSize === size && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+                                activeTool === 'eraser' && eraserSize === size && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
                                 activeTool === 'text' && "opacity-20 cursor-not-allowed"
                             )}
                             onClick={() => {
@@ -120,7 +133,7 @@ const PostItToolbar: React.FC<PostItToolbarProps> = ({
                     ))}
                 </div>
 
-                {/* Undo/Redo */}
+                {/* Undo/Redo/Save */}
                 <div className="flex items-center gap-1 border-r border-border pr-2 mr-1">
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -137,6 +150,27 @@ const PostItToolbar: React.FC<PostItToolbarProps> = ({
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>Redo (Ctrl+Y)</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant={hasChanges ? "default" : "ghost"}
+                                size="sm"
+                                className={cn(
+                                    "rounded-full h-8 px-3 relative transition-all duration-300",
+                                    hasChanges && "bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] scale-105"
+                                )}
+                                onClick={onSave}
+                                disabled={!hasChanges}
+                            >
+                                <Save className={cn("h-4 w-4", hasChanges && "mr-2")} />
+                                {hasChanges && <span className="text-xs font-bold whitespace-nowrap hidden md:inline">SAVE CHANGES</span>}
+                                {hasChanges && (
+                                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-800" />
+                                )}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{hasChanges ? "Save your masterpiece!" : "No changes to save"}</TooltipContent>
                     </Tooltip>
                 </div>
 
