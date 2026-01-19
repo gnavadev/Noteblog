@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import mermaid from 'mermaid';
 import { isAdmin as checkAdmin } from '@/lib/auth-utils';
-import { TOPIC_COLOR_PALETTE, ADMIN_USER_IDS } from '@/lib/constants';
+import { TOPIC_COLOR_PALETTE } from '@/lib/constants';
 import { getMermaidConfig } from '@/lib/mermaid-config';
 
 
@@ -50,7 +50,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
     const [showPostIt, setShowPostIt] = useState(false);
     const isMobile = useIsMobile();
 
-    // Reset expansion when changing posts
     useEffect(() => {
         setIsReaderExpanded(false);
     }, [selectedPostId]);
@@ -108,7 +107,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
         };
     }, []);
 
-    // Handle Mermaid theme switching
     useEffect(() => {
         mermaid.initialize(getMermaidConfig(colorMode) as any);
     }, [colorMode]);
@@ -120,7 +118,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
             .from('notes')
             .select('*');
 
-        // If not admin, only show public posts
         if (!isAdmin) {
             query = query.eq('is_public', true);
         }
@@ -164,11 +161,9 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
         setSelectedTopic(null);
     };
 
-    // Handle browser back button
     useEffect(() => {
         const handlePopState = () => {
             const path = window.location.pathname;
-            // If we went back to root, close the modal
             if (path === '/' || path === '') {
                 setSelectedPostId(null);
             }
@@ -194,15 +189,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
 
     const isAdmin = checkAdmin(user?.id);
 
-    // Debug log to help identify ID mismatches
-    useEffect(() => {
-        if (user) {
-            console.log('DEBUG: Current User ID:', user.id);
-            console.log('DEBUG: Authorized Admin IDs (env):', import.meta.env.PUBLIC_ADMIN_USER_ID);
-            console.log('DEBUG: Processed Admin IDs (array):', ADMIN_USER_IDS);
-            console.log('DEBUG: Is Admin Result:', isAdmin);
-        }
-    }, [user, isAdmin]);
 
     const handleUpdateTopicOrder = (newOrder: string[]) => {
         localStorage.setItem('topicOrder', JSON.stringify(newOrder));

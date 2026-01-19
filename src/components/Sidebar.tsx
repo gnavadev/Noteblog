@@ -237,7 +237,6 @@ const SidebarComponent: React.FC<SidebarProps> = ({
     onSelectPostIt
 }) => {
     const [user, setUser] = useState<any>(null);
-
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {

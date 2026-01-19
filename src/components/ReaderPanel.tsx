@@ -146,7 +146,6 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
             </div>
         );
     }
-
     const topicColor = topics.find(t => t.name === post.topic)?.color || '#007aff';
 
     return (

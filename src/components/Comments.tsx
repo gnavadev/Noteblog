@@ -43,7 +43,6 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
-    // -- Authentication & Real-time --
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
@@ -73,7 +72,7 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
             .from('comments')
             .select('*')
             .eq('post_id', postId)
-            .order('created_at', { ascending: true }); // Important: getting all flat first
+            .order('created_at', { ascending: true });
 
         if (error) {
             console.error('Error fetching comments:', error);
@@ -87,12 +86,10 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
         const commentMap: { [key: string]: Comment } = {};
         const roots: Comment[] = [];
 
-        // 1. Initialize all comments
         flatComments.forEach(c => {
             commentMap[c.id] = { ...c, replies: [] };
         });
 
-        // 2. Link children to parents & Identify roots
         flatComments.forEach(c => {
             if (c.parent_id && commentMap[c.parent_id]) {
                 commentMap[c.parent_id].replies?.push(commentMap[c.id]);
@@ -101,22 +98,17 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
             }
         });
 
-        // 3. Sort roots: Pinned first, then by date
         return roots.sort((a, b) => {
-            if (a.is_pinned === b.is_pinned) {
-                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-            }
-            return (a.is_pinned ? -1 : 1);
+            if (a.is_pinned && !b.is_pinned) return -1;
+            if (!a.is_pinned && b.is_pinned) return 1;
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         });
     };
 
 
-    // -- Actions (Create, Reply, Edit, Delete) --
-
     const handlePostComment = async (content: string, parentId: string | null = null) => {
         if (!content.trim() || !user) return;
 
-        // Optimistic UI update (optional, but skipping for simplicity with realtime)
         if (!parentId) setLoading(true);
 
         const { error } = await supabase.from('comments').insert([
@@ -326,11 +318,6 @@ const CommentItem: React.FC<{
     const [isEditing, setIsEditing] = useState(false);
     const [replyContent, setReplyContent] = useState('');
     const [editContent, setEditContent] = useState(comment.content);
-
-    // Sync editContent when comment.content changes (after database update)
-    useEffect(() => {
-        setEditContent(comment.content);
-    }, [comment.content]);
 
     const isOwner = user?.id === comment.user_id;
     const canDelete = isOwner || isAdmin;
