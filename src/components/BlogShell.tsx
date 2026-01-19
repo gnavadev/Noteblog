@@ -4,7 +4,7 @@ import MagazineGrid from './MagazineGrid';
 import PostItBoard from './PostItBoard';
 const ReaderPanel = React.lazy(() => import('./ReaderPanel'));
 const PostEditor = React.lazy(() => import('./NoteEditor'));
-import { Plus, Menu, Sun, Moon, User } from "lucide-react";
+import { Plus, Menu, Sun, Moon } from "lucide-react";
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -14,28 +14,10 @@ import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import mermaid from 'mermaid';
+import { isAdmin as checkAdmin } from '@/lib/auth-utils';
+import { TOPIC_COLOR_PALETTE } from '@/lib/constants';
+import { getMermaidConfig } from '@/lib/mermaid-config';
 
-// Initialize mermaid with default options
-// Initialize mermaid with default options
-if (typeof window !== 'undefined') {
-    mermaid.initialize({
-        startOnLoad: true,
-        theme: 'default',
-        securityLevel: 'loose',
-        flowchart: { useMaxWidth: true, htmlLabels: true },
-        sequence: { useMaxWidth: true },
-        gantt: { useMaxWidth: true },
-        journey: { useMaxWidth: true },
-        timeline: { useMaxWidth: true },
-        class: { useMaxWidth: true },
-        state: { useMaxWidth: true },
-        er: { useMaxWidth: true },
-        pie: { useMaxWidth: true },
-        quadrantChart: { useMaxWidth: true },
-        xyChart: { useMaxWidth: true },
-        requirement: { useMaxWidth: true },
-    } as any);
-}
 
 interface Post {
     id: string;
@@ -67,8 +49,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
     const [isReaderExpanded, setIsReaderExpanded] = useState(false);
     const [showPostIt, setShowPostIt] = useState(false);
     const isMobile = useIsMobile();
-    const contentRef = useRef<HTMLDivElement>(null);
-    const topicPalette = ['#ff9500', '#ff2d55', '#007aff', '#5856d6', '#00b96b', '#af52de', '#ff3b30', '#ffcc00'];
 
     // Reset expansion when changing posts
     useEffect(() => {
@@ -82,8 +62,8 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const currentUser = session?.user ?? null;
             setUser(currentUser);
-            if (currentUser?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1') {
-                const avatar = currentUser.user_metadata?.avatar_url;
+            if (checkAdmin(currentUser?.id)) {
+                const avatar = currentUser?.user_metadata?.avatar_url;
                 if (avatar) {
                     setAdminAvatar(avatar);
                     localStorage.setItem('adminAvatar', avatar);
@@ -96,8 +76,8 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
         supabase.auth.getSession().then(({ data: { session } }) => {
             const currentUser = session?.user ?? null;
             setUser(currentUser);
-            if (currentUser?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1') {
-                const avatar = currentUser.user_metadata?.avatar_url;
+            if (checkAdmin(currentUser?.id)) {
+                const avatar = currentUser?.user_metadata?.avatar_url;
                 if (avatar) {
                     setAdminAvatar(avatar);
                     localStorage.setItem('adminAvatar', avatar);
@@ -129,38 +109,12 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
     }, []);
 
     // Handle Mermaid theme switching
-    // Handle Mermaid theme switching
     useEffect(() => {
-        mermaid.initialize({
-            theme: colorMode === 'dark' ? 'dark' : 'default',
-            flowchart: {
-                useMaxWidth: true,
-                htmlLabels: true,
-            },
-            sequence: { useMaxWidth: true },
-            gantt: { useMaxWidth: true },
-            journey: { useMaxWidth: true },
-            timeline: { useMaxWidth: true },
-            class: { useMaxWidth: true },
-            state: { useMaxWidth: true },
-            er: { useMaxWidth: true },
-            pie: { useMaxWidth: true },
-            quadrantChart: { useMaxWidth: true },
-            xyChart: { useMaxWidth: true },
-            requirement: { useMaxWidth: true },
-            themeVariables: colorMode === 'dark' ? {
-                primaryColor: '#c6a0f6',
-                primaryTextColor: '#cad3f5',
-                primaryBorderColor: '#b8c0e0',
-                lineColor: '#939ab7',
-                secondaryColor: '#363a4f',
-                tertiaryColor: '#24273a',
-            } : {}
-        } as any);
+        mermaid.initialize(getMermaidConfig(colorMode) as any);
     }, [colorMode]);
 
     const fetchPosts = async (currentUser = user) => {
-        const isAdmin = currentUser?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1';
+        const isAdmin = checkAdmin(currentUser?.id);
 
         let query = supabase
             .from('notes')
@@ -184,7 +138,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
             let dynamicTopics = Object.keys(counts).map((name, index) => ({
                 name,
                 count: counts[name],
-                color: topicPalette[index % topicPalette.length]
+                color: TOPIC_COLOR_PALETTE[index % TOPIC_COLOR_PALETTE.length]
             }));
 
             const savedOrderStr = localStorage.getItem('topicOrder');
@@ -238,7 +192,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
         setShowPostIt(false);
     };
 
-    const isAdmin = user?.id === '403fcc1a-e806-409f-b0da-7623da7b64a1';
+    const isAdmin = checkAdmin(user?.id);
 
     const handleUpdateTopicOrder = (newOrder: string[]) => {
         localStorage.setItem('topicOrder', JSON.stringify(newOrder));
@@ -302,7 +256,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
 
             <SidebarInset className="flex-1 flex flex-col relative w-full h-full min-h-0 overflow-hidden">
                 <ContentArea
-                    contentRef={contentRef}
                     isMobile={isMobile}
                     showPostIt={showPostIt}
                     user={user}
@@ -365,7 +318,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({ colorMode, toggleTheme,
 
 // Extracted ContentArea for better organization
 const ContentArea: React.FC<any> = ({
-    contentRef,
     isMobile,
     showPostIt,
     user,
@@ -386,7 +338,6 @@ const ContentArea: React.FC<any> = ({
 }) => {
     return (
         <main
-            ref={contentRef}
             className="flex-1 h-full min-h-0 overflow-x-hidden overflow-y-auto"
             id="grid-scroll-container"
         >

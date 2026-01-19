@@ -12,7 +12,6 @@ import {
     Github,
     Linkedin
 } from 'lucide-react';
-// import Auth from './Auth'; // Removed unused component
 import { supabase } from '../lib/supabase';
 import {
     DndContext,
@@ -39,7 +38,6 @@ import {
     SidebarHeader,
     SidebarGroup,
     SidebarGroupLabel,
-    SidebarGroupContent,
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuButton,

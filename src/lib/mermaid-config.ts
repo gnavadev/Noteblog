@@ -1,0 +1,25 @@
+export const getMermaidConfig = (theme: 'light' | 'dark') => ({
+    startOnLoad: true,
+    theme: theme === 'dark' ? 'dark' : 'default',
+    securityLevel: 'loose',
+    flowchart: { useMaxWidth: true, htmlLabels: true },
+    sequence: { useMaxWidth: true },
+    gantt: { useMaxWidth: true },
+    journey: { useMaxWidth: true },
+    timeline: { useMaxWidth: true },
+    class: { useMaxWidth: true },
+    state: { useMaxWidth: true },
+    er: { useMaxWidth: true },
+    pie: { useMaxWidth: true },
+    quadrantChart: { useMaxWidth: true },
+    xyChart: { useMaxWidth: true },
+    requirement: { useMaxWidth: true },
+    themeVariables: theme === 'dark' ? {
+        primaryColor: '#c6a0f6',
+        primaryTextColor: '#cad3f5',
+        primaryBorderColor: '#b8c0e0',
+        lineColor: '#939ab7',
+        secondaryColor: '#363a4f',
+        tertiaryColor: '#24273a',
+    } : {}
+});
