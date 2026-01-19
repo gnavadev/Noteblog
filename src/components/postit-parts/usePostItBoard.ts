@@ -179,7 +179,6 @@ export function usePostItBoard({ userId, isAdmin }: UsePostItBoardOptions) {
 
             setHasUnsavedChanges(false);
             toast({ title: "Changes saved successfully" });
-            await fetchPostIts();
         } catch (error: any) {
             console.error('Error saving post-it:', error);
             toast({ title: "Failed to save changes", description: error.message, variant: "destructive" });

@@ -10,7 +10,7 @@ interface PostItBoardProps {
 
 const PostItBoard: React.FC<PostItBoardProps> = ({ user, isAdmin }) => {
     const [activeTool, setActiveTool] = useState<PostItTool>('pencil');
-    const [pencilSize, setPencilSize] = useState(3);
+    const [pencilSize, setPencilSize] = useState(5);
     const [eraserSize, setEraserSize] = useState(10);
 
     const {
