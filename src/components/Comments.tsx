@@ -321,9 +321,11 @@ const CommentItem: React.FC<{
     onPin: (id: string, isPinned: boolean) => void;
     level: number;
 }> = ({ comment, user, isAdmin, onReply, onEdit, onDelete, onPin, level }) => {
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    const [isCollapsed, setIsCollapsed] = useState(hasReplies); // Default to collapsed if has replies
+
     const [isReplying, setIsReplying] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
     const [replyContent, setReplyContent] = useState('');
     const [editContent, setEditContent] = useState(comment.content);
 
@@ -336,6 +338,7 @@ const CommentItem: React.FC<{
         onReply(replyContent, comment.id);
         setReplyContent('');
         setIsReplying(false);
+        setIsCollapsed(false); // Auto-expand on reply
     };
 
     const handleEditSubmit = () => {
@@ -344,7 +347,7 @@ const CommentItem: React.FC<{
         setIsEditing(false);
     };
 
-    const hasReplies = comment.replies && comment.replies.length > 0;
+
 
     return (
         <motion.div
@@ -354,7 +357,7 @@ const CommentItem: React.FC<{
         >
             <div className="flex gap-4">
                 {/* Avatar Column */}
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center gap-2">
                     <Avatar className={cn("border border-border z-10", isRoot ? "h-10 w-10" : "h-8 w-8")}>
                         <AvatarImage src={comment.user_metadata?.avatar_url || comment.user_metadata?.picture} />
                         <AvatarFallback className="bg-muted text-muted-foreground font-bold">
@@ -363,11 +366,20 @@ const CommentItem: React.FC<{
                     </Avatar>
 
                     {/* Thread Line & Collapse Trigger */}
-                    {hasReplies && !isCollapsed && (
-                        <div className="w-px h-full bg-border/50 my-2 group-hover:bg-border/80 transition-colors cursor-pointer" onClick={() => setIsCollapsed(true)} />
+                    {hasReplies && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full hover:bg-muted text-muted-foreground"
+                            onClick={() => setIsCollapsed(!isCollapsed)}
+                            title={isCollapsed ? "Show replies" : "Hide replies"}
+                        >
+                            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
                     )}
-                    {hasReplies && isCollapsed && (
-                        <div className="h-6 w-px border-l-2 border-dashed border-border/50 my-1" />
+
+                    {hasReplies && !isCollapsed && (
+                        <div className="w-px h-full bg-border/50 group-hover:bg-border/80 transition-colors" />
                     )}
                 </div>
 
@@ -445,7 +457,7 @@ const CommentItem: React.FC<{
                                                 <Trash2 className="h-3.5 w-3.5" />
                                             </Button>
                                         </AlertDialogTrigger>
-                                        <AlertDialogContent>
+                                        <AlertDialogContent className="z-[9999]">
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Delete comment?</AlertDialogTitle>
                                                 <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
