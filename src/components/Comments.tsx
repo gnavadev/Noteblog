@@ -157,16 +157,35 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
     };
 
     const handleDeleteComment = async (commentId: string) => {
-        const { error } = await supabase
-            .from('comments')
-            .delete()
-            .eq('id', commentId);
+        try {
+            // Pseudo-cascade: 1. Fetch children ids
+            const getDescendantIds = async (rootId: string): Promise<string[]> => {
+                const { data } = await supabase.from('comments').select('id, parent_id').eq('parent_id', rootId);
+                let ids = data?.map(c => c.id) || [];
+                for (const childId of ids) {
+                    const grandChildren = await getDescendantIds(childId);
+                    ids = [...ids, ...grandChildren];
+                }
+                return ids;
+            };
 
-        if (error) {
-            toast({ title: "Delete failed", description: error.message, variant: "destructive" });
-        } else {
+            const descendants = await getDescendantIds(commentId);
+
+            // 2. Delete descendants first
+            if (descendants.length > 0) {
+                const { error: childrenError } = await supabase.from('comments').delete().in('id', descendants);
+                if (childrenError) throw childrenError;
+            }
+
+            // 3. Delete target
+            const { error } = await supabase.from('comments').delete().eq('id', commentId);
+            if (error) throw error;
+
             toast({ title: "Comment deleted" });
             fetchComments();
+
+        } catch (error: any) {
+            toast({ title: "Delete failed", description: error.message, variant: "destructive" });
         }
     };
 
