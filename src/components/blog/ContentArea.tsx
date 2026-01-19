@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu } from "lucide-react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import MagazineGrid from '../MagazineGrid';
 import PostItBoard from '../PostItBoard';
@@ -45,12 +45,14 @@ const ContentArea: React.FC<ContentAreaProps> = ({
     setIsReaderExpanded,
     colorMode
 }) => {
+    const { openMobile } = useSidebar();
+
     return (
         <main
             className="flex-1 h-full min-h-0 overflow-x-hidden overflow-y-auto"
             id="grid-scroll-container"
         >
-            {isMobile && (
+            {isMobile && !openMobile && (
                 <div className="fixed top-6 left-6 z-[100]">
                     <SidebarTrigger className="h-12 w-12 rounded-full shadow-lg bg-background border-none flex items-center justify-center">
                         <Menu className="h-6 w-6" />

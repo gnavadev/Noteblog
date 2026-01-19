@@ -72,7 +72,12 @@ export function useBlogState(
     }, [posts, dbTopics, getTopicColor]);
 
     useEffect(() => {
-        setIsReaderExpanded(false);
+        // On mobile, force expanded view (no small preview). On desktop, start collapsed.
+        if (typeof window !== 'undefined' && window.innerWidth < 640) {
+            setIsReaderExpanded(true);
+        } else {
+            setIsReaderExpanded(false);
+        }
     }, [selectedPostId]);
 
     const fetchPosts = useCallback(async (currentUser = user) => {

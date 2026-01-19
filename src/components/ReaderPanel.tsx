@@ -1,10 +1,11 @@
 import React from 'react';
-import { Clock, Calendar, Maximize2, Minimize2, Loader2, BookOpen } from 'lucide-react';
+import { Clock, Calendar, Maximize2, Minimize2, Loader2, BookOpen, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 const CherryMarkdownViewer = React.lazy(() => import('./CherryMarkdownViewer'));
 import Comments from './comments/Comments';
@@ -70,7 +71,6 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
         >
             <PostHeader
                 post={post}
-                topicColor={topicColor}
                 isExpanded={isExpanded}
                 onToggleExpand={onToggleExpand}
                 onClose={onClose}
@@ -81,10 +81,17 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 initial="hidden"
                 animate="show"
                 className={cn(
-                    "mx-auto py-12 px-8 transition-all duration-700 ease-in-out",
+                    "mx-auto py-12 px-8 transition-all duration-700 ease-in-out relative",
                     isExpanded ? "max-w-[1000px]" : "max-w-[800px]"
                 )}
             >
+                <Badge
+                    className="absolute top-0 left-8 -translate-y-1/2 px-4 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-primary/20 border-none z-40"
+                    style={{ backgroundColor: topicColor }}
+                >
+                    {post.topic}
+                </Badge>
+
                 <header className="mb-10 flex flex-col gap-6">
                     <motion.div variants={contentVariants}>
                         <h1 className={cn(
@@ -111,8 +118,17 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                                     <span>{new Date(post.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</span>
                                 </div>
                             </div>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="ml-4 gap-2 shadow-sm hidden sm:flex font-semibold text-secondary-foreground hover:bg-secondary/80"
+                                onClick={() => window.open(`/post/${post.id}`, '_blank')}
+                                title="Open dedicated focus page in new tab"
+                            >
+                                <span>Focus View</span>
+                                <ExternalLink className="h-3.5 w-3.5" />
+                            </Button>
                         </div>
-
                         <div className="flex items-center gap-6 text-sm font-semibold text-muted-foreground">
                             <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
                                 <Clock className="h-4 w-4 text-primary" />
@@ -121,9 +137,19 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
 
                             <Button
                                 size="sm"
+                                variant="default"
+                                className="rounded-full px-4 font-bold shadow-lg shadow-primary/20 flex sm:hidden"
+                                onClick={() => window.open(`/post/${post.id}`, '_blank')}
+                            >
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                <span>Focus View</span>
+                            </Button>
+
+                            <Button
+                                size="sm"
                                 variant={isExpanded ? "destructive" : "default"}
                                 onClick={onToggleExpand}
-                                className="rounded-full px-6 font-bold shadow-lg shadow-primary/20"
+                                className="rounded-full px-6 font-bold shadow-lg shadow-primary/20 hidden sm:flex"
                             >
                                 {isExpanded ? <Minimize2 className="h-4 w-4 mr-2" /> : <Maximize2 className="h-4 w-4 mr-2" />}
                                 {isExpanded ? 'Minimize' : 'Expand View'}
