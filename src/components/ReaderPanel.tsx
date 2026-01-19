@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, Share2, Maximize2, Minimize2, X, Loader2, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import "@uiw/react-markdown-preview/markdown.css";
+
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

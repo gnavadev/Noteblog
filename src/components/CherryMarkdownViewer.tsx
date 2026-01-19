@@ -85,7 +85,15 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
     useEffect(() => {
         if (!dependenciesLoaded) return;
         if (!editorContainerRef.current) return;
-        if (editorInstanceRef.current) return;
+
+        // Clean up previous instance if it exists
+        if (editorInstanceRef.current) {
+            // Manual cleanup since destroy() might not be perfect or exist on all versions
+            editorInstanceRef.current = null;
+            if (editorContainerRef.current) {
+                editorContainerRef.current.innerHTML = '';
+            }
+        }
 
         try {
             editorInstanceRef.current = new Cherry({
@@ -145,12 +153,15 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
         }
 
         return () => {
+            // Cleanup on unmount or re-run
             if (editorInstanceRef.current) {
-                // editorInstanceRef.current.destroy(); // Optional protection
                 editorInstanceRef.current = null;
             }
+            if (editorContainerRef.current) {
+                editorContainerRef.current.innerHTML = '';
+            }
         };
-    }, [dependenciesLoaded, uniqueId]); // Intentionally exclude `content` to control updates manually
+    }, [dependenciesLoaded, uniqueId, colorMode]); // Include colorMode to force re-init
 
     // Handle Content Updates
     useEffect(() => {
@@ -158,19 +169,6 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
             editorInstanceRef.current.setMarkdown(content);
         }
     }, [content]);
-
-    // Handle Theme Changes
-    useEffect(() => {
-        if (editorInstanceRef.current) {
-            // Cherry doesn't always handle dynamic theme switching perfectly in preview mode, 
-            // but we try both editor and toolbar APIs.
-            if (editorInstanceRef.current.setTheme) {
-                editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'light');
-            }
-            // For previewer specifically, often just CSS class on container handles it, 
-            // which Cherry does internally.
-        }
-    }, [colorMode]);
 
     if (!dependenciesLoaded) {
         return <div className="p-4 text-muted-foreground animate-pulse">Loading content...</div>;
