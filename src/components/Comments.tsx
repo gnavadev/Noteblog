@@ -410,10 +410,26 @@ const CommentItem: React.FC<{
                                 {comment.content}
                             </div>
                         )}
+                    </div>
 
-                        {/* Actions Bar */}
-                        {!isEditing && (
-                            <div className="flex justify-end items-center gap-1 mt-2.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                    {/* Actions Toolbar & Show Replies (Below Card) */}
+                    {!isEditing && (
+                        <div className="mt-2 flex items-center justify-between ml-1">
+                            {/* Left: Show Replies Button */}
+                            <div>
+                                {isCollapsed && hasReplies && (
+                                    <button
+                                        onClick={() => setIsCollapsed(false)}
+                                        className="flex items-center gap-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                                    >
+                                        <PlusCircle className="h-4 w-4" />
+                                        Show {comment.replies?.length} replies
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Right: Action Buttons */}
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 {isAdmin && isRoot && (
                                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onPin(comment.id, !comment.is_pinned)}>
                                         <Pin className={cn("h-3.5 w-3.5", comment.is_pinned ? "fill-yellow-600 text-yellow-600" : "text-muted-foreground")} />
@@ -452,19 +468,6 @@ const CommentItem: React.FC<{
                                     </AlertDialog>
                                 )}
                             </div>
-                        )}
-                    </div>
-
-                    {/* Show Replies Button (Sibling of Card) */}
-                    {isCollapsed && hasReplies && (
-                        <div className="mt-2 text-xs font-bold text-primary transition-colors ml-1">
-                            <button
-                                onClick={() => setIsCollapsed(false)}
-                                className="flex items-center gap-2 hover:text-primary/80"
-                            >
-                                <PlusCircle className="h-4 w-4" />
-                                Show {comment.replies?.length} replies
-                            </button>
                         </div>
                     )}
 
