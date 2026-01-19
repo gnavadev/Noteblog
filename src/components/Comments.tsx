@@ -156,7 +156,7 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
 
     const handleDeleteComment = async (commentId: string) => {
         try {
-            // Pseudo-cascade: 1. Fetch children ids
+            // Pseudo-cascade: 1. Fetch children ids (BFS/DFS)
             const getDescendantIds = async (rootId: string): Promise<string[]> => {
                 const { data } = await supabase.from('comments').select('id, parent_id').eq('parent_id', rootId);
                 let ids = data?.map(c => c.id) || [];
@@ -169,10 +169,14 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
 
             const descendants = await getDescendantIds(commentId);
 
-            // 2. Delete descendants first
-            if (descendants.length > 0) {
-                const { error: childrenError } = await supabase.from('comments').delete().in('id', descendants);
-                if (childrenError) throw childrenError;
+            // 2. Delete descendants SEQUENTIALLY from bottom to top to respect constraints
+            const reversed = [...descendants].reverse();
+            for (const id of reversed) {
+                const { error: childError } = await supabase.from('comments').delete().eq('id', id);
+                if (childError) {
+                    console.error("Failed to delete descendant:", id, childError);
+                    throw childError; // Fail fast so user knows
+                }
             }
 
             // 3. Delete target
@@ -469,18 +473,18 @@ const CommentItem: React.FC<{
                                 )}
                             </div>
                         )}
-
-                        {/* Collapsed "Show Replies" Button (Inside card, bottom) */}
-                        {isCollapsed && hasReplies && (
-                            <button
-                                onClick={() => setIsCollapsed(false)}
-                                className="flex items-center gap-2 mt-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
-                            >
-                                <PlusCircle className="h-3.5 w-3.5" />
-                                Show {comment.replies?.length} replies
-                            </button>
-                        )}
                     </div>
+
+                    {/* Show Replies Button (Outside Card) */}
+                    {isCollapsed && hasReplies && (
+                        <button
+                            onClick={() => setIsCollapsed(false)}
+                            className="flex items-center gap-2 mt-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors ml-1"
+                        >
+                            <PlusCircle className="h-4 w-4" />
+                            Show {comment.replies?.length} replies
+                        </button>
+                    )}
 
                     {/* Reply Input */}
                     {isReplying && (
