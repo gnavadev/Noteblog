@@ -1,6 +1,7 @@
 ---
 import EditorLayout from "../../layouts/EditorLayout.astro";
 import StandalonePostEditor from "../../components/StandalonePostEditor";
+import TopicProvider from "../../components/TopicProvider";
 import { supabase } from "../../lib/supabase";
 
 const { data: topics } = await supabase
@@ -10,5 +11,7 @@ const { data: topics } = await supabase
 ---
 
 <EditorLayout title="New Post">
-    <StandalonePostEditor client:only="react" availableTopics={topics || []} />
+    <TopicProvider client:only="react" initialTopics={topics || []}>
+        <StandalonePostEditor availableTopics={topics || []} />
+    </TopicProvider>
 </EditorLayout>

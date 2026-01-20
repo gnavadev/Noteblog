@@ -1,6 +1,7 @@
 ---
 import EditorLayout from "../../layouts/EditorLayout.astro";
 import StandalonePostEditor from "../../components/StandalonePostEditor";
+import TopicProvider from "../../components/TopicProvider";
 import { supabase } from "../../lib/supabase";
 
 const { id } = Astro.params;
@@ -19,17 +20,14 @@ const { data: topics } = await supabase
     .from("topics")
     .select("*")
     .order("order", { ascending: true });
-
-if (error || !post) {
-    return Astro.redirect("/");
-}
 ---
 
-<EditorLayout title={`Editing: ${post.title}`}>
-    <StandalonePostEditor
-        client:only="react"
-        postId={id}
-        initialData={post}
-        availableTopics={topics || []}
-    />
+<EditorLayout title={post ? `Editing: ${post.title}` : "Editing Post"}>
+    <TopicProvider client:only="react" initialTopics={topics || []}>
+        <StandalonePostEditor
+            postId={id}
+            initialData={post}
+            availableTopics={topics || []}
+        />
+    </TopicProvider>
 </EditorLayout>
