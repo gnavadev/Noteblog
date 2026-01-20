@@ -156,28 +156,28 @@
     line-height: 1.6;
   }
 
-  /* Custom Thin Scrollbar */
-  ::-webkit-scrollbar {
+  /* Custom Thin Scrollbar (Opt-in) */
+  .enable-custom-scroll ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
-  ::-webkit-scrollbar-track {
+  .enable-custom-scroll ::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  ::-webkit-scrollbar-thumb {
+  .enable-custom-scroll ::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.3);
     border-radius: 10px;
     transition: background 0.2s ease;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
+  .enable-custom-scroll ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.5);
   }
 
   /* Firefox support */
-  * {
+  .enable-custom-scroll * {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
   }
@@ -274,4 +274,18 @@
   outline: none !important;
   cursor: default !important;
   caret-color: transparent !important;
+}
+
+/* Fix Chart/Table Scrollbars */
+.cherry-chart,
+.cherry-table-container,
+/* Attempt to target table container if exists */
+div[class*="echarts"] {
+  overflow: hidden !important;
+  /* Hide unwanted scrollbars */
+}
+
+/* Ensure canvas doesn't cause vertical overflow */
+canvas {
+  display: block;
 }
