@@ -55,6 +55,7 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                         mathBlock: { engine: 'MathJax' },
                         inlineMath: { engine: 'MathJax' },
                         emoji: { useUnicode: true },
+                        header: { anchorStyle: 'none' },
                     },
                 },
                 editor: {
