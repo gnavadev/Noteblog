@@ -8,114 +8,6 @@ declare global {
 }
 
 /**
- * Custom Syntax Hook
- */
-const CustomHookA = Cherry.createSyntaxHook('codeBlock', Cherry.constants.HOOKS_TYPE_LIST.PAR, {
-    makeHtml(str: string) {
-        console.warn('custom hook', 'hello');
-        return str;
-    },
-    rule(str: string) {
-        return {
-            begin: '',
-            content: '',
-            end: '',
-            reg: new RegExp('', 'g') // Dummy regex to satisfy type, logic stripped in original?
-        };
-    },
-});
-
-/**
- * Custom Menu: Bold Italic
- */
-const customMenuA = Cherry.createMenuHook('BoldItalic', {
-    iconName: 'font',
-    onClick: function (selection: string) {
-        // @ts-ignore
-        let $selection = this.getSelection(selection) || '同时加粗斜体';
-        // @ts-ignore
-        if (!this.isSelections && !/^\s*(\*\*\*)[\s\S]+(\1)/.test($selection)) {
-            // @ts-ignore
-            this.getMoreSelection('***', '***', () => {
-                // @ts-ignore
-                const newSelection = this.editor.editor.getSelection();
-                const isBoldItalic = /^\s*(\*\*\*)[\s\S]+(\1)/.test(newSelection);
-                if (isBoldItalic) {
-                    $selection = newSelection;
-                }
-                return isBoldItalic;
-            });
-        }
-        if (/^\s*(\*\*\*)[\s\S]+(\1)/.test($selection)) {
-            return $selection.replace(/(^)(\s*)(\*\*\*)([^\n]+)(\3)(\s*)($)/gm, '$1$4$7');
-        }
-        // @ts-ignore
-        this.registerAfterClickCb(() => {
-            // @ts-ignore
-            this.setLessSelection('***', '***');
-        });
-        return $selection.replace(/(^)([^\n]+)($)/gm, '$1***$2***$3');
-    },
-});
-
-/**
- * Custom Menu: Laboratory (Structure holder)
- */
-const customMenuB = Cherry.createMenuHook('实验室', {
-    icon: {
-        type: 'svg',
-        content:
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg>',
-        iconStyle: 'width: 15px; height: 15px; vertical-align: middle;',
-    },
-});
-
-/**
- * Custom Menu: Help Center
- */
-const customMenuC = Cherry.createMenuHook('HelpCenter', {
-    iconName: 'question',
-    onClick: (selection: string, type: string) => {
-        switch (type) {
-            case 'shortKey':
-                return `${selection}快捷键看这里：https://codemirror.net/5/demo/sublime.html`;
-            case 'github':
-                return `${selection}我们在这里：https://github.com/Tencent/cherry-markdown`;
-            case 'release':
-                return `${selection}我们在这里：https://github.com/Tencent/cherry-markdown/releases`;
-            default:
-                return selection;
-        }
-    },
-    subMenuConfig: [
-        {
-            noIcon: true,
-            name: '快捷键',
-            onclick: (event: any) => {
-                // @ts-ignore
-                window.cherry?.toolbar.menus.hooks.customMenuCName.fire(null, 'shortKey');
-            },
-        },
-        {
-            noIcon: true,
-            name: '联系我们',
-            onclick: (event: any) => {
-                // @ts-ignore
-                window.cherry?.toolbar.menus.hooks.customMenuCName.fire(null, 'github');
-            },
-        },
-        {
-            noIcon: true,
-            name: '更新日志',
-            onclick: (event: any) => {
-                // @ts-ignore
-                window.cherry?.toolbar.menus.hooks.customMenuCName.fire(null, 'release');
-            },
-        },
-    ],
-});
-
-/**
  * Custom Menu: Charts
  */
 const customMenuTable = Cherry.createMenuHook('图表', {
@@ -257,13 +149,7 @@ export const basicFullConfig = {
                 enablePanel: true,
             },
         },
-        customSyntax: {
-            CustomHook: {
-                syntaxClass: CustomHookA,
-                force: false,
-                after: 'br',
-            },
-        },
+        customSyntax: {},
     },
     multipleFileSelection: {
         video: true,
@@ -278,7 +164,7 @@ export const basicFullConfig = {
             'bold',
             'italic',
             {
-                strikethrough: ['strikethrough', 'underline', 'sub', 'sup', 'ruby', 'customMenuAName'],
+                strikethrough: ['strikethrough', 'underline', 'sub', 'sup', 'ruby'],
             },
             'size',
             '|',
@@ -318,10 +204,6 @@ export const basicFullConfig = {
             'togglePreview',
             'search',
             'shortcutKey',
-            {
-                customMenuBName: ['ruby', 'audio', 'video', 'customMenuAName'],
-            },
-            'customMenuCName',
         ],
         toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount', 'codeTheme'],
         bubble: ['bold', 'italic', 'underline', 'strikethrough', 'sub', 'sup', 'quote', 'ruby', '|', 'size', 'color'],
@@ -330,9 +212,6 @@ export const basicFullConfig = {
             defaultModel: 'full',
         },
         customMenu: {
-            customMenuAName: customMenuA,
-            customMenuBName: customMenuB,
-            customMenuCName: customMenuC,
             customMenuTable,
             customMenuCodeThemeName: customMenuCodeTheme,
         },

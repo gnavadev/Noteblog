@@ -26,7 +26,7 @@
     -->
         <iframe
             id="drawio-iframe"
-            src="https://embed.diagrams.net/?embed=1&ui=min&spin=1&proto=json&libraries=1&noSaveBtn=1&lang=en"
+            src="https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json&libraries=1&noSaveBtn=1&lang=en&dark=1&configure=1"
             style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; border: 0; display: block;"
             allow="clipboard-write"></iframe>
 
@@ -39,20 +39,24 @@
                 window.addEventListener("message", function (e) {
                     if (!e.data) return;
 
-                    // 1. Identify Source
+                    // Security: Verify Origin
+                    // We allow messages from:
+                    // 1. The iframe (diagrams.net) where we trust the logic
+                    // 2. The parent window (our own app)
+                    // Note: In production, you might want to strictly check e.origin specific domains
+
                     var isFromIframe = e.source === iframe.contentWindow;
                     var isFromParent =
                         e.source === window.parent ||
                         (!isFromIframe && e.data.eventName);
 
+                    if (!isFromIframe && !isFromParent) {
+                        // Untrusted source
+                        return;
+                    }
+
                     // --- Handle Message from PARENT (Cherry) ---
                     if (isFromParent && e.data.eventName) {
-                        console.log(
-                            "[DrawIO Bridge] From Parent:",
-                            e.data.eventName,
-                            e.data,
-                        );
-
                         if (e.data.eventName === "setData") {
                             window.initialXml = e.data.value;
                         }
@@ -60,9 +64,6 @@
                         if (e.data.eventName === "getData") {
                             pendingExport = true;
                             accumulatedData = { xmlData: "", base64: "" };
-                            console.log(
-                                "[DrawIO Bridge] Requesting XML Export...",
-                            );
                             var msg = JSON.stringify({
                                 action: "export",
                                 format: "xml",
@@ -71,12 +72,9 @@
                         }
 
                         if (e.data.eventName === "ready?") {
-                            console.log(
-                                "[DrawIO Bridge] Sending ready to Parent",
-                            );
                             window.parent.postMessage(
                                 { eventName: "ready", value: "" },
-                                "*",
+                                "*", // Parent origin is dynamically determined, usually same-origin or trusted
                             );
                         }
                         return;
@@ -93,24 +91,53 @@
                     }
 
                     if (msg && msg.event) {
-                        // Filter noisy events
-                        if (
-                            msg.event === "configure" ||
-                            msg.event === "autosave" ||
-                            msg.event === "status"
-                        )
+                        // Handle configure event
+                        if (msg.event === "configure") {
+                            iframe.contentWindow.postMessage(
+                                JSON.stringify({
+                                    action: "configure",
+                                    config: {
+                                        language: "",
+                                        configVersion: null,
+                                        customFonts: [],
+                                        libraries:
+                                            "general;uml;er;bpmn;flowchart;basic;arrows2",
+                                        customLibraries: [],
+                                        plugins: [],
+                                        recentColors: [],
+                                        formatWidth: "240",
+                                        createTarget: false,
+                                        pageFormat: {
+                                            x: 0,
+                                            y: 0,
+                                            width: 850,
+                                            height: 1100,
+                                        },
+                                        search: true,
+                                        showStartScreen: false,
+                                        gridColor: "#d0d0d0",
+                                        darkGridColor: "#424242",
+                                        darkMode: true,
+                                        autosave: true,
+                                        resizeImages: null,
+                                        openCounter: 5,
+                                        version: 18,
+                                        unit: 1,
+                                        isRulerOn: false,
+                                        ui: "atlas",
+                                    },
+                                }),
+                                "*",
+                            );
                             return;
+                        }
 
-                        console.log("[DrawIO Bridge] From Iframe:", msg.event);
+                        // Filter noisy events
+                        if (msg.event === "autosave" || msg.event === "status")
+                            return;
 
                         if (msg.event === "init") {
                             var xml = window.initialXml || "";
-                            console.log(
-                                "[DrawIO Bridge] Sending LOAD to Iframe (XML len: " +
-                                    xml.length +
-                                    ")",
-                            );
-
                             iframe.contentWindow.postMessage(
                                 JSON.stringify({
                                     action: "load",
@@ -131,11 +158,7 @@
                             if (!pendingExport) return;
 
                             if (!accumulatedData.xmlData) {
-                                console.log(
-                                    "[DrawIO Bridge] XML received. Requesting PNG...",
-                                );
                                 accumulatedData.xmlData = msg.data;
-
                                 iframe.contentWindow.postMessage(
                                     JSON.stringify({
                                         action: "export",
@@ -145,9 +168,6 @@
                                     "*",
                                 );
                             } else {
-                                console.log(
-                                    "[DrawIO Bridge] PNG received. Done.",
-                                );
                                 accumulatedData.base64 = msg.data; // data:image/png;base64,...
 
                                 window.parent.postMessage(
