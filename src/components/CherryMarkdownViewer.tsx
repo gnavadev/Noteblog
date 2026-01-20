@@ -103,6 +103,16 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
 
     return (
         <div className={cn("cherry-viewer-wrapper break-words", className)} style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}>
+            <style>{`
+                #${uniqueId} img {
+                    pointer-events: none !important;
+                    user-select: none !important;
+                    -webkit-user-drag: none !important;
+                }
+                #${uniqueId} .cherry-img-resizer {
+                    display: none !important;
+                }
+            `}</style>
             <div id={uniqueId} ref={editorContainerRef} />
         </div>
     );
