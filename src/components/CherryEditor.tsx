@@ -108,6 +108,9 @@ const CherryEditor = React.memo(({ value, onChange, onFileUpload, colorMode }: C
             if (editorInstanceRef.current) {
                 editorInstanceRef.current = null;
             }
+            if (editorContainerRef.current) {
+                editorContainerRef.current.innerHTML = '';
+            }
         };
     }, [dependenciesLoaded]);
 
