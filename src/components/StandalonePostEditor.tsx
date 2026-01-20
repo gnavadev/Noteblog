@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import CherryEditor from './CherryEditor';
 import { EditorHeader } from './editor';
 import { useTopics } from './TopicProvider';
+import { isAdmin as checkAdmin } from '@/lib/auth-utils';
 import { Button } from "@/components/ui/button";
 
 interface StandalonePostEditorProps {
@@ -15,6 +16,17 @@ interface StandalonePostEditorProps {
 }
 
 const StandalonePostEditor: React.FC<StandalonePostEditorProps> = ({ postId, initialData, availableTopics: initialAvailableTopics }) => {
+    // Auth Check
+    useEffect(() => {
+        const verifyAdmin = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session || !checkAdmin(session.user.id)) {
+                window.location.href = '/';
+            }
+        };
+        verifyAdmin();
+    }, []);
+
     // App State
     const { topics: providerTopics, ensureTopicExists, deleteTopicIfEmpty } = useTopics();
     const availableTopics = initialAvailableTopics || providerTopics;
