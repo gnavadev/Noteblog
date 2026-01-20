@@ -28,7 +28,7 @@ const CustomHookA = Cherry.createSyntaxHook('codeBlock', Cherry.constants.HOOKS_
 /**
  * Custom Menu: Bold Italic
  */
-const customMenuA = Cherry.createMenuHook('Bold Italic', {
+const customMenuA = Cherry.createMenuHook('BoldItalic', {
     iconName: 'font',
     onClick: function (selection: string) {
         // @ts-ignore
@@ -73,7 +73,7 @@ const customMenuB = Cherry.createMenuHook('Lab', {
 /**
  * Custom Menu: Help Center
  */
-const customMenuC = Cherry.createMenuHook('Help Center', {
+const customMenuC = Cherry.createMenuHook('HelpCenter', {
     iconName: 'question',
     onClick: (selection: string, type: string) => {
         switch (type) {
