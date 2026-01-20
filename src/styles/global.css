@@ -289,3 +289,10 @@ div[class*="echarts"] {
 canvas {
   display: block;
 }
+
+/* Fix Cherry Dialog Iframe Sizing (Draw.io) */
+.cherry-dialog-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
