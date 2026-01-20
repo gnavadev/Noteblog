@@ -20,14 +20,13 @@
       - ui=min: Minimal UI
       - spin=1: Show spinner on save
       - proto=json: JSON protocol for messages
-      - configure=1: Allow configuration
+      - configure=1: REMOVED to avoid waiting for config
       - libraries=1: Enable libraries
-      - noSaveBtn=1: Hide save button (we trigger save externally) - actually Cherry flow usually triggers save via 'OK' button outside iframe?
-        Wait, Cherry dialog has OK button. So we don't need internal save button.
+      - noSaveBtn=1: Hide save button
     -->
         <iframe
             id="drawio-iframe"
-            src="https://embed.diagrams.net/?embed=1&ui=min&spin=1&proto=json&configure=1&libraries=1&noSaveBtn=1"
+            src="https://embed.diagrams.net/?embed=1&ui=min&spin=1&proto=json&libraries=1&noSaveBtn=1"
             style="width: 100%; height: 100%; border: 0;"
             allow="clipboard-write"></iframe>
 
@@ -37,160 +36,133 @@
                 var pendingExport = false;
                 var accumulatedData = { xmlData: "", base64: "" };
 
-                // Handle messages from Cherry Editor (Parent)
                 window.addEventListener("message", function (e) {
                     if (!e.data) return;
-                    console.log(
-                        "[DrawIO Wrapper] Received from Parent:",
-                        e.data,
-                    );
 
-                    // 1. Initial Load (from Cherry)
-                    if (e.data.eventName === "setData") {
+                    // 1. Identify Source
+                    var isFromIframe = e.source === iframe.contentWindow;
+                    var isFromParent =
+                        e.source === window.parent ||
+                        (!isFromIframe && e.data.eventName);
+
+                    // --- Handle Message from PARENT (Cherry) ---
+                    if (isFromParent && e.data.eventName) {
                         console.log(
-                            "[DrawIO Wrapper] setData called. Value:",
-                            e.data.value,
-                        );
-                        // Start editing this XML
-                        // Wait for iframe to be ready? Draw.io sends 'init' first.
-                        // We store it and send on 'init'.
-                        window.initialXml = e.data.value;
-
-                        // If iframe is already ready (re-opened), send immediately
-                        // But usually iframe reloads.
-                    }
-
-                    // 2. Export Request (from Cherry "OK" button)
-                    if (e.data.eventName === "getData") {
-                        console.log(
-                            "[DrawIO Wrapper] getData called. Requesting export from iframe...",
-                        );
-                        pendingExport = true;
-                        accumulatedData = { xmlData: "", base64: "" };
-
-                        // Step 1: Request XML
-                        var msg = JSON.stringify({
-                            action: "export",
-                            format: "xml",
-                        });
-                        iframe.contentWindow.postMessage(msg, "*");
-                    }
-
-                    // 3. Ready Check
-                    if (e.data.eventName === "ready?") {
-                        console.log(
-                            "[DrawIO Wrapper] ready? called. Sending ready.",
-                        );
-                        window.parent.postMessage(
-                            { eventName: "ready", value: "" },
-                            "*",
-                        );
-                    }
-                });
-
-                // Handle messages from Draw.io (Iframe)
-                window.addEventListener("message", function (e) {
-                    // Filter messages only from draw.io domain if strictly needed, but '*' is okay for demo.
-                    // Protocol: JSON string
-                    var msg;
-                    try {
-                        msg = JSON.parse(e.data);
-                    } catch (err) {
-                        return; // Ignore non-JSON messages
-                    }
-
-                    if (!msg) return;
-
-                    // Filter internal messages if needed (DrawIO sends many)
-                    if (msg.event === "configure" || msg.event === "autosave")
-                        return;
-
-                    console.log(
-                        "[DrawIO Wrapper] Received from Iframe:",
-                        msg.event,
-                        msg,
-                    );
-
-                    // A. Draw.io Initialized
-                    if (msg.event === "init") {
-                        // Send stored XML if any
-                        // If window.initialXml is empty string, we should send load anyway to clear?
-                        // Cherry sends '' for new diagram.
-
-                        var xml = window.initialXml || "";
-                        console.log(
-                            "[DrawIO Wrapper] DrawIO initialized. Sending load. XML length:",
-                            xml.length,
+                            "[DrawIO Bridge] From Parent:",
+                            e.data.eventName,
+                            e.data,
                         );
 
-                        // Load command
-                        iframe.contentWindow.postMessage(
-                            JSON.stringify({
-                                action: "load",
-                                autosave: 0,
-                                xml: xml,
-                            }),
-                            "*",
-                        );
+                        if (e.data.eventName === "setData") {
+                            window.initialXml = e.data.value;
+                        }
 
-                        // Tell Parent we are ready
-                        window.parent.postMessage(
-                            { eventName: "ready", value: "" },
-                            "*",
-                        );
-                    }
-
-                    // B. Export Response
-                    if (msg.event === "export") {
-                        if (!pendingExport) return;
-                        console.log(
-                            "[DrawIO Wrapper] Export received. Data length:",
-                            msg.data?.length,
-                        );
-
-                        // Detect response type
-                        // XML usually starts with <mxGraphModel or similar, or just check format logic
-                        // Actually, since we request sequentially, we can track state.
-
-                        if (!accumulatedData.xmlData) {
-                            // This must be the XML response (Step 1 complete)
-                            accumulatedData.xmlData = msg.data;
+                        if (e.data.eventName === "getData") {
+                            pendingExport = true;
+                            accumulatedData = { xmlData: "", base64: "" };
                             console.log(
-                                "[DrawIO Wrapper] XML received. Requesting PNG...",
+                                "[DrawIO Bridge] Requesting XML Export...",
                             );
+                            var msg = JSON.stringify({
+                                action: "export",
+                                format: "xml",
+                            });
+                            iframe.contentWindow.postMessage(msg, "*");
+                        }
 
-                            // Step 2: Request PNG
-                            iframe.contentWindow.postMessage(
-                                JSON.stringify({
-                                    action: "export",
-                                    format: "png",
-                                    spin: "Updating preview...",
-                                }),
-                                "*",
-                            );
-                        } else {
-                            // This must be the PNG response (Step 2 complete)
-                            accumulatedData.base64 = msg.data; // data:image/png;base64,...
+                        if (e.data.eventName === "ready?") {
                             console.log(
-                                "[DrawIO Wrapper] PNG received. Sending success to Parent.",
+                                "[DrawIO Bridge] Sending ready to Parent",
                             );
-
-                            // Step 3: Send Final Data to Cherry
                             window.parent.postMessage(
-                                {
-                                    eventName: "getData:success",
-                                    mceAction: "getData:success", // For compatibility
-                                    value: accumulatedData,
-                                },
+                                { eventName: "ready", value: "" },
                                 "*",
                             );
+                        }
+                        return;
+                    }
 
-                            pendingExport = false;
+                    // --- Handle Message from IFRAME (Draw.io) ---
+                    var msg = e.data;
+                    if (typeof msg === "string") {
+                        try {
+                            msg = JSON.parse(msg);
+                        } catch (err) {
+                            return;
                         }
                     }
 
-                    // C. Auto-save / Save (if we enabled it)
-                    // We disabled save button, so we rely on parent 'getData' trigger.
+                    if (msg && msg.event) {
+                        // Filter noisy events
+                        if (
+                            msg.event === "configure" ||
+                            msg.event === "autosave" ||
+                            msg.event === "status"
+                        )
+                            return;
+
+                        console.log("[DrawIO Bridge] From Iframe:", msg.event);
+
+                        if (msg.event === "init") {
+                            var xml = window.initialXml || "";
+                            console.log(
+                                "[DrawIO Bridge] Sending LOAD to Iframe (XML len: " +
+                                    xml.length +
+                                    ")",
+                            );
+
+                            iframe.contentWindow.postMessage(
+                                JSON.stringify({
+                                    action: "load",
+                                    autosave: 0,
+                                    xml: xml,
+                                }),
+                                "*",
+                            );
+
+                            // Also tell Cherry we are ready
+                            window.parent.postMessage(
+                                { eventName: "ready", value: "" },
+                                "*",
+                            );
+                        }
+
+                        if (msg.event === "export") {
+                            if (!pendingExport) return;
+
+                            if (!accumulatedData.xmlData) {
+                                console.log(
+                                    "[DrawIO Bridge] XML received. Requesting PNG...",
+                                );
+                                accumulatedData.xmlData = msg.data;
+
+                                iframe.contentWindow.postMessage(
+                                    JSON.stringify({
+                                        action: "export",
+                                        format: "png",
+                                        spin: "Updating preview...",
+                                    }),
+                                    "*",
+                                );
+                            } else {
+                                console.log(
+                                    "[DrawIO Bridge] PNG received. Done.",
+                                );
+                                accumulatedData.base64 = msg.data; // data:image/png;base64,...
+
+                                window.parent.postMessage(
+                                    {
+                                        eventName: "getData:success",
+                                        mceAction: "getData:success",
+                                        value: accumulatedData,
+                                    },
+                                    "*",
+                                );
+
+                                pendingExport = false;
+                            }
+                        }
+                    }
                 });
             })();
         </script>
