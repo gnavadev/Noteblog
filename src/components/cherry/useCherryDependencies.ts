@@ -44,7 +44,7 @@ export function useCherryDependencies() {
             await Promise.race([
                 Promise.all([
                     loadScript('/libs/echarts.min.js', 'echarts'),
-                    loadScript('/libs/tex-svg.js', 'MathJax')
+                    loadScript('https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js', 'MathJax')
                 ]),
                 new Promise(resolve => setTimeout(resolve, 2000)) // Safety timeout
             ]);

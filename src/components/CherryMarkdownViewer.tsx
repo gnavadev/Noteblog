@@ -62,6 +62,7 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                     theme: colorMode === 'dark' ? 'dark' : 'default',
                     height: '100%',
                     showFullWidthMark: false,
+                    editable: false,
                 },
                 toolbars: {
                     showToolbar: false,

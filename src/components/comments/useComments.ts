@@ -91,9 +91,9 @@ export function useComments(postId: string) {
         if (error) {
             toast({ title: "Failed to post", description: error.message, variant: "destructive" });
         } else {
-            if (!parentId) return true; // Signal to clear input
             toast({ title: parentId ? "Reply added!" : "Comment posted!" });
             fetchComments();
+            if (!parentId) return true; // Signal to clear input
         }
         return !error;
     };
