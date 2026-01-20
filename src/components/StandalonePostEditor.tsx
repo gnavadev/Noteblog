@@ -159,7 +159,8 @@ const StandalonePostEditor: React.FC<StandalonePostEditorProps> = ({ postId, ini
                 window.location.href = '/';
             }
         } else {
-            if (postId) {
+            // Only redirect to post view if it's public, otherwise go to dashboard
+            if (postId && isPublic) {
                 window.location.href = `/post/${postId}`;
             } else {
                 window.location.href = '/';
@@ -211,8 +212,8 @@ const StandalonePostEditor: React.FC<StandalonePostEditorProps> = ({ postId, ini
             toast({ title: "Published successfully" });
             localStorage.removeItem('post-draft');
 
-            // Redirect to the post
-            if (savedData?.id) {
+            // Redirect to the post if public, otherwise dashboard
+            if (savedData?.id && isPublic) {
                 window.location.href = `/post/${savedData.id}`;
             } else {
                 window.location.href = '/';
