@@ -32,7 +32,7 @@ const customMenuA = Cherry.createMenuHook('BoldItalic', {
     iconName: 'font',
     onClick: function (selection: string) {
         // @ts-ignore
-        let $selection = this.getSelection(selection) || 'Bold & Italic';
+        let $selection = this.getSelection(selection) || '同时加粗斜体';
         // @ts-ignore
         if (!this.isSelections && !/^\s*(\*\*\*)[\s\S]+(\1)/.test($selection)) {
             // @ts-ignore
@@ -61,7 +61,7 @@ const customMenuA = Cherry.createMenuHook('BoldItalic', {
 /**
  * Custom Menu: Laboratory (Structure holder)
  */
-const customMenuB = Cherry.createMenuHook('Lab', {
+const customMenuB = Cherry.createMenuHook('实验室', {
     icon: {
         type: 'svg',
         content:
@@ -78,11 +78,11 @@ const customMenuC = Cherry.createMenuHook('HelpCenter', {
     onClick: (selection: string, type: string) => {
         switch (type) {
             case 'shortKey':
-                return `${selection}Shortcuts here: https://codemirror.net/5/demo/sublime.html`;
+                return `${selection}快捷键看这里：https://codemirror.net/5/demo/sublime.html`;
             case 'github':
-                return `${selection}We are here: https://github.com/Tencent/cherry-markdown`;
+                return `${selection}我们在这里：https://github.com/Tencent/cherry-markdown`;
             case 'release':
-                return `${selection}We are here: https://github.com/Tencent/cherry-markdown/releases`;
+                return `${selection}我们在这里：https://github.com/Tencent/cherry-markdown/releases`;
             default:
                 return selection;
         }
@@ -90,7 +90,7 @@ const customMenuC = Cherry.createMenuHook('HelpCenter', {
     subMenuConfig: [
         {
             noIcon: true,
-            name: 'Shortcuts',
+            name: '快捷键',
             onclick: (event: any) => {
                 // @ts-ignore
                 window.cherry?.toolbar.menus.hooks.customMenuCName.fire(null, 'shortKey');
@@ -98,7 +98,7 @@ const customMenuC = Cherry.createMenuHook('HelpCenter', {
         },
         {
             noIcon: true,
-            name: 'Contact Us',
+            name: '联系我们',
             onclick: (event: any) => {
                 // @ts-ignore
                 window.cherry?.toolbar.menus.hooks.customMenuCName.fire(null, 'github');
@@ -106,7 +106,7 @@ const customMenuC = Cherry.createMenuHook('HelpCenter', {
         },
         {
             noIcon: true,
-            name: 'Changelog',
+            name: '更新日志',
             onclick: (event: any) => {
                 // @ts-ignore
                 window.cherry?.toolbar.menus.hooks.customMenuCName.fire(null, 'release');
@@ -118,69 +118,69 @@ const customMenuC = Cherry.createMenuHook('HelpCenter', {
 /**
  * Custom Menu: Charts
  */
-const customMenuTable = Cherry.createMenuHook('Charts', {
+const customMenuTable = Cherry.createMenuHook('图表', {
     iconName: 'trendingUp',
     subMenuConfig: [
         {
             noIcon: true,
-            name: 'Line Chart',
+            name: '折线图',
             onclick: (event: any) => {
                 window.cherry?.insert(
-                    '\n| :line:{"title": "Line Chart"} | Header1 | Header2 | Header3 | Header4 |\n| ------ | ------ | ------ | ------ | ------ |\n| Sample1 | 11 | 11 | 4 | 33 |\n| Sample2 | 112 | 111 | 22 | 222 |\n| Sample3 | 333 | 142 | 311 | 11 |\n',
+                    '\n| :line:{"title": "折线图"} | Header1 | Header2 | Header3 | Header4 |\n| ------ | ------ | ------ | ------ | ------ |\n| Sample1 | 11 | 11 | 4 | 33 |\n| Sample2 | 112 | 111 | 22 | 222 |\n| Sample3 | 333 | 142 | 311 | 11 |\n',
                 );
             },
         },
         {
             noIcon: true,
-            name: 'Bar Chart',
+            name: '柱状图',
             onclick: (event: any) => {
                 window.cherry?.insert(
-                    '\n| :bar:{"title": "Bar Chart"} | Header1 | Header2 | Header3 | Header4 |\n| ------ | ------ | ------ | ------ | ------ |\n| Sample1 | 11 | 11 | 4 | 33 |\n| Sample2 | 112 | 111 | 22 | 222 |\n| Sample3 | 333 | 142 | 311 | 11 |\n',
+                    '\n| :bar:{"title": "柱状图"} | Header1 | Header2 | Header3 | Header4 |\n| ------ | ------ | ------ | ------ | ------ |\n| Sample1 | 11 | 11 | 4 | 33 |\n| Sample2 | 112 | 111 | 22 | 222 |\n| Sample3 | 333 | 142 | 311 | 11 |\n',
                 );
             },
         },
         {
             noIcon: true,
-            name: 'Radar Chart',
+            name: '雷达图',
             onclick: (event: any) => {
                 window.cherry?.insert(
-                    '\n| :radar:{"title": "Radar Chart"} | Skill1 | Skill2 | Skill3 | Skill4 | Skill5 |\n| ------ | ------ | ------ | ------ | ------ | ------ |\n| UserA | 90 | 85 | 75 | 80 | 88 |\n| UserB | 75 | 90 | 88 | 85 | 78 |\n| UserC | 85 | 78 | 90 | 88 | 85 |\n',
+                    '\n| :radar:{"title": "雷达图"} | 技能1 | 技能2 | 技能3 | 技能4 | 技能5 |\n| ------ | ------ | ------ | ------ | ------ | ------ |\n| 用户A | 90 | 85 | 75 | 80 | 88 |\n| 用户B | 75 | 90 | 88 | 85 | 78 |\n| 用户C | 85 | 78 | 90 | 88 | 85 |\n',
                 );
             },
         },
         {
             noIcon: true,
-            name: 'Heatmap',
+            name: '热力图',
             onclick: (event: any) => {
                 window.cherry?.insert(
-                    '\n| :heatmap:{"title": "Heatmap"} | Mon | Tue | Wed | Thu | Fri |\n| ------ | ------ | ------ | ------ | ------ | ------ |\n| Morning | 10 | 20 | 30 | 40 | 50 |\n| Afternoon | 15 | 25 | 35 | 45 | 55 |\n| Evening | 5 | 15 | 25 | 35 | 45 |\n',
+                    '\n| :heatmap:{"title": "热力图"} | 周一 | 周二 | 周三 | 周四 | 周五 |\n| ------ | ------ | ------ | ------ | ------ | ------ |\n| 上午 | 10 | 20 | 30 | 40 | 50 |\n| 下午 | 15 | 25 | 35 | 45 | 55 |\n| 晚上 | 5 | 15 | 25 | 35 | 45 |\n',
                 );
             },
         },
         {
             noIcon: true,
-            name: 'Pie Chart',
+            name: '饼图',
             onclick: (event: any) => {
                 window.cherry?.insert(
-                    '\n| :pie:{"title": "Pie Chart"} | Value |\n| ------ | ------ |\n| Apple | 40 |\n| Banana | 30 |\n| Orange | 20 |\n| Grape | 10 |\n',
+                    '\n| :pie:{"title": "饼图"} | 数值 |\n| ------ | ------ |\n| 苹果 | 40 |\n| 香蕉 | 30 |\n| 橙子 | 20 |\n| 葡萄 | 10 |\n',
                 );
             },
         },
         {
             noIcon: true,
-            name: 'Scatter Plot',
+            name: '散点图',
             onclick: (event: any) => {
                 window.cherry?.insert(
-                    '\n| :scatter:{"title": "Scatter Plot", "cherry:mapping": {"x": "X", "y": "Y", "size": "Size", "series": "Series"}} | X | Y | Size | Series |\n| ------ | ------ | ------ | ------ | ------ |\n| A1 | 10 | 20 | 5 | S1 |\n| A2 | 15 | 35 | 8 | S1 |\n| B1 | 30 | 12 | 3 | S2 |\n| B2 | 25 | 28 | 6 | S2 |\n| C1 | 50 | 40 | 9 | S3 |\n| C2 | 60 | 55 | 7 | S3 |\n',
+                    '\n| :scatter:{"title": "散点图", "cherry:mapping": {"x": "X", "y": "Y", "size": "Size", "series": "Series"}} | X | Y | Size | Series |\n| ------ | ------ | ------ | ------ | ------ |\n| A1 | 10 | 20 | 5 | S1 |\n| A2 | 15 | 35 | 8 | S1 |\n| B1 | 30 | 12 | 3 | S2 |\n| B2 | 25 | 28 | 6 | S2 |\n| C1 | 50 | 40 | 9 | S3 |\n| C2 | 60 | 55 | 7 | S3 |\n',
                 );
             },
         },
         {
             noIcon: true,
-            name: 'Map',
+            name: '地图',
             onclick: (event: any) => {
                 window.cherry?.insert(
-                    '\n| :map:{"title": "Map", "mapDataSource": "https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json"} | Value |\n| :-: | :-: |\n| Beijing | 100 |\n| Shanghai | 200 |\n| Guangdong | 300 |\n| Sichuan | 150 |\n| Jiangsu | 250 |\n| Zhejiang | 180 |\n\n**Note:** Modify mapDataSource URL to customize map data source\n',
+                    '\n| :map:{"title": "地图", "mapDataSource": "https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json"} | 数值 |\n| :-: | :-: |\n| 北京 | 100 |\n| 上海 | 200 |\n| 广东 | 300 |\n| 四川 | 150 |\n| 江苏 | 250 |\n| 浙江 | 180 |\n\n**说明：** 修改mapDataSource的URL来自定义地图数据源\n',
                 );
             },
         },
@@ -195,6 +195,7 @@ export const basicFullConfig = {
         MathJax: window.MathJax,
     },
     isPreviewOnly: false,
+    locale: 'en_US',
     engine: {
         global: {
             htmlAttrWhiteList: 'part|slot',
@@ -214,7 +215,7 @@ export const basicFullConfig = {
                 editCode: true,
                 changeLang: true,
                 wrapperRender: (lang: string, code: string, html: string) => {
-                    return `<div class="custom-codeblock-wrapper language-${lang}" data-tips="Custom outer wrapper for code block">${html}</div>`;
+                    return `<div class="custom-codeblock-wrapper language-${lang}" data-tips="可以自定义代码块外层容器">${html}</div>`;
                 },
             },
             table: {
@@ -329,11 +330,11 @@ export const basicFullConfig = {
             shortcutKeyMap: {
                 'Alt-Digit1': {
                     hookName: 'header',
-                    aliasName: 'Header',
+                    aliasName: '标题',
                 },
                 'Control-Shift-KeyX': {
                     hookName: 'bold',
-                    aliasName: 'Bold',
+                    aliasName: '加粗',
                 },
             },
         },
@@ -367,7 +368,7 @@ export const basicFullConfig = {
         showSuggestList: true,
         maxUrlLength: 200,
         codemirror: {
-            placeholder: 'Type or use "/" to start editing',
+            placeholder: '输入文本或「/」开始编辑',
         },
     },
     autoScrollByHashAfterInit: true,
