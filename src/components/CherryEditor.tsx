@@ -56,8 +56,21 @@ const CherryEditor = React.memo(({ value, onChange, onFileUpload, colorMode }: C
                 },
             };
 
+
             editorInstanceRef.current = new Cherry(config);
             window.cherry = editorInstanceRef.current;
+
+            // Link custom sidebar CodeTheme to the real CodeTheme's options
+            setTimeout(() => {
+                if (window.cherry?.toolbar?.menus?.hooks?.codeTheme?.subMenuConfig) {
+                    const realConfig = window.cherry.toolbar.menus.hooks.codeTheme.subMenuConfig;
+                    // @ts-ignore
+                    if (window.cherry.toolbar.menus.hooks.customMenuCodeThemeName) {
+                        // @ts-ignore
+                        window.cherry.toolbar.menus.hooks.customMenuCodeThemeName.subMenuConfig = realConfig;
+                    }
+                }
+            }, 500);
         } catch (err) {
             console.error("Cherry Editor Init Failed:", err);
         }
