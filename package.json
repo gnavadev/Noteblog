@@ -40,7 +40,7 @@
     "@uiw/react-md-editor": "^4.0.11",
     "astro": "^5.16.9",
     "autoprefixer": "^10.4.23",
-    "cherry-markdown": "^0.11.0-alpha.0",
+    "cherry-markdown": "^0.10.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.26.2",
