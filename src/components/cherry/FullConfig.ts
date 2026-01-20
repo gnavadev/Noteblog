@@ -315,7 +315,7 @@ export const basicFullConfig = {
         ],
         toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount'],
         bubble: ['bold', 'italic', 'underline', 'strikethrough', 'sub', 'sup', 'quote', 'ruby', '|', 'size', 'color'],
-        sidebar: ['mobilePreview', 'copy', 'theme', 'codeTheme'],
+        sidebar: ['mobilePreview', 'copy', 'theme'],
         toc: {
             defaultModel: 'full',
         },
@@ -347,7 +347,7 @@ export const basicFullConfig = {
             },
         },
     },
-    drawioIframeUrl: './drawio_demo.html',
+    drawioIframeUrl: '/drawio_demo',
     previewer: {
         floatWhenClosePreviewer: true,
     },

@@ -1,0 +1,160 @@
+---
+// Draw.io Integration Page
+// Bridges Cherry Markdown Editor with diagrams.net embed
+---
+
+<!doctype html>
+<html lang="en" style="height: 100%; width: 100%; overflow: hidden;">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Draw.io Integration</title>
+    </head>
+    <body
+        style="height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden;"
+    >
+        <!-- 
+      Embed Draw.io in iframe. 
+      params:
+      - embed=1: Embed mode
+      - ui=min: Minimal UI
+      - spin=1: Show spinner on save
+      - proto=json: JSON protocol for messages
+      - configure=1: Allow configuration
+      - libraries=1: Enable libraries
+      - noSaveBtn=1: Hide save button (we trigger save externally) - actually Cherry flow usually triggers save via 'OK' button outside iframe?
+        Wait, Cherry dialog has OK button. So we don't need internal save button.
+    -->
+        <iframe
+            id="drawio-iframe"
+            src="https://embed.diagrams.net/?embed=1&ui=min&spin=1&proto=json&configure=1&libraries=1&noSaveBtn=1"
+            style="width: 100%; height: 100%; border: 0;"
+            allow="clipboard-write"></iframe>
+
+        <script is:inline>
+            (function () {
+                var iframe = document.getElementById("drawio-iframe");
+                var pendingExport = false;
+                var accumulatedData = { xmlData: "", base64: "" };
+
+                // Handle messages from Cherry Editor (Parent)
+                window.addEventListener("message", function (e) {
+                    if (!e.data) return;
+
+                    // 1. Initial Load (from Cherry)
+                    if (e.data.eventName === "setData") {
+                        // Start editing this XML
+                        // Wait for iframe to be ready? Draw.io sends 'init' first.
+                        // We store it and send on 'init'.
+                        window.initialXml = e.data.value;
+
+                        // If iframe is already ready (re-opened), send immediately
+                        // But usually iframe reloads.
+                    }
+
+                    // 2. Export Request (from Cherry "OK" button)
+                    if (e.data.eventName === "getData") {
+                        pendingExport = true;
+                        accumulatedData = { xmlData: "", base64: "" };
+
+                        // Step 1: Request XML
+                        var msg = JSON.stringify({
+                            action: "export",
+                            format: "xml",
+                        });
+                        iframe.contentWindow.postMessage(msg, "*");
+                    }
+
+                    // 3. Ready Check
+                    if (e.data.eventName === "ready?") {
+                        window.parent.postMessage(
+                            { eventName: "ready", value: "" },
+                            "*",
+                        );
+                    }
+                });
+
+                // Handle messages from Draw.io (Iframe)
+                window.addEventListener("message", function (e) {
+                    // Filter messages only from draw.io domain if strictly needed, but '*' is okay for demo.
+                    // Protocol: JSON string
+                    var msg;
+                    try {
+                        msg = JSON.parse(e.data);
+                    } catch (err) {
+                        return; // Ignore non-JSON messages
+                    }
+
+                    if (!msg) return;
+
+                    // A. Draw.io Initialized
+                    if (msg.event === "init") {
+                        // Send stored XML if any
+                        // If window.initialXml is empty string, we should send load anyway to clear?
+                        // Cherry sends '' for new diagram.
+
+                        var xml = window.initialXml || "";
+
+                        // Load command
+                        iframe.contentWindow.postMessage(
+                            JSON.stringify({
+                                action: "load",
+                                autosave: 0,
+                                xml: xml,
+                            }),
+                            "*",
+                        );
+
+                        // Tell Parent we are ready
+                        window.parent.postMessage(
+                            { eventName: "ready", value: "" },
+                            "*",
+                        );
+                    }
+
+                    // B. Export Response
+                    if (msg.event === "export") {
+                        if (!pendingExport) return;
+
+                        // Detect response type
+                        // XML usually starts with <mxGraphModel or similar, or just check format logic
+                        // Actually, since we request sequentially, we can track state.
+
+                        if (!accumulatedData.xmlData) {
+                            // This must be the XML response (Step 1 complete)
+                            accumulatedData.xmlData = msg.data;
+
+                            // Step 2: Request PNG
+                            iframe.contentWindow.postMessage(
+                                JSON.stringify({
+                                    action: "export",
+                                    format: "png",
+                                    spin: "Updating preview...",
+                                }),
+                                "*",
+                            );
+                        } else {
+                            // This must be the PNG response (Step 2 complete)
+                            accumulatedData.base64 = msg.data; // data:image/png;base64,...
+
+                            // Step 3: Send Final Data to Cherry
+                            window.parent.postMessage(
+                                {
+                                    eventName: "getData:success",
+                                    mceAction: "getData:success", // For compatibility
+                                    value: accumulatedData,
+                                },
+                                "*",
+                            );
+
+                            pendingExport = false;
+                        }
+                    }
+
+                    // C. Auto-save / Save (if we enabled it)
+                    // We disabled save button, so we rely on parent 'getData' trigger.
+                });
+            })();
+        </script>
+    </body>
+</html>
