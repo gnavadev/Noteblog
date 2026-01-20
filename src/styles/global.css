@@ -201,25 +201,11 @@
   background-color: transparent !important;
 }
 
-/* Ensure text colors are correct in dark mode */
-.dark .cherry-viewer-wrapper .cherry-previewer {
-  color: hsl(var(--foreground)) !important;
-}
-
-.dark .cherry-viewer-wrapper .cherry-previewer h1,
-.dark .cherry-viewer-wrapper .cherry-previewer h2,
-.dark .cherry-viewer-wrapper .cherry-previewer h3,
-.dark .cherry-viewer-wrapper .cherry-previewer h4,
-.dark .cherry-viewer-wrapper .cherry-previewer h5,
-.dark .cherry-viewer-wrapper .cherry-previewer h6 {
-  color: hsl(var(--foreground)) !important;
-}
-
-.dark .cherry-viewer-wrapper .cherry-previewer p,
-.dark .cherry-viewer-wrapper .cherry-previewer li,
-.dark .cherry-viewer-wrapper .cherry-previewer blockquote {
-  color: hsl(var(--muted-foreground)) !important;
-}
+/* 
+   REMOVED: Custom color overrides for dark mode.
+   We are now using correct Cherry themes ('dark' and 'default') so these manual overrides
+   are no longer needed and were actually preventing the themes from working correctly.
+*/
 
 /* Mermaid Sizing and Alignment */
 .mermaid,
@@ -245,14 +231,16 @@
 }
 
 /* Fix List Types in Reader (Restoring default styles overridden by Tailwind) */
-.cherry-viewer-wrapper ul {
+.cherry-viewer-wrapper ul,
+.cherry-previewer ul {
   list-style-type: disc;
   padding-left: 1.5rem;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
-.cherry-viewer-wrapper ol {
+.cherry-viewer-wrapper ol,
+.cherry-previewer ol {
   list-style-type: decimal;
   padding-left: 1.5rem;
   margin-top: 0.5rem;
@@ -295,4 +283,12 @@ canvas {
   width: 100% !important;
   height: 100% !important;
   display: block !important;
+}
+
+/* Fix Word Breaking */
+.cherry-viewer-wrapper,
+.cherry-previewer,
+.cherry-previewer p {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
 }

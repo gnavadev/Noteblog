@@ -15,6 +15,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cardVariants, type Post, type Topic } from './types';
+import { stripCherryFormatting } from '@/lib/markdown-utils';
 
 interface PostCardProps {
     post: Post;
@@ -131,7 +132,7 @@ const PostCard: React.FC<PostCardProps> = ({
                                 a: ({ children }) => <span className="text-primary">{children}</span>
                             }}
                         >
-                            {post.content}
+                            {stripCherryFormatting(post.content)}
                         </ReactMarkdown>
                     </div>
 

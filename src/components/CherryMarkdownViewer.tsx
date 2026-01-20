@@ -59,13 +59,13 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                 },
                 editor: {
                     defaultModel: 'previewOnly',
-                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                    theme: colorMode === 'dark' ? 'dark' : 'default',
                     height: '100%',
                     showFullWidthMark: false,
                 },
                 toolbars: {
                     showToolbar: false,
-                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                    theme: colorMode === 'dark' ? 'dark' : 'default',
                 },
             });
         } catch (err) {
@@ -85,7 +85,7 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
     // Handle Theme Changes via Instance API
     useEffect(() => {
         if (editorInstanceRef.current) {
-            editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'light');
+            editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'default');
         }
     }, [colorMode, dependenciesLoaded]);
 
@@ -101,7 +101,7 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
     }
 
     return (
-        <div className={cn("cherry-viewer-wrapper", className)}>
+        <div className={cn("cherry-viewer-wrapper break-words", className)} style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}>
             <div id={uniqueId} ref={editorContainerRef} />
         </div>
     );

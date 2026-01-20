@@ -82,7 +82,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 animate="show"
                 className={cn(
                     "mx-auto py-12 px-8 transition-all duration-700 ease-in-out relative",
-                    isExpanded ? "max-w-[1000px]" : "max-w-[800px]"
+                    isExpanded ? "max-w-6xl" : "max-w-5xl"
                 )}
             >
                 <Badge

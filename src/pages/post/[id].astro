@@ -74,7 +74,7 @@ const formattedDate = new Date(post.created_at).toLocaleDateString("en-US", {
         </div>
 
         <article
-            class="w-full max-w-[850px] space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700"
+            class="w-full max-w-5xl space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700"
         >
             <!-- Header Section -->
             <header class="space-y-8">
@@ -113,9 +113,7 @@ const formattedDate = new Date(post.created_at).toLocaleDateString("en-US", {
             </div>
 
             <!-- Content Section -->
-            <div
-                class="prose prose-lg dark:prose-invert max-w-none prose-headings:font-black prose-headings:tracking-tight prose-p:leading-relaxed prose-p:text-muted-foreground/90"
-            >
+            <div class="w-full max-w-none">
                 <ReactiveMarkdownViewer
                     content={post.content}
                     client:only="react"

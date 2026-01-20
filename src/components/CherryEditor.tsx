@@ -39,11 +39,11 @@ const CherryEditor = React.memo(({ value, onChange, onFileUpload, colorMode }: C
                 value: value,
                 editor: {
                     ...basicFullConfig.editor,
-                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                    theme: colorMode === 'dark' ? 'dark' : 'default',
                 },
                 toolbars: {
                     ...basicFullConfig.toolbars,
-                    theme: colorMode === 'dark' ? 'dark' : 'light',
+                    theme: colorMode === 'dark' ? 'dark' : 'default',
                 },
                 callback: {
                     ...basicFullConfig.callback,
@@ -88,8 +88,8 @@ const CherryEditor = React.memo(({ value, onChange, onFileUpload, colorMode }: C
     // Handle Theme Changes
     useEffect(() => {
         if (editorInstanceRef.current?.setTheme) {
-            editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'light');
-            editorInstanceRef.current.toolbar?.setTheme?.(colorMode === 'dark' ? 'dark' : 'light');
+            editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'default');
+            editorInstanceRef.current.toolbar?.setTheme?.(colorMode === 'dark' ? 'dark' : 'default');
         }
     }, [colorMode]);
 
