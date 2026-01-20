@@ -1,15 +1,27 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 import CherryEditor from './CherryEditor';
 import { EditorHeader } from './editor';
 import { useTopics } from './TopicProvider';
-import type { PostEditorProps } from './editor/types';
+import { Button } from "@/components/ui/button";
 
-const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, availableTopics, colorMode, toggleTheme }) => {
+interface StandalonePostEditorProps {
+    postId?: string;
+    // Initial data can be passed from SSR if available, or fetched client-side as fallback
+    initialData?: any;
+    availableTopics?: any[];
+}
+
+const StandalonePostEditor: React.FC<StandalonePostEditorProps> = ({ postId, initialData, availableTopics: initialAvailableTopics }) => {
     // App State
-    const { ensureTopicExists, deleteTopicIfEmpty } = useTopics();
+    const { topics: providerTopics, ensureTopicExists, deleteTopicIfEmpty } = useTopics();
+    const availableTopics = initialAvailableTopics || providerTopics;
+
+    // Theme State
+    const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
+
     const [markdown, setMarkdown] = useState('# New Post\n\nStart writing...');
     const [title, setTitle] = useState('');
     const [topic, setTopic] = useState('Technology');
@@ -25,6 +37,23 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     const initialized = useRef(false);
 
     const { toast } = useToast();
+
+    // -- Theme sync --
+    useEffect(() => {
+        const syncTheme = () => {
+            if (document.documentElement.classList.contains('dark')) {
+                setColorMode('dark');
+            } else {
+                setColorMode('light');
+            }
+        };
+        syncTheme();
+
+        // Listen for changes
+        const observer = new MutationObserver(syncTheme);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+        return () => observer.disconnect();
+    }, []);
 
     // -- File Upload Logic (Supabase) --
     const handleFileUpload = useCallback(async (file: File, callback: (url: string) => void) => {
@@ -56,16 +85,17 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
 
     // -- Data Loading --
     useEffect(() => {
-        if (!open) {
-            initialized.current = false;
-            setIsLoading(true);
-            return;
-        }
-
         const loadData = async () => {
             setIsLoading(true);
             try {
-                if (postId) {
+                if (initialData) {
+                    // Use SSR props if available
+                    setTitle(initialData.title);
+                    setTopic(initialData.topic);
+                    setIsPublic(initialData.is_public);
+                    setFeaturedImage(initialData.featured_image);
+                    setMarkdown(initialData.content || '');
+                } else if (postId) {
                     const { data, error } = await supabase.from('notes').select('*').eq('id', postId).single();
                     if (data) {
                         setTitle(data.title);
@@ -101,23 +131,27 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
         };
 
         loadData();
-    }, [open, postId, availableTopics, toast]);
+    }, [postId, initialData, toast]); // Removed availableTopics dependency to avoid reset loops
 
     // -- Auto Save Draft --
     useEffect(() => {
-        if (open && !postId && initialized.current) {
+        if (!postId && initialized.current) {
             localStorage.setItem('post-draft', JSON.stringify({ title, topic, markdown, isPublic, featuredImage }));
         }
-    }, [title, topic, markdown, isPublic, featuredImage, open, postId]);
+    }, [title, topic, markdown, isPublic, featuredImage, postId]);
 
     // -- Handlers --
     const handleClose = () => {
         if (!postId && (title || markdown.length > 50)) {
             if (window.confirm("You have unsaved changes. Draft will be saved locally. Close anyway?")) {
-                onClose();
+                window.location.href = '/';
             }
         } else {
-            onClose();
+            if (postId) {
+                window.location.href = `/post/${postId}`;
+            } else {
+                window.location.href = '/';
+            }
         }
     };
 
@@ -149,9 +183,9 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 oldTopic = currentPost?.topic;
             }
 
-            const { error } = postId
-                ? await supabase.from('notes').update(payload).eq('id', postId)
-                : await supabase.from('notes').insert([payload]);
+            const { data: savedData, error } = postId
+                ? await supabase.from('notes').update(payload).eq('id', postId).select().single()
+                : await supabase.from('notes').insert([payload]).select().single();
 
             if (error) throw error;
 
@@ -159,16 +193,19 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
                 await deleteTopicIfEmpty(oldTopic);
             }
 
-            await supabase.channel('blog_updates').send({
-                type: 'broadcast',
-                event: 'refresh',
-                payload: { action: 'saved', postId: postId || 'new' }
-            });
+            // We don't need to broadcast manually if we are just navigating, 
+            // but keeping it doesn't hurt.
 
             toast({ title: "Published successfully" });
             localStorage.removeItem('post-draft');
-            onSave();
-            onClose();
+
+            // Redirect to the post
+            if (savedData?.id) {
+                window.location.href = `/post/${savedData.id}`;
+            } else {
+                window.location.href = '/';
+            }
+
         } catch (e: any) {
             toast({ title: "Error saving", description: e.message, variant: "destructive" });
         } finally {
@@ -203,27 +240,28 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
         fileInputRef.current?.click();
     };
 
-    if (!open) return null;
-
     return (
-        <div className="fixed inset-0 z-[2000] flex flex-col bg-white dark:bg-[#1e1e1e] text-slate-900 dark:text-slate-100">
-            <EditorHeader
-                title={title}
-                onTitleChange={setTitle}
-                topic={topic}
-                onTopicChange={setTopic}
-                availableTopics={availableTopics}
-                isPublic={isPublic}
-                onPublicChange={setIsPublic}
-                featuredImage={featuredImage}
-                saving={saving}
-                newTopicName={newTopicName}
-                onNewTopicNameChange={setNewTopicName}
-                onAddTopic={handleAddTopic}
-                onClose={handleClose}
-                onSave={handleSave}
-                onUploadBanner={handleUploadBanner}
-            />
+        <div className="flex flex-col h-screen bg-white dark:bg-[#1e1e1e] text-slate-900 dark:text-slate-100">
+            {/* Custom Header Wrapper that includes Back Button */}
+            <div className="flex-none">
+                <EditorHeader
+                    title={title}
+                    onTitleChange={setTitle}
+                    topic={topic}
+                    onTopicChange={setTopic}
+                    availableTopics={availableTopics}
+                    isPublic={isPublic}
+                    onPublicChange={setIsPublic}
+                    featuredImage={featuredImage}
+                    saving={saving}
+                    newTopicName={newTopicName}
+                    onNewTopicNameChange={setNewTopicName}
+                    onAddTopic={handleAddTopic}
+                    onClose={handleClose}
+                    onSave={handleSave}
+                    onUploadBanner={handleUploadBanner}
+                />
+            </div>
 
             {/* Hidden Input for Header Buttons */}
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleHeaderUpload} />
@@ -247,4 +285,4 @@ const PostEditor: React.FC<PostEditorProps> = ({ open, onClose, onSave, postId, 
     );
 };
 
-export default PostEditor;
+export default StandalonePostEditor;

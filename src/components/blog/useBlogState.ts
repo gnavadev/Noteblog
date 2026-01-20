@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 import { isAdmin as checkAdmin } from '@/lib/auth-utils';
-import { TOPIC_COLOR_PALETTE } from '@/lib/constants';
-import type { Post, Topic } from './types';
+import type { Post } from './types';
 import { useTopics } from '../TopicProvider';
 
 export function useBlogState(
@@ -18,8 +17,7 @@ export function useBlogState(
     const [loading, setLoading] = useState(initialPosts.length === 0);
     const [selectedPostId, setSelectedPostId] = useState<string | null>(initialSelectedPostId);
     const [selectedTopic, setSelectedTopic] = useState<string | null>(initialTopic);
-    const [isEditorOpen, setIsEditorOpen] = useState(false);
-    const [editingPostId, setEditingPostId] = useState<string | null>(null);
+
     const [user, setUser] = useState<any>(null);
     const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
     const [isReaderExpanded, setIsReaderExpanded] = useState(!!initialSelectedPostId);
@@ -232,15 +230,13 @@ export function useBlogState(
     }, [fetchPosts]);
 
     const handleNewPost = useCallback(() => {
-        setEditingPostId(null);
-        setIsEditorOpen(true);
+        window.location.href = '/editor/new';
     }, []);
 
     const handleSavePost = handleNewPost; // Compatibility alias if needed
 
     const handleEditPost = useCallback((id: string) => {
-        setEditingPostId(id);
-        setIsEditorOpen(true);
+        window.location.href = `/editor/${id}`;
     }, []);
 
     const handleDeletePost = useCallback(async (id: string) => {
@@ -267,14 +263,7 @@ export function useBlogState(
         }
     }, [selectedPostId, fetchPosts, toast, posts, deleteTopicIfEmpty]);
 
-    const closeEditor = useCallback(() => {
-        setIsEditorOpen(false);
-    }, []);
 
-    const onEditorSave = useCallback(async (newTopicId?: string) => {
-        await fetchPosts();
-        setIsEditorOpen(false);
-    }, [fetchPosts]);
 
     return {
         // State
@@ -283,8 +272,6 @@ export function useBlogState(
         loading,
         selectedPostId,
         selectedTopic,
-        isEditorOpen,
-        editingPostId,
         user,
         adminAvatar,
         isReaderExpanded,
@@ -299,8 +286,6 @@ export function useBlogState(
         handleNewPost,
         handleEditPost,
         handleDeletePost,
-        closeEditor,
-        onEditorSave,
         fetchPosts,
     };
 }

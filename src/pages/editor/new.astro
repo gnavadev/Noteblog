@@ -1,0 +1,23 @@
+---
+import EditorLayout from "../../layouts/EditorLayout.astro";
+import StandalonePostEditor from "../../components/StandalonePostEditor";
+import { supabase } from "../../lib/supabase";
+
+import { isAdmin } from "../../lib/auth-utils";
+
+const {
+    data: { session },
+} = await supabase.auth.getSession();
+if (!session || !isAdmin(session.user.id)) {
+    return Astro.redirect("/");
+}
+
+const { data: topics } = await supabase
+    .from("topics")
+    .select("*")
+    .order("order", { ascending: true });
+---
+
+<EditorLayout title="New Post">
+    <StandalonePostEditor client:only="react" availableTopics={topics || []} />
+</EditorLayout>

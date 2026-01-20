@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import Sidebar from './Sidebar';
-const PostEditor = React.lazy(() => import('./NoteEditor'));
+
 import { Plus, Sun, Moon } from "lucide-react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -38,8 +38,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
         loading,
         selectedPostId,
         selectedTopic,
-        isEditorOpen,
-        editingPostId,
         user,
         adminAvatar,
         isReaderExpanded,
@@ -53,8 +51,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
         handleNewPost,
         handleEditPost,
         handleDeletePost,
-        closeEditor,
-        onEditorSave,
     } = useBlogState(initialPosts, initialSelectedPostId, initialTopic, initialShowPostIt);
 
     useEffect(() => {
@@ -125,21 +121,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
                 </ErrorBoundary>
             </SidebarInset>
 
-            {isEditorOpen && (
-                <React.Suspense fallback={null}>
-                    <ErrorBoundary>
-                        <PostEditor
-                            open={isEditorOpen}
-                            postId={editingPostId}
-                            onClose={closeEditor}
-                            onSave={onEditorSave}
-                            availableTopics={topics}
-                            colorMode={colorMode}
-                            toggleTheme={toggleTheme}
-                        />
-                    </ErrorBoundary>
-                </React.Suspense>
-            )}
+
 
             <div className="fixed right-6 bottom-6 z-[6000] flex flex-col gap-3">
                 {isAdmin && (

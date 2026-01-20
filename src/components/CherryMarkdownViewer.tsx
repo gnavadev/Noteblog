@@ -1,21 +1,10 @@
 import React, { useRef, useEffect } from 'react';
-import Cherry from 'cherry-markdown/dist/cherry-markdown.core';
 import 'cherry-markdown/dist/cherry-markdown.css';
-// @ts-ignore
-import CherryMermaidPlugin from 'cherry-markdown/dist/addons/cherry-code-block-mermaid-plugin';
-// @ts-ignore
-import CherryTableEchartsPlugin from 'cherry-markdown/dist/addons/advance/cherry-table-echarts-plugin';
-import mermaid from 'mermaid';
 import { cn } from '@/lib/utils';
 import { useCherryDependencies } from './cherry';
+import { Cherry } from './cherry/cherryPlugins';
 
-// Register Plugins immediately (Global registration)
-try {
-    Cherry.usePlugin(CherryMermaidPlugin, { mermaid });
-    Cherry.usePlugin(CherryTableEchartsPlugin);
-} catch (e) {
-    // Plugins already registered or failed
-}
+// Plugins are registered via the cherryPlugins module import
 
 interface CherryMarkdownViewerProps {
     content: string;
