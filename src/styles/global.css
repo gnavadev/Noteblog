@@ -228,15 +228,18 @@
   display: block !important;
   width: fit-content !important;
   max-width: 100% !important;
+  max-height: 500px !important;
   margin: 1.5rem auto !important;
   background-color: transparent !important;
-  overflow: visible !important;
+  overflow: auto !important;
+  contain: layout paint !important;
 }
 
 .mermaid svg,
 .cherry-previewer .mermaid svg,
 [class*="language-mermaid"] svg {
   max-width: 100% !important;
+  max-height: 480px !important;
   height: auto !important;
   display: block !important;
 }
