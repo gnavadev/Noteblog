@@ -40,9 +40,17 @@
                 // Handle messages from Cherry Editor (Parent)
                 window.addEventListener("message", function (e) {
                     if (!e.data) return;
+                    console.log(
+                        "[DrawIO Wrapper] Received from Parent:",
+                        e.data,
+                    );
 
                     // 1. Initial Load (from Cherry)
                     if (e.data.eventName === "setData") {
+                        console.log(
+                            "[DrawIO Wrapper] setData called. Value:",
+                            e.data.value,
+                        );
                         // Start editing this XML
                         // Wait for iframe to be ready? Draw.io sends 'init' first.
                         // We store it and send on 'init'.
@@ -54,6 +62,9 @@
 
                     // 2. Export Request (from Cherry "OK" button)
                     if (e.data.eventName === "getData") {
+                        console.log(
+                            "[DrawIO Wrapper] getData called. Requesting export from iframe...",
+                        );
                         pendingExport = true;
                         accumulatedData = { xmlData: "", base64: "" };
 
@@ -67,6 +78,9 @@
 
                     // 3. Ready Check
                     if (e.data.eventName === "ready?") {
+                        console.log(
+                            "[DrawIO Wrapper] ready? called. Sending ready.",
+                        );
                         window.parent.postMessage(
                             { eventName: "ready", value: "" },
                             "*",
@@ -87,6 +101,16 @@
 
                     if (!msg) return;
 
+                    // Filter internal messages if needed (DrawIO sends many)
+                    if (msg.event === "configure" || msg.event === "autosave")
+                        return;
+
+                    console.log(
+                        "[DrawIO Wrapper] Received from Iframe:",
+                        msg.event,
+                        msg,
+                    );
+
                     // A. Draw.io Initialized
                     if (msg.event === "init") {
                         // Send stored XML if any
@@ -94,6 +118,10 @@
                         // Cherry sends '' for new diagram.
 
                         var xml = window.initialXml || "";
+                        console.log(
+                            "[DrawIO Wrapper] DrawIO initialized. Sending load. XML length:",
+                            xml.length,
+                        );
 
                         // Load command
                         iframe.contentWindow.postMessage(
@@ -115,6 +143,10 @@
                     // B. Export Response
                     if (msg.event === "export") {
                         if (!pendingExport) return;
+                        console.log(
+                            "[DrawIO Wrapper] Export received. Data length:",
+                            msg.data?.length,
+                        );
 
                         // Detect response type
                         // XML usually starts with <mxGraphModel or similar, or just check format logic
@@ -123,6 +155,9 @@
                         if (!accumulatedData.xmlData) {
                             // This must be the XML response (Step 1 complete)
                             accumulatedData.xmlData = msg.data;
+                            console.log(
+                                "[DrawIO Wrapper] XML received. Requesting PNG...",
+                            );
 
                             // Step 2: Request PNG
                             iframe.contentWindow.postMessage(
@@ -136,6 +171,9 @@
                         } else {
                             // This must be the PNG response (Step 2 complete)
                             accumulatedData.base64 = msg.data; // data:image/png;base64,...
+                            console.log(
+                                "[DrawIO Wrapper] PNG received. Sending success to Parent.",
+                            );
 
                             // Step 3: Send Final Data to Cherry
                             window.parent.postMessage(

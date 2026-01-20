@@ -187,6 +187,17 @@ const customMenuTable = Cherry.createMenuHook('图表', {
     ],
 });
 
+/**
+ * Custom Menu: Code Block Theme (Icon version for Sidebar)
+ */
+const customMenuCodeTheme = Cherry.createMenuHook('CodeTheme', {
+    iconName: 'checklist', // Using 'checklist' icon as it looks like a list/theme chooser
+    onClick: (event: any) => {
+        // Trigger the original codeTheme hook
+        window.cherry?.toolbar.menus.hooks.codeTheme?.fire(null);
+    }
+});
+
 export const basicFullConfig = {
     id: 'cherry-markdown-container',
     externals: {
@@ -315,7 +326,7 @@ export const basicFullConfig = {
         ],
         toolbarRight: ['fullScreen', '|', 'export', 'changeLocale', 'wordCount'],
         bubble: ['bold', 'italic', 'underline', 'strikethrough', 'sub', 'sup', 'quote', 'ruby', '|', 'size', 'color'],
-        sidebar: ['mobilePreview', 'copy', 'theme'],
+        sidebar: ['mobilePreview', 'copy', 'theme', 'customMenuCodeThemeName'],
         toc: {
             defaultModel: 'full',
         },
@@ -324,6 +335,7 @@ export const basicFullConfig = {
             customMenuBName: customMenuB,
             customMenuCName: customMenuC,
             customMenuTable,
+            customMenuCodeThemeName: customMenuCodeTheme,
         },
         shortcutKeySettings: {
             isReplace: false,
