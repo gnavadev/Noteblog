@@ -13,6 +13,7 @@ import type { Post } from './blog';
 import ErrorBoundary from './ErrorBoundary';
 import { TopicProvider } from './TopicProvider';
 import { useCherryDependencies } from './cherry';
+import WelcomeDialog from './WelcomeDialog';
 
 interface BlogShellInnerProps {
     colorMode: 'light' | 'dark';
@@ -142,7 +143,8 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
                     {colorMode === 'light' ? <Moon className="h-6 w-6" /> : <Sun className="h-6 w-6" />}
                 </Button>
             </div>
-        </div>
+            <WelcomeDialog />
+        </div >
     );
 };
 
