@@ -69,7 +69,7 @@ const WelcomeDialog: React.FC = () => {
                 <DialogFooter className="mt-1 sm:justify-center">
                     <Button
                         onClick={handleClose}
-                        className="w-full sm:w-1/2 h-9 text-sm font-bold rounded-full shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-primary/80"
+                        className="w-full sm:w-1/2 h-9 text-sm font-bold text-primary-foreground rounded-full shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-primary/80"
                     >
                         Click Me
                     </Button>
