@@ -161,9 +161,12 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 <Separator className="mb-10 opacity-50" />
 
                 <motion.div variants={contentVariants}>
-                    <div className="markdown-reader-content w-full min-h-[400px]" data-color-mode={colorMode}>
+                    <div
+                        className="markdown-reader-content w-full min-h-[400px]"
+                        data-color-mode={colorMode}
+                    >
                         <div className="min-h-[400px]">
-                            <CherryEngineViewer content={post.content || ''} />
+                            <CherryEngineViewer content={post.content || ''} colorMode={colorMode} />
                         </div>
                     </div>
                 </motion.div>

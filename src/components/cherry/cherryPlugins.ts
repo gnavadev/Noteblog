@@ -41,7 +41,7 @@ export async function getCherryWithPlugins() {
 }
 
 /**
- * Lazily fetches the lightweight Cherry Engine (no Editor DOM) and applies plugins.
+ * Lazily fetches the lightweight Cherry Engine (no Editor DOM), its plugins, and dependencies.
  */
 export async function getCherryEngineWithPlugins() {
     if (CachedCherryEngineClass) {
@@ -56,20 +56,25 @@ export async function getCherryEngineWithPlugins() {
             { default: mermaid }
         ] = await Promise.all([
             import('cherry-markdown/dist/cherry-markdown.engine.core.esm.js'),
+            // @ts-ignore - addons don't have types
             import('cherry-markdown/dist/addons/cherry-code-block-mermaid-plugin'),
+            // @ts-ignore - addons don't have types
             import('cherry-markdown/dist/addons/advance/cherry-table-echarts-plugin'),
             import('mermaid')
         ]);
 
-        if (!enginePluginsRegistered) {
-            // Apply plugins directly onto the Engine Class
-            CherryEngineClass.usePlugin(CherryMermaidPlugin, { mermaid });
-            CherryEngineClass.usePlugin(CherryTableEchartsPlugin);
-            enginePluginsRegistered = true;
+        if (typeof window !== 'undefined') {
+            window.mermaid = mermaid;
         }
 
-        CachedCherryEngineClass = CherryEngineClass;
-        return CherryEngineClass;
+        CachedCherryEngineClass = {
+            CherryEngineClass,
+            CherryMermaidPlugin,
+            CherryTableEchartsPlugin,
+            mermaid
+        };
+
+        return CachedCherryEngineClass;
     } catch (e) {
         console.error("Failed to lazily load Cherry Engine plugins:", e);
         throw e;
