@@ -3,7 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import BlogShell from "../components/BlogShell";
 import { supabase } from "../lib/supabase";
 
-const [postsResult, topicsResult] = await Promise.all([
+const [postsResult, topicsResult, recentContentResult] = await Promise.all([
 	supabase
 		.from("notes")
 		.select(
@@ -12,10 +12,25 @@ const [postsResult, topicsResult] = await Promise.all([
 		.eq("is_public", true)
 		.order("created_at", { ascending: false }),
 	supabase.from("topics").select("*").order("order", { ascending: true }),
+	supabase
+		.from("notes")
+		.select("id, content")
+		.eq("is_public", true)
+		.order("created_at", { ascending: false })
+		.limit(6),
 ]);
 
-const posts = postsResult.data || [];
+let posts = postsResult.data || [];
 const topics = topicsResult.data || [];
+const recentContent = recentContentResult.data || [];
+
+// Merge the heavy preview content into the first 6 light metadata arrays
+if (recentContent.length > 0) {
+	posts = posts.map((post) => {
+		const match = recentContent.find((rc) => rc.id === post.id);
+		return match ? { ...post, content: match.content } : post;
+	});
+}
 ---
 
 <Layout title="Segmentation Thoughts">

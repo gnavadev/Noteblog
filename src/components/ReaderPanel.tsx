@@ -176,7 +176,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                             </div>
                         }>
                             <CherryMarkdownViewer
-                                content={post.content}
+                                content={post.content || ''}
                                 colorMode={colorMode}
                                 className="min-h-[400px]"
                             />

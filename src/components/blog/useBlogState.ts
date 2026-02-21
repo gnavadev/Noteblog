@@ -262,7 +262,30 @@ export function useBlogState(
         }
     }, [selectedPostId, fetchPosts, toast, posts, deleteTopicIfEmpty]);
 
+    const loadMoreContent = useCallback(async (postsToLoadIdList: string[]) => {
+        if (!postsToLoadIdList.length) return;
+        setLoading(true);
 
+        try {
+            const { data, error } = await supabase
+                .from('notes')
+                .select('id, content')
+                .in('id', postsToLoadIdList);
+
+            if (error) throw error;
+            if (data) {
+                setPosts(currentPosts => currentPosts.map(p => {
+                    const match = data.find(newD => newD.id === p.id);
+                    return match ? { ...p, content: match.content } : p;
+                }));
+            }
+        } catch (error) {
+            console.error('Failed to load more content:', error);
+            toast({ title: "Failed to load older posts", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    }, [toast]);
 
     return {
         // State
@@ -286,5 +309,6 @@ export function useBlogState(
         handleEditPost,
         handleDeletePost,
         fetchPosts,
+        loadMoreContent,
     };
 }

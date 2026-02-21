@@ -12,6 +12,7 @@ export interface MagazineGridProps {
     posts: Post[];
     topics: Topic[];
     loading: boolean;
+    loadMoreContent: (ids: string[]) => Promise<void>;
 }
 
 export const containerVariants = {

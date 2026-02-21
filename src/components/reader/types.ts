@@ -1,7 +1,7 @@
 export interface Post {
     id: string;
     title: string;
-    content: string;
+    content?: string;
     topic: string;
     created_at: string;
     read_time_minutes: number;

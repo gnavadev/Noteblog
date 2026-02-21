@@ -15,10 +15,14 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     selectedTopic = null,
     posts,
     topics,
-    loading
+    loading,
+    loadMoreContent
 }) => {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [postToDelete, setPostToDelete] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const POSTS_PER_PAGE = 6;
 
     const displayPosts = useMemo(() => {
         let filtered = [...posts].sort((a, b) =>
@@ -29,6 +33,26 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
         }
         return filtered;
     }, [posts, selectedTopic]);
+
+    // Apply pagination
+    const paginatedPosts = useMemo(() => {
+        return displayPosts.slice(0, page * POSTS_PER_PAGE);
+    }, [displayPosts, page]);
+
+    const hasMore = displayPosts.length > page * POSTS_PER_PAGE;
+
+    const handleLoadMore = async () => {
+        setIsLoadingMore(true);
+        const nextPage = page + 1;
+        const nextPosts = displayPosts.slice(page * POSTS_PER_PAGE, nextPage * POSTS_PER_PAGE);
+        const missingContentIds = nextPosts.filter(p => !p.content).map(p => p.id);
+
+        if (missingContentIds.length > 0) {
+            await loadMoreContent(missingContentIds);
+        }
+        setPage(nextPage);
+        setIsLoadingMore(false);
+    };
 
     const handleDeleteRequest = (postId: string) => {
         setPostToDelete(postId);
@@ -92,7 +116,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
             >
                 <AnimatePresence mode="popLayout">
-                    {displayPosts.map((post) => {
+                    {paginatedPosts.map((post) => {
                         const topicColor = topics.find(t =>
                             (post.topic_id && t.id === post.topic_id) ||
                             (!post.topic_id && t.name === post.topic)
@@ -113,6 +137,26 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                     })}
                 </AnimatePresence>
             </motion.div>
+
+            {hasMore && (
+                <div className="mt-12 flex justify-center pb-8">
+                    <Button
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        variant="secondary"
+                        className="rounded-full px-8 py-6 text-base font-semibold shadow-sm hover:shadow-md transition-all min-w-[200px]"
+                    >
+                        {isLoadingMore ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Loading Stories...
+                            </>
+                        ) : (
+                            "Load More"
+                        )}
+                    </Button>
+                </div>
+            )}
 
             <DeleteConfirmDialog
                 open={deleteConfirmOpen}

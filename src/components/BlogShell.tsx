@@ -52,6 +52,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
         handleNewPost,
         handleEditPost,
         handleDeletePost,
+        loadMoreContent,
     } = useBlogState(initialPosts, initialSelectedPostId, initialTopic, initialShowPostIt);
 
     useEffect(() => {
@@ -112,6 +113,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
                         handleNewPost={handleNewPost}
                         handleEditPost={handleEditPost}
                         handleDeletePost={handleDeletePost}
+                        loadMoreContent={loadMoreContent}
                         isAdmin={isAdmin}
                         selectedTopic={selectedTopic}
                         loading={loading}

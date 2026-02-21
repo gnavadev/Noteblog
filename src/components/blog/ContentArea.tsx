@@ -25,6 +25,7 @@ interface ContentAreaProps {
     isReaderExpanded: boolean;
     setIsReaderExpanded: (value: boolean) => void;
     colorMode: 'light' | 'dark';
+    loadMoreContent: (ids: string[]) => Promise<void>;
 }
 
 const ContentArea: React.FC<ContentAreaProps> = ({
@@ -43,7 +44,8 @@ const ContentArea: React.FC<ContentAreaProps> = ({
     loading,
     isReaderExpanded,
     setIsReaderExpanded,
-    colorMode
+    colorMode,
+    loadMoreContent
 }) => {
     const { openMobile } = useSidebar();
 
@@ -76,6 +78,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({
                     posts={posts}
                     topics={topics}
                     loading={loading}
+                    loadMoreContent={loadMoreContent}
                 />
             )}
 
