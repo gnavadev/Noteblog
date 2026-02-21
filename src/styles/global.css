@@ -234,6 +234,11 @@
   background: transparent !important;
 }
 
+.cherry-viewer-root .cherry-markdown {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
 /* Cherry's own theme__light / theme__dark classes handle all content colors.
    We only fix shape and spacing here. */
 
