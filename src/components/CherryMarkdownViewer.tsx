@@ -18,10 +18,17 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
     const { dependenciesLoaded } = useCherryDependencies();
     const uniqueId = useRef(`cherry-viewer-${Math.random().toString(36).substring(2, 9)}`).current;
 
+    const contentRef = useRef(content);
+    useEffect(() => {
+        contentRef.current = content;
+    }, [content]);
+
     // Initialize Editor (Read-Only Mode)
     useEffect(() => {
         if (!dependenciesLoaded) return;
         if (!editorContainerRef.current) return;
+
+        let isCancelled = false;
 
         // Clean up previous instance if it exists
         if (editorInstanceRef.current) {
@@ -34,17 +41,21 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
         const initCherry = async () => {
             try {
                 const CherryClass = await getCherryWithPlugins();
-                if (!editorContainerRef.current) return;
+                if (isCancelled || !editorContainerRef.current) return;
 
                 // Yield to the browser rendering cycle to allow the CSS Drawer slide animation 
                 // to smoothly execute before we block the main thread with heavy markdown parsing!
-                await new Promise(resolve => setTimeout(resolve, 50));
+                // 400ms covers the majority of the slide transition, guaranteeing a smooth UX entering the reader.
+                await new Promise(resolve => setTimeout(resolve, 400));
 
-                if (!editorContainerRef.current) return;
+                if (isCancelled || !editorContainerRef.current) return;
+
+                // CRITICAL: Prevent Strict Mode concurrent dual-initialization from corrupting the DOM!
+                if (editorInstanceRef.current) return;
 
                 editorInstanceRef.current = new CherryClass({
                     id: uniqueId,
-                    value: content,
+                    value: contentRef.current,
                     locale: 'en_US',
                     externals: {
                         echarts: window.echarts,
@@ -71,7 +82,7 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                     editor: {
                         defaultModel: 'previewOnly',
                         theme: colorMode === 'dark' ? 'dark' : 'default',
-                        height: '100%',
+                        height: 'auto',
                         showFullWidthMark: false,
                         editable: false,
                     },
@@ -88,6 +99,7 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
         initCherry();
 
         return () => {
+            isCancelled = true;
             if (editorInstanceRef.current) {
                 editorInstanceRef.current = null;
             }

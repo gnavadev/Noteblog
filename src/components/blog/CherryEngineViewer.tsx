@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import 'cherry-markdown/dist/cherry-markdown.css';
 // Import only the engine, not the full editor
 import CherryEngine from 'cherry-markdown/dist/cherry-markdown.engine.core.esm.js';
 
