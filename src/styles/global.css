@@ -223,12 +223,39 @@
    Uses @tailwindcss/typography (prose) for all
    content rhythm — we only supply the color tokens.
 ───────────────────────────────────────────── */
-.cherry-viewer-root .cherry-markdown .anchor::before,
-.cherry-viewer-wrapper .cherry-markdown .anchor::before {
-  content: "§";
+.cherry-viewer-root .cherry-previewer-content,
+.cherry-viewer-root .cherry-markdown,
+.cherry-viewer-wrapper .cherry-previewer-content,
+.cherry-viewer-wrapper .cherry-markdown {
+  padding: 0 1.5rem !important;
+  /* Added left/right padding for readability */
+  margin-top: 0 !important;
 }
 
-.cherry-viewer-root .cherry-markdown .anchor {
+/* Remove top margin from whatever element Cherry renders first */
+.cherry-viewer-root .cherry-markdown>*:first-child,
+.cherry-viewer-wrapper .cherry-markdown>*:first-child {
+  margin-top: 0 !important;
+}
+
+/* Cherry hides anchors by default (opacity: 0) until hover — force them visible */
+.cherry-viewer-root .cherry-markdown a.anchor,
+.cherry-viewer-wrapper .cherry-markdown a.anchor {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline !important;
+}
+
+/* Cherry's own theme__light / theme__dark classes handle all content colors.
+   We only fix shape and spacing here. */
+
+/* Anchor symbol (§) next to headings */
+.cherry-viewer-root .cherry-markdown a.anchor::before,
+.cherry-viewer-wrapper .cherry-markdown a.anchor::before {
+  content: "§" !important;
+}
+
+.cherry-viewer-root .cherry-markdown a.anchor {
   color: hsl(var(--primary));
   opacity: 0.5;
   text-decoration: none;
