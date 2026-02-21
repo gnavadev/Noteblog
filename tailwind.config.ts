@@ -1,6 +1,5 @@
 import type { Config } from 'tailwindcss';
 import animate from 'tailwindcss-animate';
-import typography from '@tailwindcss/typography';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -70,28 +69,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))',
 				},
 			},
-			typography: () => ({
-				DEFAULT: {
-					css: {
-						'--tw-prose-body': 'hsl(var(--foreground))',
-						'--tw-prose-headings': 'hsl(var(--foreground))',
-						'--tw-prose-lead': 'hsl(var(--muted-foreground))',
-						'--tw-prose-links': 'hsl(var(--primary))',
-						'--tw-prose-bold': 'hsl(var(--foreground))',
-						'--tw-prose-counters': 'hsl(var(--muted-foreground))',
-						'--tw-prose-bullets': 'hsl(var(--muted-foreground))',
-						'--tw-prose-hr': 'hsl(var(--border))',
-						'--tw-prose-quotes': 'hsl(var(--muted-foreground))',
-						'--tw-prose-quote-borders': 'hsl(var(--primary))',
-						'--tw-prose-captions': 'hsl(var(--muted-foreground))',
-						'--tw-prose-code': 'hsl(var(--primary))',
-						'--tw-prose-pre-bg': 'transparent',
-						'--tw-prose-th-borders': 'hsl(var(--border))',
-						'--tw-prose-td-borders': 'hsl(var(--border))',
-					},
-				},
-			}),
 		},
 	},
-	plugins: [animate, typography],
+	plugins: [animate],
 } satisfies Config;

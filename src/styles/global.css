@@ -234,12 +234,8 @@
   background: transparent !important;
 }
 
-/* Apply prose — colors come from tailwind.config.ts typography config.
-   prose-invert is intentionally omitted: our --tw-prose-* variables
-   already reference shadcn tokens that flip automatically with the theme. */
-.cherry-viewer-root .cherry-markdown {
-  @apply prose max-w-none;
-}
+/* Cherry's own theme__light / theme__dark classes handle all content colors.
+   We only fix shape and spacing here. */
 
 /* Anchor symbol (§) next to headings */
 .cherry-viewer-root .cherry-markdown .anchor {
