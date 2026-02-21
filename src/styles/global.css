@@ -4,38 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
-
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS
+   Raw Catppuccin palette values are generated
+   in tailwind.config.ts via @catppuccin/palette
+   and injected as CSS variables automatically.
+   Only semantic mappings live here.
+───────────────────────────────────────────── */
 @layer base {
   :root {
-    /* Catppuccin Latte (Light Mode) Palette */
-    --ctp-latte-rosewater: 11 59% 67%;
-    --ctp-latte-flamingo: 0 60% 67%;
-    --ctp-latte-pink: 316 73% 69%;
-    --ctp-latte-mauve: 266 85% 58%;
-    --ctp-latte-red: 347 87% 44%;
-    --ctp-latte-maroon: 355 76% 59%;
-    --ctp-latte-peach: 22 99% 52%;
-    --ctp-latte-yellow: 35 77% 49%;
-    --ctp-latte-green: 109 58% 40%;
-    --ctp-latte-teal: 183 74% 35%;
-    --ctp-latte-sky: 197 97% 46%;
-    --ctp-latte-sapphire: 189 70% 42%;
-    --ctp-latte-blue: 220 91% 54%;
-    --ctp-latte-lavender: 231 97% 72%;
-    --ctp-latte-text: 234 16% 35%;
-    --ctp-latte-subtext1: 233 13% 41%;
-    --ctp-latte-subtext0: 233 10% 47%;
-    --ctp-latte-overlay2: 232 10% 53%;
-    --ctp-latte-overlay1: 231 10% 59%;
-    --ctp-latte-overlay0: 228 11% 65%;
-    --ctp-latte-surface2: 227 12% 71%;
-    --ctp-latte-surface1: 225 14% 77%;
-    --ctp-latte-surface0: 223 16% 83%;
-    --ctp-latte-base: 220 23% 95%;
-    --ctp-latte-mantle: 220 22% 92%;
-    --ctp-latte-crust: 220 21% 89%;
 
-    /* Shadcn Theme Mapping (Light Mode) */
+    /* shadcn/ui mappings */
     --background: var(--ctp-latte-base);
     --foreground: var(--ctp-latte-text);
     --card: var(--ctp-latte-base);
@@ -55,9 +34,9 @@
     --border: var(--ctp-latte-surface2);
     --input: var(--ctp-latte-surface2);
     --ring: var(--ctp-latte-yellow);
-
     --radius: 0.5rem;
 
+    /* Sidebar */
     --sidebar-background: var(--ctp-latte-mantle);
     --sidebar-foreground: var(--ctp-latte-text);
     --sidebar-primary: var(--ctp-latte-yellow);
@@ -67,7 +46,7 @@
     --sidebar-border: var(--ctp-latte-surface1);
     --sidebar-ring: var(--ctp-latte-yellow);
 
-    /* Custom Light Theme Variables */
+    /* App-level aliases */
     --mac-border: rgba(0, 0, 0, 0.05);
     --app-bg: hsl(var(--ctp-latte-base));
     --app-sidebar: hsl(var(--ctp-latte-mantle));
@@ -77,9 +56,11 @@
     --gutter-main: 32px;
   }
 
+  /* ─────────────────────────────────────────────
+     DESIGN TOKENS — Catppuccin Mocha (Dark)
+  ───────────────────────────────────────────── */
   html[data-theme="dark"],
   .dark {
-    /* Catppuccin Mocha (Dark Mode) Palette */
     --ctp-mocha-rosewater: 10 56% 91%;
     --ctp-mocha-flamingo: 0 59% 88%;
     --ctp-mocha-pink: 316 72% 86%;
@@ -107,7 +88,7 @@
     --ctp-mocha-mantle: 240 21% 12%;
     --ctp-mocha-crust: 240 23% 9%;
 
-    /* Shadcn Theme Mapping (Dark Mode) */
+    /* shadcn/ui mappings */
     --background: var(--ctp-mocha-base);
     --foreground: var(--ctp-mocha-text);
     --card: var(--ctp-mocha-base);
@@ -128,6 +109,7 @@
     --input: var(--ctp-mocha-surface2);
     --ring: var(--ctp-mocha-mauve);
 
+    /* Sidebar */
     --sidebar-background: var(--ctp-mocha-mantle);
     --sidebar-foreground: var(--ctp-mocha-text);
     --sidebar-primary: var(--ctp-mocha-mauve);
@@ -137,7 +119,7 @@
     --sidebar-border: var(--ctp-mocha-surface1);
     --sidebar-ring: var(--ctp-mocha-mauve);
 
-    /* Custom Dark Theme Variables */
+    /* App-level aliases */
     --mac-border: rgba(255, 255, 255, 0.1);
     --app-bg: hsl(var(--ctp-mocha-base));
     --app-sidebar: hsl(var(--ctp-mocha-mantle));
@@ -145,6 +127,9 @@
     --app-secondary: hsl(var(--ctp-mocha-overlay0));
   }
 
+  /* ─────────────────────────────────────────────
+     BASE STYLES
+  ───────────────────────────────────────────── */
   html {
     font-size: 16px;
   }
@@ -155,140 +140,148 @@
     overflow-x: hidden;
     cursor: url('/cursors/dscim-32x32.png'), auto;
   }
-
-  /* Custom Thin Scrollbar (Opt-in) */
-  .enable-custom-scroll ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  .enable-custom-scroll ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .enable-custom-scroll ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 10px;
-    transition: background 0.2s ease;
-  }
-
-  .enable-custom-scroll ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.5);
-  }
-
-  /* Firefox support */
-  .enable-custom-scroll * {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
-  }
 }
 
-
-
-/* Cherry Editor Preview Mermaid Overrides */
-.dark .cherry-previewer .mermaid svg,
-[data-color-mode="dark"] .cherry-previewer .mermaid svg {
-  color: inherit !important;
+/* ─────────────────────────────────────────────
+   SCROLLBAR (opt-in via .enable-custom-scroll)
+───────────────────────────────────────────── */
+.enable-custom-scroll ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-/* Cherry Markdown Theme Fixes */
-.cherry-viewer-wrapper .cherry {
-  background-color: transparent !important;
+.enable-custom-scroll ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.enable-custom-scroll ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.enable-custom-scroll ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
+.enable-custom-scroll * {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
+
+/* ─────────────────────────────────────────────
+   CHERRY VIEWER
+   Uses @tailwindcss/typography (prose) for all
+   content rhythm — we only supply the color tokens.
+───────────────────────────────────────────── */
+
+/* Strip Cherry's own chrome so it inherits the page */
+.cherry-viewer-root .cherry {
+  background: transparent !important;
   border: none !important;
 }
 
-.cherry-viewer-wrapper .cherry-previewer {
-  background-color: transparent !important;
+.cherry-viewer-root .cherry-previewer {
+  background: transparent !important;
 }
 
-/* 
-   REMOVED: Custom color overrides for dark mode.
-   We are now using correct Cherry themes ('dark' and 'default') so these manual overrides
-   are no longer needed and were actually preventing the themes from working correctly.
-*/
+/* Apply prose — colors come from tailwind.config.ts typography config */
+.cherry-viewer-root .cherry-markdown {
+  @apply prose max-w-none;
+}
 
-/* Mermaid Sizing and Alignment */
+html[data-theme="dark"] .cherry-viewer-root .cherry-markdown,
+.dark .cherry-viewer-root .cherry-markdown {
+  @apply prose-invert;
+}
+
+/* Anchor symbol (§) next to headings */
+.cherry-viewer-root .cherry-markdown .anchor {
+  color: hsl(var(--primary));
+  opacity: 0.5;
+  text-decoration: none;
+  margin-right: 0.4em;
+  font-weight: 400;
+  transition: opacity 0.15s ease;
+}
+
+.cherry-viewer-root .cherry-markdown .anchor:hover {
+  opacity: 1;
+}
+
+/* Inline code shape — prose handles color */
+.cherry-viewer-root .cherry-markdown code:not(pre code) {
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.875em;
+}
+
+/* Blockquote shape — prose handles color */
+.cherry-viewer-root .cherry-markdown blockquote {
+  border-radius: 0 6px 6px 0;
+  background: hsl(var(--primary) / 0.06);
+}
+
+/* Disable interaction (reader mode) */
+.cherry-viewer-root input[type="checkbox"],
+.cherry-viewer-root .cherry-checkbox {
+  pointer-events: none !important;
+}
+
+.cherry-viewer-root [contenteditable] {
+  outline: none !important;
+  cursor: default !important;
+  caret-color: transparent !important;
+}
+
+/* Word breaking */
+.cherry-viewer-root,
+.cherry-viewer-root p {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+/* ─────────────────────────────────────────────
+   MERMAID
+───────────────────────────────────────────── */
 .mermaid,
-.cherry-previewer .mermaid,
-[class*="language-mermaid"] {
+.cherry-previewer .mermaid {
   display: block !important;
   width: fit-content !important;
   max-width: 100% !important;
   max-height: 500px !important;
   margin: 1.5rem auto !important;
-  background-color: transparent !important;
+  background: transparent !important;
   overflow: auto !important;
   contain: layout paint !important;
 }
 
 .mermaid svg,
-.cherry-previewer .mermaid svg,
-[class*="language-mermaid"] svg {
+.cherry-previewer .mermaid svg {
   max-width: 100% !important;
   max-height: 480px !important;
   height: auto !important;
   display: block !important;
 }
 
-/* Fix List Types in Reader (Restoring default styles overridden by Tailwind) */
-.cherry-viewer-wrapper ul,
-.cherry-previewer ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
+/* ─────────────────────────────────────────────
+   MISC FIXES
+───────────────────────────────────────────── */
 
-.cherry-viewer-wrapper ol,
-.cherry-previewer ol {
-  list-style-type: decimal;
-  padding-left: 1.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.cherry-viewer-wrapper li {
-  margin-bottom: 0.25rem;
-}
-
-/* Disable Interaction in Reader (Checkboxes, etc.) */
-.cherry-viewer-wrapper input[type="checkbox"],
-.cherry-viewer-wrapper .cherry-checkbox {
-  pointer-events: none !important;
-}
-
-/* Prevent any contenteditable behavior in viewer */
-.cherry-viewer-wrapper [contenteditable] {
-  outline: none !important;
-  cursor: default !important;
-  caret-color: transparent !important;
-}
-
-/* Fix Chart/Table Scrollbars */
+/* ECharts / canvas */
 .cherry-chart,
-.cherry-table-container,
-/* Attempt to target table container if exists */
 div[class*="echarts"] {
   overflow: hidden !important;
-  /* Hide unwanted scrollbars */
 }
 
-/* Ensure canvas doesn't cause vertical overflow */
 canvas {
   display: block;
 }
 
-/* Fix Cherry Dialog Iframe Sizing (Draw.io) */
+/* Draw.io iframe */
 .cherry-dialog-iframe {
   width: 100% !important;
   height: 100% !important;
   display: block !important;
-}
-
-/* Fix Word Breaking */
-.cherry-viewer-wrapper,
-.cherry-previewer,
-.cherry-previewer p {
-  word-break: normal !important;
-  overflow-wrap: break-word !important;
 }

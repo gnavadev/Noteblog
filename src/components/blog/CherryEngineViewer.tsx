@@ -107,6 +107,11 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         let isCancelled = false;
 
         const initAndRender = async () => {
+            // Reset engine when theme changes so codeBlockTheme re-initializes correctly
+            if (engineRef.current && engineRef.current.__resolvedMode !== resolvedMode) {
+                engineRef.current = null;
+            }
+
             if (!engineRef.current) {
                 try {
                     const {
@@ -123,7 +128,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                         locales: { en_US: LOCALE_DATA },
                         themeSettings: {
                             mainTheme: resolvedMode,
-                            codeBlockTheme: 'default',
+                            codeBlockTheme: resolvedMode === 'dark' ? 'atom-one-dark' : 'github',
                         },
                         engine: {
                             syntax: {
@@ -138,7 +143,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                                 mathBlock: { engine: 'MathJax' },
                                 inlineMath: { engine: 'MathJax' },
                                 emoji: { useUnicode: true },
-                                header: { anchorStyle: 'none' },
+                                header: { anchorStyle: 'underline' },
                             },
                             customSyntax: {
                                 mermaid: { syntaxClass: CherryMermaidPlugin, force: true },
@@ -153,6 +158,9 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                     const engine = engineRef.current;
 
                     // Patch the engine instance itself — it IS `this.cherry` for many plugins.
+                    // Tag the engine with current theme so we can detect mode changes above.
+                    engine.__resolvedMode = resolvedMode;
+
                     // IMPORTANT: set locale to the data object, not the key string, so that
                     // `this.cherry.locale.saveAsImage` resolves correctly.
                     engine.locale = LOCALE_DATA;
@@ -264,6 +272,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         <div
             ref={containerRef}
             className={cn(
+                'cherry-viewer-root',
                 'cherry',
                 'cherry-editor',
                 `theme__${resolvedMode}`,
