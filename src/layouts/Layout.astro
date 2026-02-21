@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
 
 interface Props {
 	title: string;
@@ -17,8 +18,9 @@ const {
 <!doctype html>
 <html lang="en" data-theme="light">
 	<head>
-		<script>
-			(function () {
+		<ClientRouter />
+		<script is:inline>
+			const setTheme = () => {
 				try {
 					const savedTheme = localStorage.getItem("blog-theme");
 					const theme = savedTheme || "light";
@@ -35,7 +37,9 @@ const {
 					);
 					document.documentElement.classList.remove("dark");
 				}
-			})();
+			};
+			setTheme();
+			document.addEventListener("astro:after-swap", setTheme);
 		</script>
 
 		<meta charset="UTF-8" />

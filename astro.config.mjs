@@ -11,6 +11,7 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   output: 'static',
   adapter: cloudflare(),
+  prefetch: true,
 
   site: 'https://www.gabrielnava.dev', // ← Update this to your new domain
 

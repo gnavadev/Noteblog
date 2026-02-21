@@ -1,8 +1,11 @@
 ---
 export const prerender = true;
 export async function getStaticPaths() {
-  const { data: posts } = await supabase.from("notes").select("id").eq("is_public", true);
-  return posts.map(post => ({ params: { id: String(post.id) } }));
+    const { data: posts } = await supabase
+        .from("notes")
+        .select("id")
+        .eq("is_public", true);
+    return (posts || []).map((post) => ({ params: { id: String(post.id) } }));
 }
 
 import Layout from "../../layouts/Layout.astro";
@@ -119,11 +122,23 @@ const formattedDate = new Date(post.created_at).toLocaleDateString("en-US", {
             </div>
 
             <!-- Content Section -->
-            <div class="w-full max-w-none">
+            <div class="w-full max-w-none min-h-[50vh]">
                 <ReactiveMarkdownViewer
                     content={post.content}
                     client:only="react"
-                />
+                >
+                    <div
+                        slot="fallback"
+                        class="w-full flex flex-col space-y-6 py-10 animate-pulse"
+                    >
+                        <div class="h-6 w-3/4 bg-border/40 rounded-md"></div>
+                        <div class="h-6 w-full bg-border/40 rounded-md"></div>
+                        <div class="h-6 w-5/6 bg-border/40 rounded-md"></div>
+                        <div class="h-6 w-2/3 bg-border/40 rounded-md"></div>
+                        <div class="h-6 w-full bg-border/40 rounded-md"></div>
+                        <div class="h-6 w-4/5 bg-border/40 rounded-md"></div>
+                    </div>
+                </ReactiveMarkdownViewer>
             </div>
 
             <div class="pt-20 space-y-12">
