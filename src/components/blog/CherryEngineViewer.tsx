@@ -143,7 +143,6 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                                 mathBlock: { engine: 'MathJax' },
                                 inlineMath: { engine: 'MathJax' },
                                 emoji: { useUnicode: true },
-                                header: { anchorStyle: 'header_anchor' },
                             },
                             customSyntax: {
                                 mermaid: { syntaxClass: CherryMermaidPlugin, force: true },

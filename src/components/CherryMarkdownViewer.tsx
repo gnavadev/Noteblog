@@ -4,8 +4,6 @@ import { cn } from '@/lib/utils';
 import { useCherryDependencies } from './cherry';
 import { getCherryWithPlugins } from './cherry/cherryPlugins';
 
-// Plugins are registered via the cherryPlugins module import
-
 interface CherryMarkdownViewerProps {
     content: string;
     colorMode: 'light' | 'dark';
@@ -23,19 +21,16 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
         contentRef.current = content;
     }, [content]);
 
-    // Initialize Editor (Read-Only Mode)
+    // Initialize Editor (Read-Only / Preview-Only Mode)
     useEffect(() => {
         if (!dependenciesLoaded) return;
         if (!editorContainerRef.current) return;
 
         let isCancelled = false;
 
-        // Clean up previous instance if it exists
         if (editorInstanceRef.current) {
             editorInstanceRef.current = null;
-            if (editorContainerRef.current) {
-                editorContainerRef.current.innerHTML = '';
-            }
+            if (editorContainerRef.current) editorContainerRef.current.innerHTML = '';
         }
 
         const initCherry = async () => {
@@ -43,14 +38,12 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                 const CherryClass = await getCherryWithPlugins();
                 if (isCancelled || !editorContainerRef.current) return;
 
-                // Yield to the browser rendering cycle to allow the CSS Drawer slide animation 
-                // to smoothly execute before we block the main thread with heavy markdown parsing!
-                // 400ms covers the majority of the slide transition, guaranteeing a smooth UX entering the reader.
+                // Yield to allow the CSS Drawer slide animation to finish before
+                // blocking the main thread with heavy markdown parsing.
                 await new Promise(resolve => setTimeout(resolve, 400));
-
                 if (isCancelled || !editorContainerRef.current) return;
 
-                // CRITICAL: Prevent Strict Mode concurrent dual-initialization from corrupting the DOM!
+                // Prevent Strict Mode concurrent dual-initialization corrupting the DOM.
                 if (editorInstanceRef.current) return;
 
                 editorInstanceRef.current = new CherryClass({
@@ -64,9 +57,7 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                     },
                     engine: {
                         global: {
-                            urlProcessor(url: string, srcType: string) {
-                                return url;
-                            },
+                            urlProcessor(url: string, srcType: string) { return url; },
                         },
                         syntax: {
                             codeBlock: { theme: 'twilight', wrap: true, lineNumber: false },
@@ -76,13 +67,15 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                             mathBlock: { engine: 'MathJax' },
                             inlineMath: { engine: 'MathJax' },
                             emoji: { useUnicode: true },
-                            header: { anchorStyle: 'none' },
+                            // Let Cherry use its default anchor behaviour (shows § symbol)
                         },
                     },
                     editor: {
                         defaultModel: 'previewOnly',
                         theme: colorMode === 'dark' ? 'dark' : 'default',
-                        height: 'auto',
+                        // Setting height to auto causes Cherry to add extra padding/min-height.
+                        // Use 100% and let the parent control sizing instead.
+                        height: '100%',
                         showFullWidthMark: false,
                         editable: false,
                     },
@@ -92,7 +85,7 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                     },
                 });
             } catch (err) {
-                console.error("Cherry Viewer Init Failed:", err);
+                console.error('Cherry Viewer Init Failed:', err);
             }
         };
 
@@ -100,23 +93,19 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
 
         return () => {
             isCancelled = true;
-            if (editorInstanceRef.current) {
-                editorInstanceRef.current = null;
-            }
-            if (editorContainerRef.current) {
-                editorContainerRef.current.innerHTML = '';
-            }
+            editorInstanceRef.current = null;
+            if (editorContainerRef.current) editorContainerRef.current.innerHTML = '';
         };
     }, [dependenciesLoaded, uniqueId]);
 
-    // Handle Theme Changes via Instance API
+    // Theme changes
     useEffect(() => {
         if (editorInstanceRef.current) {
             editorInstanceRef.current.setTheme(colorMode === 'dark' ? 'dark' : 'default');
         }
     }, [colorMode, dependenciesLoaded]);
 
-    // Handle Content Updates
+    // Content updates
     useEffect(() => {
         if (editorInstanceRef.current && content !== editorInstanceRef.current.getMarkdown()) {
             editorInstanceRef.current.setMarkdown(content);
@@ -128,7 +117,10 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
     }
 
     return (
-        <div className={cn("cherry-viewer-wrapper break-words", className)} style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}>
+        <div
+            className={cn('cherry-viewer-wrapper break-words', className)}
+            style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}
+        >
             <style>{`
                 #${uniqueId} img {
                     pointer-events: none !important;
