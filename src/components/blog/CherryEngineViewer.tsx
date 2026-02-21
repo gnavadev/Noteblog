@@ -36,6 +36,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                         minValue: 'Min',
                         chartRenderError: 'Chart Error',
                         saveAsImage: 'Save as Image',
+                        copy: 'Copy',
                     };
 
                     // Initialize engine instance with native theme settings
@@ -73,11 +74,13 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                         mermaid
                     });
 
-                    // CRITICAL: Manually ensure the engine instance has the locale property
-                    // Plugins in Cherry Markdown often access this.cherry.locale directly.
-                    // The lightweight engine might not initialize it from options automatically.
-                    if (!engineRef.current.locale) {
-                        engineRef.current.locale = localeData;
+                    // CRITICAL: Lightweight engine doesn't automatically set up locale properties on itself.
+                    // Many plugins (like tableEcharts) access `this.cherry.locale` directly.
+                    engineRef.current.locale = localeData;
+                    engineRef.current.locales = { en_US: localeData };
+                    if (engineRef.current.options) {
+                        engineRef.current.options.locale = 'en_US';
+                        engineRef.current.options.locales = { en_US: localeData };
                     }
 
                     // Create a plugin instance for manual rendering triggers
@@ -90,11 +93,10 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                 } catch (e) {
                     console.error("Failed to init Cherry Engine", e);
                 }
-            } else {
-                // Update theme if it changed
-                engineRef.current.setTheme(colorMode);
             }
 
+            // Note: CherryEngine (lightweight) DOES NOT have setTheme().
+            // Themes are managed strictly via CSS classes on the container.
             if (engineRef.current && content) {
                 try {
                     const markup = engineRef.current.makeHtml(content);
