@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { useInView } from 'react-intersection-observer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { PostCard, DeleteConfirmDialog, containerVariants } from './magazine';
@@ -22,6 +23,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     const [postToDelete, setPostToDelete] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const { ref: loadMoreRef, inView } = useInView({ threshold: 0.1 });
     const POSTS_PER_PAGE = 6;
 
     const displayPosts = useMemo(() => {
@@ -42,6 +44,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     const hasMore = displayPosts.length > page * POSTS_PER_PAGE;
 
     const handleLoadMore = async () => {
+        if (isLoadingMore || !hasMore) return;
         setIsLoadingMore(true);
         const nextPage = page + 1;
         const nextPosts = displayPosts.slice(page * POSTS_PER_PAGE, nextPage * POSTS_PER_PAGE);
@@ -53,6 +56,12 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
         setPage(nextPage);
         setIsLoadingMore(false);
     };
+
+    React.useEffect(() => {
+        if (inView) {
+            handleLoadMore();
+        }
+    }, [inView]);
 
     const handleDeleteRequest = (postId: string) => {
         setPostToDelete(postId);
@@ -113,7 +122,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
                 <AnimatePresence mode="popLayout">
                     {paginatedPosts.map((post) => {
@@ -139,22 +148,13 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
             </motion.div>
 
             {hasMore && (
-                <div className="mt-12 flex justify-center pb-8">
-                    <Button
-                        onClick={handleLoadMore}
-                        disabled={isLoadingMore}
-                        variant="secondary"
-                        className="rounded-full px-8 py-6 text-base font-semibold shadow-sm hover:shadow-md transition-all min-w-[200px]"
-                    >
-                        {isLoadingMore ? (
-                            <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Loading Stories...
-                            </>
-                        ) : (
-                            "Load More"
-                        )}
-                    </Button>
+                <div ref={loadMoreRef} className="mt-12 flex justify-center pb-8 h-20 items-center">
+                    {isLoadingMore && (
+                        <div className="flex items-center text-muted-foreground font-medium text-sm">
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin text-primary" />
+                            Curating more stories...
+                        </div>
+                    )}
                 </div>
             )}
 

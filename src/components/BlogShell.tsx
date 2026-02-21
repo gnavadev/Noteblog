@@ -13,6 +13,7 @@ import type { Post } from './blog';
 import ErrorBoundary from './ErrorBoundary';
 import { TopicProvider } from './TopicProvider';
 import { useCherryDependencies } from './cherry';
+import { getCherryWithPlugins } from './cherry/cherryPlugins';
 import WelcomeDialog from './WelcomeDialog';
 
 interface BlogShellInnerProps {
@@ -78,10 +79,13 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
     const { loadDependencies } = useCherryDependencies();
     useEffect(() => {
         const warmUp = () => {
-            // 1. Fire off dependency loading (non-blocking)
+            // 1. Fire off external dependency loading (non-blocking)
             loadDependencies?.();
-            // 2. Start fetching ReaderPanel component chunks
+            // 2. Start fetching ReaderPanel and Viewer component chunks
             import('./ReaderPanel');
+            import('./CherryMarkdownViewer');
+            // 3. Eagerly invoke the heavy markdown parser chunk so it's cached!
+            getCherryWithPlugins().catch(() => { });
         };
 
         if (typeof window !== 'undefined') {

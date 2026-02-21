@@ -50,6 +50,7 @@
     "mermaid": "^11.12.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "react-intersection-observer": "^10.0.3",
     "rehype-external-links": "^3.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.4.0",
