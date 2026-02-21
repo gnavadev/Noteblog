@@ -65,8 +65,39 @@ function patchCherryLocale(root: any, visited = new WeakSet()): void {
 
 const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorMode = 'auto' }) => {
     const [html, setHtml] = useState<string>('');
+    const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>(
+        colorMode === 'auto' ? detectColorMode() : colorMode
+    );
 
-    const resolvedMode = colorMode === 'auto' ? detectColorMode() : colorMode;
+    // Keep resolvedMode in sync when colorMode prop changes
+    useEffect(() => {
+        if (colorMode !== 'auto') setResolvedMode(colorMode);
+    }, [colorMode]);
+
+    // Watch for theme changes on the document root (class or data-theme attribute)
+    // so the Focus View's theme toggle button is reflected immediately.
+    useEffect(() => {
+        if (colorMode !== 'auto') return;
+
+        const observer = new MutationObserver(() => {
+            setResolvedMode(detectColorMode());
+        });
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class', 'data-theme'],
+        });
+
+        // Also watch the system preference in case no class/attr is used
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const onMqChange = () => setResolvedMode(detectColorMode());
+        mq.addEventListener('change', onMqChange);
+
+        return () => {
+            observer.disconnect();
+            mq.removeEventListener('change', onMqChange);
+        };
+    }, [colorMode]);
     const engineRef = useRef<any>(null);
     const tableEchartsRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
