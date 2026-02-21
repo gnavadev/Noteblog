@@ -127,7 +127,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                         locale: 'en_US',
                         locales: { en_US: LOCALE_DATA },
                         themeSettings: {
-                            mainTheme: resolvedMode,
+                            mainTheme: resolvedMode === 'dark' ? 'dark' : 'default',
                             codeBlockTheme: resolvedMode === 'dark' ? 'atom-one-dark' : 'github',
                         },
                         engine: {
@@ -274,7 +274,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                 'cherry-viewer-root',
                 'cherry',
                 'cherry-editor',
-                `theme__${resolvedMode}`,
+                resolvedMode === 'dark' ? 'theme__dark' : 'theme__default',
             )}
             style={{
                 width: '100%',

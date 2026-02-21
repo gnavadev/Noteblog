@@ -223,13 +223,9 @@
    Uses @tailwindcss/typography (prose) for all
    content rhythm — we only supply the color tokens.
 ───────────────────────────────────────────── */
-.cherry-viewer-root .cherry-previewer-content,
-.cherry-viewer-root .cherry-markdown,
-.cherry-viewer-wrapper .cherry-previewer-content,
-.cherry-viewer-wrapper .cherry-markdown {
-  padding: 0 1.5rem !important;
-  /* Added left/right padding for readability */
-  margin-top: 0 !important;
+.cherry-viewer-root .cherry-previewer,
+.cherry-viewer-wrapper .cherry-previewer {
+  background: transparent !important;
 }
 
 /* Remove top margin from whatever element Cherry renders first */
