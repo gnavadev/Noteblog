@@ -265,6 +265,11 @@
    We only fix shape and spacing here. */
 
 /* Anchor symbol (§) next to headings */
+.cherry-viewer-root .cherry-markdown .anchor::before,
+.cherry-viewer-wrapper .cherry-markdown .anchor::before {
+  content: "§";
+}
+
 .cherry-viewer-root .cherry-markdown .anchor {
   color: hsl(var(--primary));
   opacity: 0.5;
