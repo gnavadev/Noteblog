@@ -6,7 +6,15 @@ import { useCherryDependencies } from '../cherry/useCherryDependencies';
 
 interface CherryEngineViewerProps {
     content: string;
-    colorMode?: 'light' | 'dark';
+    colorMode?: 'light' | 'dark' | 'auto';
+}
+
+/** Reads the active color scheme from the document root or media query. */
+function detectColorMode(): 'light' | 'dark' {
+    const root = document.documentElement;
+    if (root.classList.contains('dark') || root.getAttribute('data-theme') === 'dark') return 'dark';
+    if (root.classList.contains('light') || root.getAttribute('data-theme') === 'light') return 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 const LOCALE_DATA = {
@@ -55,8 +63,10 @@ function patchCherryLocale(root: any, visited = new WeakSet()): void {
     }
 }
 
-const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorMode = 'light' }) => {
+const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorMode = 'auto' }) => {
     const [html, setHtml] = useState<string>('');
+
+    const resolvedMode = colorMode === 'auto' ? detectColorMode() : colorMode;
     const engineRef = useRef<any>(null);
     const tableEchartsRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -81,7 +91,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                         locale: 'en_US',
                         locales: { en_US: LOCALE_DATA },
                         themeSettings: {
-                            mainTheme: colorMode,
+                            mainTheme: resolvedMode,
                             codeBlockTheme: 'default',
                         },
                         engine: {
@@ -157,7 +167,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         return () => {
             isCancelled = true;
         };
-    }, [content, dependenciesLoaded, colorMode]);
+    }, [content, dependenciesLoaded, resolvedMode]);
 
     // Post-render triggers: Mermaid, ECharts
     useEffect(() => {
@@ -170,7 +180,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
             try {
                 window.mermaid.initialize({
                     startOnLoad: false,
-                    theme: colorMode === 'dark' ? 'dark' : 'default',
+                    theme: resolvedMode === 'dark' ? 'dark' : 'default',
                     securityLevel: 'loose',
                 });
                 window.mermaid.run({ nodes: container.querySelectorAll('.mermaid') });
@@ -208,7 +218,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                 }
             });
         }
-    }, [html, colorMode]);
+    }, [html, resolvedMode]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -225,7 +235,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
             className={cn(
                 'cherry',
                 'cherry-editor',
-                `theme__${colorMode}`,
+                `theme__${resolvedMode}`,
             )}
             style={{
                 width: '100%',
