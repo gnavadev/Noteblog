@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
-import CherryMarkdownViewer from './CherryMarkdownViewer';
+import CherryEngineViewer from './blog/CherryEngineViewer';
 import Comments from './comments/Comments';
 import { usePost, PostHeader, contentVariants, staggerContainer } from './reader';
 import type { ReaderPanelProps } from './reader/types';
@@ -161,15 +161,10 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                 <Separator className="mb-10 opacity-50" />
 
                 <motion.div variants={contentVariants}>
-                    <div
-                        className="markdown-reader-content w-full min-h-[400px]"
-                        data-color-mode={colorMode}
-                    >
-                        <CherryMarkdownViewer
-                            content={post.content || ''}
-                            colorMode={colorMode}
-                            className="min-h-[400px]"
-                        />
+                    <div className="markdown-reader-content w-full min-h-[400px]" data-color-mode={colorMode}>
+                        <div className="min-h-[400px]">
+                            <CherryEngineViewer content={post.content || ''} />
+                        </div>
                     </div>
                 </motion.div>
 
@@ -191,7 +186,7 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                     </footer>
                 </motion.div>
             </motion.div>
-        </motion.div>
+        </motion.div >
     );
 };
 
