@@ -224,91 +224,6 @@
    content rhythm — we only supply the color tokens.
 ───────────────────────────────────────────── */
 
-/* Strip Cherry's own chrome — covers both viewer components */
-.cherry-viewer-root .cherry,
-.cherry-viewer-wrapper .cherry {
-  background: transparent !important;
-  border: none !important;
-}
-
-.cherry-viewer-root .cherry-previewer,
-.cherry-viewer-wrapper .cherry-previewer {
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  min-height: 0 !important;
-}
-
-.cherry-viewer-root .cherry-previewer-content,
-.cherry-viewer-root .cherry-markdown,
-.cherry-viewer-wrapper .cherry-previewer-content,
-.cherry-viewer-wrapper .cherry-markdown {
-  padding: 0 !important;
-  margin-top: 0 !important;
-}
-
-/* Remove top margin from whatever element Cherry renders first */
-.cherry-viewer-root .cherry-markdown>*:first-child,
-.cherry-viewer-wrapper .cherry-markdown>*:first-child {
-  margin-top: 0 !important;
-}
-
-/* Cherry hides anchors by default (opacity: 0) until hover — force them visible */
-.cherry-viewer-root .cherry-markdown .anchor,
-.cherry-viewer-wrapper .cherry-markdown .anchor {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: inline !important;
-}
-
-/* Cherry's own theme__light / theme__dark classes handle all content colors.
-   We only fix shape and spacing here. */
-
-/* Anchor symbol (§) next to headings */
-.cherry-viewer-root .cherry-markdown .anchor::before,
-.cherry-viewer-wrapper .cherry-markdown .anchor::before {
-  content: "§";
-}
-
-.cherry-viewer-root .cherry-markdown .anchor {
-  color: hsl(var(--primary));
-  opacity: 0.5;
-  text-decoration: none;
-  margin-right: 0.4em;
-  font-weight: 400;
-  transition: opacity 0.15s ease;
-}
-
-.cherry-viewer-root .cherry-markdown .anchor:hover {
-  opacity: 1;
-}
-
-/* Inline code shape — prose handles color */
-.cherry-viewer-root .cherry-markdown code:not(pre code) {
-  border: 1px solid hsl(var(--border));
-  border-radius: 4px;
-  padding: 0.15em 0.4em;
-  font-size: 0.875em;
-}
-
-/* Blockquote shape — prose handles color */
-.cherry-viewer-root .cherry-markdown blockquote {
-  border-radius: 0 6px 6px 0;
-  background: hsl(var(--primary) / 0.06);
-}
-
-/* Disable interaction (reader mode) */
-.cherry-viewer-root input[type="checkbox"],
-.cherry-viewer-root .cherry-checkbox {
-  pointer-events: none !important;
-}
-
-.cherry-viewer-root [contenteditable] {
-  outline: none !important;
-  cursor: default !important;
-  caret-color: transparent !important;
-}
-
 /* Word breaking */
 .cherry-viewer-root,
 .cherry-viewer-root p {
@@ -325,7 +240,7 @@
   width: fit-content !important;
   max-width: 100% !important;
   max-height: 500px !important;
-  margin: 1.5rem auto !important;
+  /* margin: 1.5rem auto !important; */
   background: transparent !important;
   overflow: auto !important;
   contain: layout paint !important;
