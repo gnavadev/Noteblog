@@ -83,7 +83,7 @@ export function useBlogState(
 
         let query = supabase
             .from('notes')
-            .select('*');
+            .select("id, created_at, title, topic, user_id, color, is_public, layout_json, category_color, read_time_minutes, featured_image, topic_id");
 
         if (!isAdminUser) {
             query = query.eq('is_public', true);
@@ -135,13 +135,12 @@ export function useBlogState(
     const hasInitialFetch = useRef(initialPosts.length > 0);
 
     useEffect(() => {
-        // Skip fetch on mount if we already have initial posts from server
-        if (!hasInitialFetch.current) {
+        // We only want to auto-fetch if we explicitly are told we didn't get initialPosts
+        // or if a manual refresh was requested. We rely on initialPosts for the first load.
+        if (!hasInitialFetch.current && initialPosts.length === 0) {
             fetchPosts();
-        } else {
-            // Reset for future manual refreshes or user changes
-            hasInitialFetch.current = false;
         }
+        hasInitialFetch.current = false;
 
         const dbChannel = supabase
             .channel('magazine_db_changes')

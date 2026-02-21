@@ -46,8 +46,10 @@ export function TopicProvider({ children, initialTopics = [] }: { children: Reac
     };
 
     useEffect(() => {
-        fetchTopics();
-    }, []);
+        if (initialTopics.length === 0) {
+            fetchTopics();
+        }
+    }, [initialTopics.length]);
 
     const getTopicColor = useCallback((topicName: string): string => {
         const existing = topics.find(t => t.name === topicName);

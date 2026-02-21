@@ -6,7 +6,9 @@ import { supabase } from "../lib/supabase";
 const [postsResult, topicsResult] = await Promise.all([
 	supabase
 		.from("notes")
-		.select("*")
+		.select(
+			"id, created_at, title, topic, user_id, color, is_public, layout_json, category_color, read_time_minutes, featured_image, topic_id",
+		)
 		.eq("is_public", true)
 		.order("created_at", { ascending: false }),
 	supabase.from("topics").select("*").order("order", { ascending: true }),
