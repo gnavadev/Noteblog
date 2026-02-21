@@ -1,5 +1,10 @@
 ---
-export const prerender = false;
+export const prerender = true;
+export async function getStaticPaths() {
+  const { data: topics } = await supabase.from("topics").select("name");
+  return topics.map(topic => ({ params: { name: topic.name } }));
+}
+
 import Layout from "../../layouts/Layout.astro";
 import { supabase } from "../../lib/supabase";
 import BlogShell from "../../components/BlogShell";

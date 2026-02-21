@@ -1,5 +1,10 @@
 ---
-export const prerender = false;
+export const prerender = true;
+export async function getStaticPaths() {
+  const { data: posts } = await supabase.from("notes").select("id").eq("is_public", true);
+  return posts.map(post => ({ params: { id: String(post.id) } }));
+}
+
 import Layout from "../../layouts/Layout.astro";
 import { supabase } from "../../lib/supabase";
 import ReactiveMarkdownViewer from "../../components/blog/ReactiveMarkdownViewer";
