@@ -247,6 +247,12 @@
   margin-top: 0 !important;
 }
 
+/* Remove top margin from whatever element Cherry renders first */
+.cherry-viewer-root .cherry-markdown>*:first-child,
+.cherry-viewer-wrapper .cherry-markdown>*:first-child {
+  margin-top: 0 !important;
+}
+
 /* Cherry hides anchors by default (opacity: 0) until hover — force them visible */
 .cherry-viewer-root .cherry-markdown .anchor,
 .cherry-viewer-wrapper .cherry-markdown .anchor {
