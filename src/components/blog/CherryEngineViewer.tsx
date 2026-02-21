@@ -128,14 +128,23 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         <div
             ref={containerRef}
             className={cn(
+                "cherry",
                 "cherry-editor",
                 colorMode === 'dark' ? 'cherry-editor--dark' : 'cherry-editor--light'
             )}
             data-theme={colorMode}
+            style={{
+                width: '100%',
+                height: 'auto',
+                display: 'block',
+                background: 'transparent',
+                border: 'none'
+            }}
         >
-            <div className="cherry-previewer" style={{ display: 'block' }}>
+            <div className="cherry-previewer" style={{ display: 'block', width: '100%', padding: 0 }}>
                 <div
                     className="cherry-markdown"
+                    style={{ width: '100%' }}
                     dangerouslySetInnerHTML={{ __html: html }}
                 />
             </div>
