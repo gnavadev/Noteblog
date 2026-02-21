@@ -5,14 +5,14 @@ import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
 import tailwind from '@astrojs/tailwind';
 
-import vercel from '@astrojs/vercel';
+import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
-  adapter: vercel(),
+  adapter: cloudflare(),
 
-  site: 'https://noteblog-self.vercel.app',
+  site: 'https://www.gabrielnava.dev', // ← Update this to your new domain
 
   integrations: [
     react(),
