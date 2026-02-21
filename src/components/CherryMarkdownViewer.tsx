@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import 'cherry-markdown/dist/cherry-markdown.css';
 import { cn } from '@/lib/utils';
 import { useCherryDependencies } from './cherry';
-import { Cherry } from './cherry/cherryPlugins';
+import { getCherryWithPlugins } from './cherry/cherryPlugins';
 
 // Plugins are registered via the cherryPlugins module import
 
@@ -31,48 +31,55 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
             }
         }
 
-        try {
-            editorInstanceRef.current = new Cherry({
-                id: uniqueId,
-                value: content,
-                locale: 'en_US',
-                externals: {
-                    echarts: window.echarts,
-                    katex: window.katex,
-                    MathJax: window.MathJax,
-                },
-                engine: {
-                    global: {
-                        urlProcessor(url: string, srcType: string) {
-                            return url;
+        const initCherry = async () => {
+            try {
+                const CherryClass = await getCherryWithPlugins();
+                if (!editorContainerRef.current) return;
+
+                editorInstanceRef.current = new CherryClass({
+                    id: uniqueId,
+                    value: content,
+                    locale: 'en_US',
+                    externals: {
+                        echarts: window.echarts,
+                        katex: window.katex,
+                        MathJax: window.MathJax,
+                    },
+                    engine: {
+                        global: {
+                            urlProcessor(url: string, srcType: string) {
+                                return url;
+                            },
+                        },
+                        syntax: {
+                            codeBlock: { theme: 'twilight', wrap: true, lineNumber: false },
+                            table: { enableChart: true },
+                            fontEmphasis: { allowWhitespace: false },
+                            strikethrough: { needWhitespace: false },
+                            mathBlock: { engine: 'MathJax' },
+                            inlineMath: { engine: 'MathJax' },
+                            emoji: { useUnicode: true },
+                            header: { anchorStyle: 'none' },
                         },
                     },
-                    syntax: {
-                        codeBlock: { theme: 'twilight', wrap: true, lineNumber: false },
-                        table: { enableChart: true },
-                        fontEmphasis: { allowWhitespace: false },
-                        strikethrough: { needWhitespace: false },
-                        mathBlock: { engine: 'MathJax' },
-                        inlineMath: { engine: 'MathJax' },
-                        emoji: { useUnicode: true },
-                        header: { anchorStyle: 'none' },
+                    editor: {
+                        defaultModel: 'previewOnly',
+                        theme: colorMode === 'dark' ? 'dark' : 'default',
+                        height: '100%',
+                        showFullWidthMark: false,
+                        editable: false,
                     },
-                },
-                editor: {
-                    defaultModel: 'previewOnly',
-                    theme: colorMode === 'dark' ? 'dark' : 'default',
-                    height: '100%',
-                    showFullWidthMark: false,
-                    editable: false,
-                },
-                toolbars: {
-                    showToolbar: false,
-                    theme: colorMode === 'dark' ? 'dark' : 'default',
-                },
-            });
-        } catch (err) {
-            console.error("Cherry Viewer Init Failed:", err);
-        }
+                    toolbars: {
+                        showToolbar: false,
+                        theme: colorMode === 'dark' ? 'dark' : 'default',
+                    },
+                });
+            } catch (err) {
+                console.error("Cherry Viewer Init Failed:", err);
+            }
+        };
+
+        initCherry();
 
         return () => {
             if (editorInstanceRef.current) {

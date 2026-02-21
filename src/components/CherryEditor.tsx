@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import 'cherry-markdown/dist/cherry-markdown.css';
 import { useCherryDependencies } from './cherry';
-import { Cherry } from './cherry/cherryPlugins';
+import { getCherryWithPlugins } from './cherry/cherryPlugins';
 import { basicFullConfig } from './cherry/FullConfig';
 
 // Plugins are registered via the cherryPlugins module import
@@ -56,21 +56,43 @@ const CherryEditor = React.memo(({ value, onChange, onFileUpload, colorMode }: C
                 },
             };
 
+            const initCherry = async () => {
+                const CherryClass = await getCherryWithPlugins();
+                if (!editorContainerRef.current) return;
 
-            editorInstanceRef.current = new Cherry(config);
-            window.cherry = editorInstanceRef.current;
+                // Generate custom hooks utilizing the loaded CherryClass
+                const { initCustomMenus } = await import('./cherry/FullConfig');
+                const { customMenuTable, customMenuCodeTheme } = initCustomMenus(CherryClass);
 
-            // Link custom sidebar CodeTheme to the real CodeTheme's options
-            setTimeout(() => {
-                if (window.cherry?.toolbar?.menus?.hooks?.codeTheme?.subMenuConfig) {
-                    const realConfig = window.cherry.toolbar.menus.hooks.codeTheme.subMenuConfig;
-                    // @ts-ignore
-                    if (window.cherry.toolbar.menus.hooks.customMenuCodeThemeName) {
-                        // @ts-ignore
-                        window.cherry.toolbar.menus.hooks.customMenuCodeThemeName.subMenuConfig = realConfig;
+                // Append hooks dynamicall
+                const finalConfig = {
+                    ...config,
+                    toolbars: {
+                        ...config.toolbars,
+                        customMenu: {
+                            customMenuTable,
+                            customMenuCodeThemeName: customMenuCodeTheme,
+                        }
                     }
-                }
-            }, 500);
+                };
+
+                editorInstanceRef.current = new CherryClass(finalConfig);
+                window.cherry = editorInstanceRef.current;
+
+                // Link custom sidebar CodeTheme to the real CodeTheme's options
+                setTimeout(() => {
+                    if (window.cherry?.toolbar?.menus?.hooks?.codeTheme?.subMenuConfig) {
+                        const realConfig = window.cherry.toolbar.menus.hooks.codeTheme.subMenuConfig;
+                        // @ts-ignore
+                        if (window.cherry.toolbar.menus.hooks.customMenuCodeThemeName) {
+                            // @ts-ignore
+                            window.cherry.toolbar.menus.hooks.customMenuCodeThemeName.subMenuConfig = realConfig;
+                        }
+                    }
+                }, 500);
+            };
+
+            initCherry();
         } catch (err) {
             console.error("Cherry Editor Init Failed:", err);
         }

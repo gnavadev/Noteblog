@@ -1,6 +1,5 @@
 import React from 'react';
-import CherryMarkdownViewer from '../CherryMarkdownViewer';
-import { useTheme } from './useTheme';
+import CherryEngineViewer from './CherryEngineViewer';
 
 interface ReactiveMarkdownViewerProps {
     content: string;
@@ -8,13 +7,9 @@ interface ReactiveMarkdownViewerProps {
 }
 
 const ReactiveMarkdownViewer: React.FC<ReactiveMarkdownViewerProps> = ({ content, className }) => {
-    const { colorMode } = useTheme();
-
     return (
-        <CherryMarkdownViewer
+        <CherryEngineViewer
             content={content}
-            colorMode={colorMode}
-            className={className}
         />
     );
 };

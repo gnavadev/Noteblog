@@ -1,31 +1,39 @@
-import Cherry from 'cherry-markdown/dist/cherry-markdown.core';
-import CherryMermaidPlugin from 'cherry-markdown/dist/addons/cherry-code-block-mermaid-plugin';
-import CherryTableEchartsPlugin from 'cherry-markdown/dist/addons/advance/cherry-table-echarts-plugin';
-import mermaid from 'mermaid';
-
 // Track if plugins have been registered to avoid duplicate registration warnings
 let pluginsRegistered = false;
+let CachedCherryClass: any = null;
 
 /**
- * Register Cherry plugins once globally.
- * This should be called before any Cherry instance is created.
+ * Register Cherry plugins async.
+ * This should be called strictly when the Editor is about to mount.
  */
-export function registerCherryPlugins() {
-    if (pluginsRegistered) {
-        return;
+export async function getCherryWithPlugins() {
+    if (CachedCherryClass) {
+        return CachedCherryClass;
     }
 
     try {
-        Cherry.usePlugin(CherryMermaidPlugin, { mermaid });
-        Cherry.usePlugin(CherryTableEchartsPlugin);
-        pluginsRegistered = true;
+        const [
+            { default: CherryClass },
+            { default: CherryMermaidPlugin },
+            { default: CherryTableEchartsPlugin },
+            { default: mermaid }
+        ] = await Promise.all([
+            import('cherry-markdown/dist/cherry-markdown.core'),
+            import('cherry-markdown/dist/addons/cherry-code-block-mermaid-plugin'),
+            import('cherry-markdown/dist/addons/advance/cherry-table-echarts-plugin'),
+            import('mermaid')
+        ]);
+
+        if (!pluginsRegistered) {
+            CherryClass.usePlugin(CherryMermaidPlugin, { mermaid });
+            CherryClass.usePlugin(CherryTableEchartsPlugin);
+            pluginsRegistered = true;
+        }
+
+        CachedCherryClass = CherryClass;
+        return CherryClass;
     } catch (e) {
-        // Plugins already registered by another module
-        pluginsRegistered = true;
+        console.error("Failed to lazily load Cherry plugins:", e);
+        throw e;
     }
 }
-
-// Auto-register on module load
-registerCherryPlugins();
-
-export { Cherry };
