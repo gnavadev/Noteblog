@@ -224,19 +224,35 @@
    content rhythm — we only supply the color tokens.
 ───────────────────────────────────────────── */
 
-/* Strip Cherry's own chrome so it inherits the page */
-.cherry-viewer-root .cherry {
+/* Strip Cherry's own chrome — covers both viewer components */
+.cherry-viewer-root .cherry,
+.cherry-viewer-wrapper .cherry {
   background: transparent !important;
   border: none !important;
 }
 
-.cherry-viewer-root .cherry-previewer {
+.cherry-viewer-root .cherry-previewer,
+.cherry-viewer-wrapper .cherry-previewer {
   background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
 }
 
-.cherry-viewer-root .cherry-markdown {
-  padding-top: 0 !important;
+.cherry-viewer-root .cherry-previewer-content,
+.cherry-viewer-root .cherry-markdown,
+.cherry-viewer-wrapper .cherry-previewer-content,
+.cherry-viewer-wrapper .cherry-markdown {
+  padding: 0 !important;
   margin-top: 0 !important;
+}
+
+/* Cherry hides anchors by default (opacity: 0) until hover — force them visible */
+.cherry-viewer-root .cherry-markdown .anchor,
+.cherry-viewer-wrapper .cherry-markdown .anchor {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline !important;
 }
 
 /* Cherry's own theme__light / theme__dark classes handle all content colors.
