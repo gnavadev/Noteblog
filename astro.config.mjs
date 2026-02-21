@@ -9,7 +9,7 @@ import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'server',
+  output: 'static',
   adapter: cloudflare(),
 
   site: 'https://www.gabrielnava.dev', // ← Update this to your new domain
