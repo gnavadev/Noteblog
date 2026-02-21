@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import 'cherry-markdown/dist/cherry-markdown.css';
 import { cn } from '@/lib/utils';
 import { getCherryEngineWithPlugins } from '../cherry/cherryPlugins';
@@ -12,6 +12,7 @@ interface CherryEngineViewerProps {
 const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorMode = 'light' }) => {
     const [html, setHtml] = useState<string>('');
     const engineRef = useRef<any>(null);
+    const tableEchartsRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const { dependenciesLoaded } = useCherryDependencies();
 
@@ -30,12 +31,20 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
 
                     if (isCancelled) return;
 
-                    // Initialize engine instance
+                    // Initialize engine instance with native theme settings
                     engineRef.current = new CherryEngineClass({
+                        themeSettings: {
+                            mainTheme: colorMode,
+                            codeBlockTheme: 'default',
+                        },
                         engine: {
                             syntax: {
                                 codeBlock: { theme: 'twilight', wrap: true, lineNumber: false },
-                                table: { enableChart: true },
+                                table: {
+                                    enableChart: true,
+                                    chartRenderEngine: CherryTableEchartsPlugin,
+                                    externals: ['echarts']
+                                },
                                 fontEmphasis: { allowWhitespace: false },
                                 strikethrough: { needWhitespace: false },
                                 mathBlock: { engine: 'MathJax' },
@@ -44,16 +53,33 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                                 header: { anchorStyle: 'none' },
                             },
                             customSyntax: {
-                                mermaid: { syntaxClass: CherryMermaidPlugin, force: true },
-                                tableEcharts: { syntaxClass: CherryTableEchartsPlugin, force: true }
+                                mermaid: { syntaxClass: CherryMermaidPlugin, force: true }
                             }
                         },
-                        // Pass mermaid lib to the engine/plugins that might need it
+                        externals: {
+                            echarts: window.echarts,
+                        },
                         mermaid
+                    });
+
+                    // Create a plugin instance for manual rendering triggers
+                    tableEchartsRef.current = new CherryTableEchartsPlugin({
+                        echarts: window.echarts,
+                        cherry: {
+                            locale: {
+                                maxValue: 'Max',
+                                minValue: 'Min',
+                                chartRenderError: 'Chart Error',
+                                saveAsImage: 'Save as Image'
+                            }
+                        }
                     });
                 } catch (e) {
                     console.error("Failed to init Cherry Engine", e);
                 }
+            } else {
+                // Update theme if it changed
+                engineRef.current.setTheme(colorMode);
             }
 
             if (engineRef.current && content) {
@@ -69,14 +95,14 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
             }
         };
 
-        if (content) {
+        if (content && dependenciesLoaded) {
             initAndRender();
         }
 
         return () => {
             isCancelled = true;
         };
-    }, [content, dependenciesLoaded]);
+    }, [content, dependenciesLoaded, colorMode]);
 
     // Handle post-render triggers (Mermaid, ECharts, MathJax)
     useEffect(() => {
@@ -101,20 +127,34 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         }
 
         // 2. ECharts Rendering
-        // The table-echarts plugin usually produces containers with specific data attributes
-        if (window.echarts) {
-            const chartContainers = container.querySelectorAll('.cherry-table-echarts-container');
+        if (window.echarts && tableEchartsRef.current) {
+            const chartContainers = container.querySelectorAll('.cherry-echarts-wrapper');
             chartContainers.forEach((chartContainer: any) => {
                 try {
-                    // This is a bit of a hack since we are bypassing the full Cherry editor's lifecycle
-                    // Most plugins have a static 'render' or similar, but we might need to manual init
                     if (chartContainer.getAttribute('data-processed')) return;
 
-                    const chartData = chartContainer.getAttribute('data-options');
-                    if (chartData) {
-                        const options = JSON.parse(chartData);
-                        const chart = window.echarts.init(chartContainer, colorMode === 'dark' ? 'dark' : undefined);
-                        chart.setOption(options);
+                    const chartType = chartContainer.getAttribute('data-chart-type');
+                    const tableDataStr = chartContainer.getAttribute('data-table-data');
+                    const optionsStr = chartContainer.getAttribute('data-chart-options');
+
+                    if (chartType && tableDataStr) {
+                        const tableData = JSON.parse(tableDataStr);
+                        const chartOptions = optionsStr ? JSON.parse(optionsStr) : {};
+
+                        const plugin = tableEchartsRef.current;
+
+                        // We need to set the internal theme before rendering
+                        // @ts-ignore
+                        plugin.$buildEchartsThemeFromCss(container);
+
+                        // Generate options using the plugin's internal method
+                        // @ts-ignore
+                        const fullOptions = plugin.$generateChartOptions(chartType, tableData, chartOptions);
+
+                        // Create chart
+                        // @ts-ignore
+                        plugin.createChart(chartContainer, fullOptions, chartType);
+
                         chartContainer.setAttribute('data-processed', 'true');
                     }
                 } catch (err) {
@@ -124,21 +164,30 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         }
     }, [html, colorMode]);
 
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (tableEchartsRef.current && typeof tableEchartsRef.current.onDestroy === 'function') {
+                tableEchartsRef.current.onDestroy();
+            }
+        };
+    }, []);
+
     return (
         <div
             ref={containerRef}
             className={cn(
                 "cherry",
                 "cherry-editor",
-                colorMode === 'dark' ? 'cherry-editor--dark' : 'cherry-editor--light'
+                // Use native theme classes as documented
+                `theme__${colorMode}`
             )}
-            data-theme={colorMode}
             style={{
                 width: '100%',
                 height: 'auto',
                 display: 'block',
                 background: 'transparent',
-                border: 'none'
+                border: 'none',
             }}
         >
             <div className="cherry-previewer" style={{ display: 'block', width: '100%', padding: 0 }}>
