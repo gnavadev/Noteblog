@@ -234,14 +234,11 @@
   background: transparent !important;
 }
 
-/* Apply prose — colors come from tailwind.config.ts typography config */
+/* Apply prose — colors come from tailwind.config.ts typography config.
+   prose-invert is intentionally omitted: our --tw-prose-* variables
+   already reference shadcn tokens that flip automatically with the theme. */
 .cherry-viewer-root .cherry-markdown {
   @apply prose max-w-none;
-}
-
-html[data-theme="dark"] .cherry-viewer-root .cherry-markdown,
-.dark .cherry-viewer-root .cherry-markdown {
-  @apply prose-invert;
 }
 
 /* Anchor symbol (§) next to headings */
