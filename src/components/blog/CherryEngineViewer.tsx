@@ -21,8 +21,39 @@ const LOCALE_DATA = {
 const CHERRY_SHIM = {
     locale: LOCALE_DATA,
     locales: { en_US: LOCALE_DATA },
-    options: { locale: 'en_US', locales: { en_US: LOCALE_DATA } },
+    options: { locale: LOCALE_DATA, locales: { en_US: LOCALE_DATA } },
 };
+
+/**
+ * Recursively walks an object graph and patches any node that has a `cherry`
+ * property whose `locale` is missing or is a string (the key, not the data).
+ * This catches plugin instances nested arbitrarily deep inside the engine.
+ */
+function patchCherryLocale(root: any, visited = new WeakSet()): void {
+    if (!root || typeof root !== 'object' || visited.has(root)) return;
+    visited.add(root);
+
+    if ('cherry' in root && root.cherry) {
+        if (!root.cherry.locale || typeof root.cherry.locale === 'string') {
+            root.cherry.locale = LOCALE_DATA;
+            root.cherry.locales = { en_US: LOCALE_DATA };
+        }
+    }
+
+    // Also patch direct locale reference (engine itself may be `this.cherry`)
+    if ('locale' in root && typeof root.locale === 'string') {
+        root.locale = LOCALE_DATA;
+    }
+
+    for (const key of Object.keys(root)) {
+        try {
+            const val = root[key];
+            if (val && typeof val === 'object') patchCherryLocale(val, visited);
+        } catch {
+            // skip non-enumerable / accessor traps
+        }
+    }
+}
 
 const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorMode = 'light' }) => {
     const [html, setHtml] = useState<string>('');
@@ -49,9 +80,6 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                     engineRef.current = new CherryEngineClass({
                         locale: 'en_US',
                         locales: { en_US: LOCALE_DATA },
-                        // Pass the cherry shim as a constructor option so plugins
-                        // that access `this.cherry.locale` at init time can resolve it.
-                        cherry: CHERRY_SHIM,
                         themeSettings: {
                             mainTheme: colorMode,
                             codeBlockTheme: 'default',
@@ -81,21 +109,27 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                         mermaid,
                     });
 
-                    // Immediately patch the instance so any late-binding plugins also
-                    // find the correct locale regardless of when they resolve `this.cherry`.
-                    // NOTE: CherryEngine (lightweight) does NOT have setTheme() — themes
-                    // are handled exclusively via CSS classes on the container element.
-                    Object.assign(engineRef.current, {
-                        locale: LOCALE_DATA,
-                        locales: { en_US: LOCALE_DATA },
-                        cherry: CHERRY_SHIM,
-                    });
-                    if (engineRef.current.options) {
-                        engineRef.current.options.locale = 'en_US';
-                        engineRef.current.options.locales = { en_US: LOCALE_DATA };
+                    const engine = engineRef.current;
+
+                    // Patch the engine instance itself — it IS `this.cherry` for many plugins.
+                    // IMPORTANT: set locale to the data object, not the key string, so that
+                    // `this.cherry.locale.saveAsImage` resolves correctly.
+                    engine.locale = LOCALE_DATA;
+                    engine.locales = { en_US: LOCALE_DATA };
+                    engine.cherry = CHERRY_SHIM;
+
+                    if (engine.options) {
+                        // Must be the data object here too — NOT the 'en_US' string.
+                        engine.options.locale = LOCALE_DATA;
+                        engine.options.locales = { en_US: LOCALE_DATA };
+                        engine.options.cherry = CHERRY_SHIM;
                     }
 
-                    // Create a standalone plugin instance for manual post-render triggers.
+                    // Deep-patch any nested plugin instances that captured a cherry
+                    // reference during construction before we could set locale above.
+                    patchCherryLocale(engine);
+
+                    // Standalone plugin instance for manual post-render ECharts triggers.
                     tableEchartsRef.current = new CherryTableEchartsPlugin({
                         echarts: window.echarts,
                         cherry: CHERRY_SHIM,
@@ -125,7 +159,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         };
     }, [content, dependenciesLoaded, colorMode]);
 
-    // Post-render triggers: Mermaid, ECharts, MathJax
+    // Post-render triggers: Mermaid, ECharts
     useEffect(() => {
         if (!html || !containerRef.current) return;
 
