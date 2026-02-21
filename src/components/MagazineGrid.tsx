@@ -23,7 +23,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     const [postToDelete, setPostToDelete] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const { ref: loadMoreRef, inView } = useInView({ threshold: 0.1 });
+    const { ref: loadMoreRef, inView } = useInView({ threshold: 0.1, initialInView: false });
     const POSTS_PER_PAGE = 6;
 
     const displayPosts = useMemo(() => {
@@ -48,7 +48,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
         setIsLoadingMore(true);
         const nextPage = page + 1;
         const nextPosts = displayPosts.slice(page * POSTS_PER_PAGE, nextPage * POSTS_PER_PAGE);
-        const missingContentIds = nextPosts.filter(p => !p.content).map(p => p.id);
+        const missingContentIds = nextPosts.filter(p => !p.excerpt && !p.content).map(p => p.id);
 
         if (missingContentIds.length > 0) {
             await loadMoreContent(missingContentIds);
@@ -58,10 +58,11 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     };
 
     React.useEffect(() => {
-        if (inView) {
+        // Only trigger load more if we are in view, we actually have posts to display, and not already loading
+        if (inView && displayPosts.length > 0 && !isLoadingMore) {
             handleLoadMore();
         }
-    }, [inView]);
+    }, [inView, displayPosts.length, isLoadingMore]);
 
     const handleDeleteRequest = (postId: string) => {
         setPostToDelete(postId);

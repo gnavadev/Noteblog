@@ -132,7 +132,7 @@ const PostCard: React.FC<PostCardProps> = ({
                                 a: ({ children }) => <span className="text-primary">{children}</span>
                             }}
                         >
-                            {stripCherryFormatting(post.content || '')}
+                            {stripCherryFormatting(post.excerpt || '')}
                         </ReactMarkdown>
                     </div>
 

@@ -24,11 +24,20 @@ let posts = postsResult.data || [];
 const topics = topicsResult.data || [];
 const recentContent = recentContentResult.data || [];
 
-// Merge the heavy preview content into the first 6 light metadata arrays
+// Merge a lightweight text excerpt into the first 6 posts (discarding the heavy content body!)
 if (recentContent.length > 0) {
 	posts = posts.map((post) => {
 		const match = recentContent.find((rc) => rc.id === post.id);
-		return match ? { ...post, content: match.content } : post;
+		if (match && match.content) {
+			// Strip massive base64 image data and truncate text!
+			let rawText = match.content.replace(
+				/data:image\/[^;]+;base64,[^\)"]+/g,
+				"",
+			);
+			let excerpt = rawText.substring(0, 400);
+			return { ...post, excerpt };
+		}
+		return post;
 	});
 }
 ---

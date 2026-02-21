@@ -36,6 +36,12 @@ const CherryMarkdownViewer = React.memo(({ content, colorMode, className }: Cher
                 const CherryClass = await getCherryWithPlugins();
                 if (!editorContainerRef.current) return;
 
+                // Yield to the browser rendering cycle to allow the CSS Drawer slide animation 
+                // to smoothly execute before we block the main thread with heavy markdown parsing!
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                if (!editorContainerRef.current) return;
+
                 editorInstanceRef.current = new CherryClass({
                     id: uniqueId,
                     value: content,

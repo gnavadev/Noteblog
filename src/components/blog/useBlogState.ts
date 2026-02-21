@@ -276,7 +276,12 @@ export function useBlogState(
             if (data) {
                 setPosts(currentPosts => currentPosts.map(p => {
                     const match = data.find(newD => newD.id === p.id);
-                    return match ? { ...p, content: match.content } : p;
+                    if (match && match.content) {
+                        let rawText = match.content.replace(/data:image\/[^;]+;base64,[^\)"]+/g, '');
+                        let excerpt = rawText.substring(0, 400);
+                        return { ...p, excerpt };
+                    }
+                    return p;
                 }));
             }
         } catch (error) {
