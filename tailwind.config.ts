@@ -1,33 +1,6 @@
 import type { Config } from 'tailwindcss';
 import animate from 'tailwindcss-animate';
 import typography from '@tailwindcss/typography';
-import plugin from 'tailwindcss/plugin';
-import { flavors } from '@catppuccin/palette';
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-const toHsl = ({ h, s, l }: { h: number; s: number; l: number }) =>
-	`${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%`;
-
-const paletteVars = (
-	prefix: string,
-	flavor: (typeof flavors)[keyof typeof flavors],
-) =>
-	Object.fromEntries(
-		Object.entries(flavor.colors).map(([name, color]) => [
-			`--ctp-${prefix}-${name}`,
-			toHsl(color.hsl),
-		]),
-	);
-
-// ─── Plugin ──────────────────────────────────────────────────────────────────
-
-const catppuccinPlugin = plugin(({ addBase }) => {
-	addBase({
-		':root': paletteVars('latte', flavors.latte),
-		'html[data-theme="dark"], .dark': paletteVars('mocha', flavors.mocha),
-	});
-});
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -120,5 +93,5 @@ export default {
 			}),
 		},
 	},
-	plugins: [animate, typography, catppuccinPlugin],
+	plugins: [animate, typography],
 } satisfies Config;
