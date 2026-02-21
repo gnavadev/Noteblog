@@ -31,8 +31,19 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
 
                     if (isCancelled) return;
 
+                    const localeData = {
+                        maxValue: 'Max',
+                        minValue: 'Min',
+                        chartRenderError: 'Chart Error',
+                        saveAsImage: 'Save as Image',
+                    };
+
                     // Initialize engine instance with native theme settings
                     engineRef.current = new CherryEngineClass({
+                        locale: 'en_US',
+                        locales: {
+                            en_US: localeData
+                        },
                         themeSettings: {
                             mainTheme: colorMode,
                             codeBlockTheme: 'default',
@@ -62,16 +73,18 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                         mermaid
                     });
 
+                    // CRITICAL: Manually ensure the engine instance has the locale property
+                    // Plugins in Cherry Markdown often access this.cherry.locale directly.
+                    // The lightweight engine might not initialize it from options automatically.
+                    if (!engineRef.current.locale) {
+                        engineRef.current.locale = localeData;
+                    }
+
                     // Create a plugin instance for manual rendering triggers
                     tableEchartsRef.current = new CherryTableEchartsPlugin({
                         echarts: window.echarts,
                         cherry: {
-                            locale: {
-                                maxValue: 'Max',
-                                minValue: 'Min',
-                                chartRenderError: 'Chart Error',
-                                saveAsImage: 'Save as Image'
-                            }
+                            locale: localeData
                         }
                     });
                 } catch (e) {
