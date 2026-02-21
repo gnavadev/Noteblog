@@ -1,16 +1,18 @@
-const { flavors } = require('@catppuccin/palette');
-const plugin = require('tailwindcss/plugin');
+import type { Config } from 'tailwindcss';
+import animate from 'tailwindcss-animate';
+import typography from '@tailwindcss/typography';
+import plugin from 'tailwindcss/plugin';
+import { flavors } from '@catppuccin/palette';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/** Convert a Catppuccin HSL object to "H S% L%" (shadcn/Tailwind format) */
-const toHsl = ({ h, s, l }) =>
+const toHsl = ({ h, s, l }: { h: number; s: number; l: number }) =>
 	`${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%`;
 
-/** Build a flat record of CSS vars from a Catppuccin flavor, e.g.
- *  { '--ctp-latte-yellow': '35 77% 49%', ... }
- */
-const paletteVars = (prefix, flavor) =>
+const paletteVars = (
+	prefix: string,
+	flavor: (typeof flavors)[keyof typeof flavors],
+) =>
 	Object.fromEntries(
 		Object.entries(flavor.colors).map(([name, color]) => [
 			`--ctp-${prefix}-${name}`,
@@ -18,7 +20,7 @@ const paletteVars = (prefix, flavor) =>
 		]),
 	);
 
-// ─── Plugin: inject Catppuccin tokens as CSS variables ───────────────────────
+// ─── Plugin ──────────────────────────────────────────────────────────────────
 
 const catppuccinPlugin = plugin(({ addBase }) => {
 	addBase({
@@ -27,10 +29,9 @@ const catppuccinPlugin = plugin(({ addBase }) => {
 	});
 });
 
-// ─── Config ─────────────────────────────────────────────────────────────────
+// ─── Config ──────────────────────────────────────────────────────────────────
 
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
 	darkMode: ['class', '[data-theme="dark"]'],
 	content: ['./src/**/*.{astro,html,js,jsx,md,mdx,ts,tsx}'],
 	theme: {
@@ -119,9 +120,5 @@ module.exports = {
 			}),
 		},
 	},
-	plugins: [
-		require('tailwindcss-animate'),
-		require('@tailwindcss/typography'),
-		catppuccinPlugin,
-	],
-};
+	plugins: [animate, typography, catppuccinPlugin],
+} satisfies Config;
