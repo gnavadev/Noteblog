@@ -1,4 +1,10 @@
 ---
+export const prerender = false;
+Astro.response.headers.set(
+	"Cache-Control",
+	"s-maxage=60, stale-while-revalidate=3600",
+);
+
 import Layout from "../layouts/Layout.astro";
 import BlogShell from "../components/BlogShell";
 import { supabase } from "../lib/supabase";
