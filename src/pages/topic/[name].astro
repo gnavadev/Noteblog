@@ -1,9 +1,9 @@
 ---
-export const prerender = true;
-export async function getStaticPaths() {
-  const { data: topics } = await supabase.from("topics").select("name");
-  return topics.map(topic => ({ params: { name: topic.name } }));
-}
+export const prerender = false;
+Astro.response.headers.set(
+    "Cache-Control",
+    "s-maxage=60, stale-while-revalidate=3600",
+);
 
 import Layout from "../../layouts/Layout.astro";
 import { supabase } from "../../lib/supabase";

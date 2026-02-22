@@ -58,11 +58,19 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     };
 
     React.useEffect(() => {
-        // Only trigger load more if we are in view, we actually have posts to display, and not already loading
+        // Trigger load more when scrolling into view
         if (inView && displayPosts.length > 0 && !isLoadingMore) {
             handleLoadMore();
         }
     }, [inView, displayPosts.length, isLoadingMore]);
+
+    // Ensure currently displayed posts always have their excerpts loaded
+    React.useEffect(() => {
+        const missingContentIds = paginatedPosts.filter(p => !p.excerpt && !p.content).map(p => p.id);
+        if (missingContentIds.length > 0) {
+            loadMoreContent(missingContentIds);
+        }
+    }, [paginatedPosts, loadMoreContent]);
 
     const handleDeleteRequest = (postId: string) => {
         setPostToDelete(postId);

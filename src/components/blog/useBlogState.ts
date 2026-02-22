@@ -135,12 +135,9 @@ export function useBlogState(
     const hasInitialFetch = useRef(initialPosts.length > 0);
 
     useEffect(() => {
-        // We only want to auto-fetch if we explicitly are told we didn't get initialPosts
-        // or if a manual refresh was requested. We rely on initialPosts for the first load.
-        if (!hasInitialFetch.current && initialPosts.length === 0) {
-            fetchPosts();
-        }
-        hasInitialFetch.current = false;
+        // Always fetch posts on mount to ensure we have the absolute latest
+        // data even if SSR provided a cached stale version.
+        fetchPosts();
 
         const dbChannel = supabase
             .channel('magazine_db_changes')
