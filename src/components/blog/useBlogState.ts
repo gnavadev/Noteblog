@@ -92,7 +92,20 @@ export function useBlogState(
         const { data, error } = await query.order('created_at', { ascending: false });
 
         if (!error && data) {
-            setPosts(data);
+            // Merge with existing posts to preserve excerpts/content we already loaded
+            setPosts((currentPosts) => {
+                return data.map((newPost: any) => {
+                    const existingPost = currentPosts.find(p => p.id === newPost.id);
+                    if (existingPost) {
+                        return {
+                            ...newPost,
+                            content: (existingPost as any).content || newPost.content,
+                            excerpt: (existingPost as any).excerpt || newPost.excerpt
+                        };
+                    }
+                    return newPost;
+                });
+            });
         }
         setLoading(false);
     }, [user]);
