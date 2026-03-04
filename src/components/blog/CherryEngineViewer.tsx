@@ -258,6 +258,22 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         }
     }, [html, resolvedMode]);
 
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+
+        const ro = new ResizeObserver(() => {
+            if (!window.echarts) return;
+            container.querySelectorAll('.cherry-echarts-wrapper').forEach((el: any) => {
+                const instance = window.echarts.getInstanceByDom(el);
+                if (instance) instance.resize();
+            });
+        });
+
+        ro.observe(container);
+        return () => ro.disconnect();
+    }, [html]);
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
