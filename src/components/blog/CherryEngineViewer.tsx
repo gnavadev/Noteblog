@@ -266,13 +266,36 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
             if (!window.echarts) return;
             container.querySelectorAll('.cherry-echarts-wrapper').forEach((el: any) => {
                 const instance = window.echarts.getInstanceByDom(el);
-                if (instance) instance.resize();
+                if (instance) {
+                    instance.resize();
+                } else if (el.getAttribute('data-processed') && tableEchartsRef.current) {
+                    // Instance was disposed (e.g. during animation through zero dimensions).
+                    // Re-initialize the chart from its stored data attributes.
+                    try {
+                        const chartType = el.getAttribute('data-chart-type');
+                        const tableDataStr = el.getAttribute('data-table-data');
+                        const optionsStr = el.getAttribute('data-chart-options');
+                        if (chartType && tableDataStr && el.offsetWidth > 0) {
+                            const tableData = JSON.parse(tableDataStr);
+                            const chartOptions = optionsStr ? JSON.parse(optionsStr) : {};
+                            const plugin = tableEchartsRef.current;
+                            // @ts-ignore
+                            plugin.$buildEchartsThemeFromCss(container);
+                            // @ts-ignore
+                            const fullOptions = plugin.$generateChartOptions(chartType, tableData, chartOptions);
+                            // @ts-ignore
+                            plugin.createChart(el, fullOptions, chartType);
+                        }
+                    } catch (err) {
+                        console.error('ECharts re-init on resize error:', err);
+                    }
+                }
             });
         });
 
         ro.observe(container);
         return () => ro.disconnect();
-    }, [html]);
+    }, [html, resolvedMode]);
 
     // Cleanup on unmount
     useEffect(() => {
