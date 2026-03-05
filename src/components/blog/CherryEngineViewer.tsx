@@ -105,30 +105,14 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
 
     useEffect(() => {
         let isCancelled = false;
-        console.log('[CherryViewer] Main effect triggered', {
-            hasContent: !!content,
-            contentLength: content?.length,
-            dependenciesLoaded,
-            resolvedMode,
-            hasEngine: !!engineRef.current,
-            containerDims: containerRef.current ? {
-                width: containerRef.current.offsetWidth,
-                height: containerRef.current.offsetHeight,
-                display: getComputedStyle(containerRef.current).display,
-                visibility: getComputedStyle(containerRef.current).visibility,
-                opacity: getComputedStyle(containerRef.current).opacity,
-            } : 'no container'
-        });
 
         const initAndRender = async () => {
             // Reset engine when theme changes so codeBlockTheme re-initializes correctly
             if (engineRef.current && engineRef.current.__resolvedMode !== resolvedMode) {
-                console.log('[CherryViewer] Resetting engine due to theme change');
                 engineRef.current = null;
             }
 
             if (!engineRef.current) {
-                console.log('[CherryViewer] Initializing new engine...');
                 try {
                     const {
                         CherryEngineClass,
@@ -169,7 +153,6 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                         },
                         mermaid,
                     });
-                    console.log('[CherryViewer] Engine created successfully');
 
                     const engine = engineRef.current;
 
@@ -202,18 +185,11 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                 } catch (e) {
                     console.error('Failed to init Cherry Engine:', e);
                 }
-            } else {
-                console.log('[CherryViewer] Reusing existing engine');
             }
 
             if (engineRef.current && content) {
                 try {
                     const markup = engineRef.current.makeHtml(content);
-                    console.log('[CherryViewer] makeHtml produced', {
-                        markupLength: markup?.length,
-                        hasEchartsWrapper: markup?.includes('cherry-echarts-wrapper'),
-                        echartsWrapperCount: (markup?.match(/cherry-echarts-wrapper/g) || []).length,
-                    });
                     if (!isCancelled) setHtml(markup);
                 } catch (e) {
                     console.error('Failed to render markdown:', e);
@@ -233,23 +209,9 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
 
     // Post-render triggers: Mermaid, ECharts
     useEffect(() => {
-        if (!html || !containerRef.current) {
-            console.log('[CherryViewer] Post-render skipped', { hasHtml: !!html, hasContainer: !!containerRef.current });
-            return;
-        }
+        if (!html || !containerRef.current) return;
 
         const container = containerRef.current;
-        console.log('[CherryViewer] Post-render effect running', {
-            containerDims: {
-                offsetWidth: container.offsetWidth,
-                offsetHeight: container.offsetHeight,
-                clientWidth: container.clientWidth,
-                clientHeight: container.clientHeight,
-            },
-            echartsWrapperCount: container.querySelectorAll('.cherry-echarts-wrapper').length,
-            hasEcharts: !!window.echarts,
-            hasPlugin: !!tableEchartsRef.current,
-        });
 
         // 1. Mermaid
         if (window.mermaid) {
@@ -266,24 +228,14 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
         }
 
         // Helper: initialize a single chart element (used by post-render AND ResizeObserver)
-        const initChartElement = (el: any, parentContainer: HTMLElement, label: string) => {
+        const initChartElement = (el: any, parentContainer: HTMLElement) => {
             try {
                 const chartType = el.getAttribute('data-chart-type');
                 const tableDataStr = el.getAttribute('data-table-data');
                 const optionsStr = el.getAttribute('data-chart-options');
 
-                if (!chartType || !tableDataStr) {
-                    console.warn(`[CherryViewer] ${label} missing data`, { chartType, hasTableData: !!tableDataStr });
-                    return false;
-                }
-
-                if (el.offsetWidth <= 0 || el.offsetHeight <= 0) {
-                    console.warn(`[CherryViewer] ${label} has zero dimensions, skipping`, {
-                        offsetWidth: el.offsetWidth,
-                        offsetHeight: el.offsetHeight,
-                    });
-                    return false;
-                }
+                if (!chartType || !tableDataStr) return false;
+                if (el.offsetWidth <= 0 || el.offsetHeight <= 0) return false;
 
                 const tableData = JSON.parse(tableDataStr);
                 const chartOptions = optionsStr ? JSON.parse(optionsStr) : {};
@@ -295,23 +247,16 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                 // @ts-ignore
                 plugin.createChart(el, fullOptions, chartType);
                 el.setAttribute('data-processed', 'true');
-                console.log(`[CherryViewer] ${label} initialized successfully`, { chartType });
                 return true;
             } catch (err) {
-                console.error(`[CherryViewer] ${label} init error:`, err);
+                console.error('ECharts chart init error:', err);
                 return false;
             }
         };
 
         // 2. ECharts – try immediately, then retry after a delay if echarts isn't ready yet
         const tryProcessCharts = () => {
-            if (!window.echarts || !tableEchartsRef.current) {
-                console.warn('[CherryViewer] ECharts not available yet', {
-                    hasEcharts: !!window.echarts,
-                    hasPlugin: !!tableEchartsRef.current,
-                });
-                return false;
-            }
+            if (!window.echarts || !tableEchartsRef.current) return false;
             let allProcessed = true;
             container.querySelectorAll('.cherry-echarts-wrapper').forEach((chartContainer: any, idx: number) => {
                 if (chartContainer.getAttribute('data-processed')) return;
@@ -320,7 +265,7 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                     chartContainer.setAttribute('data-processed', 'true');
                     return;
                 }
-                const ok = initChartElement(chartContainer, container, `Post-render chart #${idx}`);
+                const ok = initChartElement(chartContainer, container);
                 if (!ok) allProcessed = false;
             });
             return allProcessed;
@@ -361,9 +306,8 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
                 // @ts-ignore
                 plugin.createChart(el, fullOptions, chartType);
                 el.setAttribute('data-processed', 'true');
-                console.log(`[CherryViewer] ResizeObserver chart #${idx} initialized successfully`);
             } catch (err) {
-                console.error(`[CherryViewer] ResizeObserver chart #${idx} init error:`, err);
+                console.error('ECharts re-init on resize error:', err);
             }
         };
 
