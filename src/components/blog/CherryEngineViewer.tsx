@@ -265,135 +265,125 @@ const CherryEngineViewer: React.FC<CherryEngineViewerProps> = ({ content, colorM
             }
         }
 
-        // 2. ECharts
-        if (window.echarts && tableEchartsRef.current) {
-            container.querySelectorAll('.cherry-echarts-wrapper').forEach((chartContainer: any, idx: number) => {
-                try {
-                    const isProcessed = chartContainer.getAttribute('data-processed');
-                    const chartDims = {
-                        offsetWidth: chartContainer.offsetWidth,
-                        offsetHeight: chartContainer.offsetHeight,
-                        clientWidth: chartContainer.clientWidth,
-                        clientHeight: chartContainer.clientHeight,
-                    };
-                    console.log(`[CherryViewer] ECharts wrapper #${idx}`, {
-                        isProcessed,
-                        chartDims,
-                        chartType: chartContainer.getAttribute('data-chart-type'),
-                        hasExistingInstance: !!window.echarts.getInstanceByDom(chartContainer),
-                    });
+        // Helper: initialize a single chart element (used by post-render AND ResizeObserver)
+        const initChartElement = (el: any, parentContainer: HTMLElement, label: string) => {
+            try {
+                const chartType = el.getAttribute('data-chart-type');
+                const tableDataStr = el.getAttribute('data-table-data');
+                const optionsStr = el.getAttribute('data-chart-options');
 
-                    if (isProcessed) return;
-
-                    const chartType = chartContainer.getAttribute('data-chart-type');
-                    const tableDataStr = chartContainer.getAttribute('data-table-data');
-                    const optionsStr = chartContainer.getAttribute('data-chart-options');
-
-                    if (chartType && tableDataStr) {
-                        const tableData = JSON.parse(tableDataStr);
-                        const chartOptions = optionsStr ? JSON.parse(optionsStr) : {};
-                        const plugin = tableEchartsRef.current;
-
-                        // @ts-ignore
-                        plugin.$buildEchartsThemeFromCss(container);
-                        // @ts-ignore
-                        const fullOptions = plugin.$generateChartOptions(chartType, tableData, chartOptions);
-                        console.log(`[CherryViewer] Creating chart #${idx}`, { chartType, fullOptions });
-                        // @ts-ignore
-                        plugin.createChart(chartContainer, fullOptions, chartType);
-
-                        chartContainer.setAttribute('data-processed', 'true');
-                        console.log(`[CherryViewer] Chart #${idx} created successfully`);
-                    } else {
-                        console.warn(`[CherryViewer] Chart #${idx} missing data`, { chartType, hasTableData: !!tableDataStr });
-                    }
-                } catch (err) {
-                    console.error('ECharts render error:', err);
+                if (!chartType || !tableDataStr) {
+                    console.warn(`[CherryViewer] ${label} missing data`, { chartType, hasTableData: !!tableDataStr });
+                    return false;
                 }
+
+                if (el.offsetWidth <= 0 || el.offsetHeight <= 0) {
+                    console.warn(`[CherryViewer] ${label} has zero dimensions, skipping`, {
+                        offsetWidth: el.offsetWidth,
+                        offsetHeight: el.offsetHeight,
+                    });
+                    return false;
+                }
+
+                const tableData = JSON.parse(tableDataStr);
+                const chartOptions = optionsStr ? JSON.parse(optionsStr) : {};
+                const plugin = tableEchartsRef.current;
+                // @ts-ignore
+                plugin.$buildEchartsThemeFromCss(parentContainer);
+                // @ts-ignore
+                const fullOptions = plugin.$generateChartOptions(chartType, tableData, chartOptions);
+                // @ts-ignore
+                plugin.createChart(el, fullOptions, chartType);
+                el.setAttribute('data-processed', 'true');
+                console.log(`[CherryViewer] ${label} initialized successfully`, { chartType });
+                return true;
+            } catch (err) {
+                console.error(`[CherryViewer] ${label} init error:`, err);
+                return false;
+            }
+        };
+
+        // 2. ECharts – try immediately, then retry after a delay if echarts isn't ready yet
+        const tryProcessCharts = () => {
+            if (!window.echarts || !tableEchartsRef.current) {
+                console.warn('[CherryViewer] ECharts not available yet', {
+                    hasEcharts: !!window.echarts,
+                    hasPlugin: !!tableEchartsRef.current,
+                });
+                return false;
+            }
+            let allProcessed = true;
+            container.querySelectorAll('.cherry-echarts-wrapper').forEach((chartContainer: any, idx: number) => {
+                if (chartContainer.getAttribute('data-processed')) return;
+                const existingInstance = window.echarts.getInstanceByDom(chartContainer);
+                if (existingInstance) {
+                    chartContainer.setAttribute('data-processed', 'true');
+                    return;
+                }
+                const ok = initChartElement(chartContainer, container, `Post-render chart #${idx}`);
+                if (!ok) allProcessed = false;
             });
-        } else {
-            console.warn('[CherryViewer] ECharts post-render skipped', {
-                hasEcharts: !!window.echarts,
-                hasPlugin: !!tableEchartsRef.current,
-            });
-        }
+            return allProcessed;
+        };
+
+        tryProcessCharts();
+
+        // Retry after delays in case window.echarts loaded late or containers had zero dims
+        const retryTimers = [
+            setTimeout(() => tryProcessCharts(), 300),
+            setTimeout(() => tryProcessCharts(), 800),
+            setTimeout(() => tryProcessCharts(), 1500),
+        ];
+
+        return () => retryTimers.forEach(t => clearTimeout(t));
     }, [html, resolvedMode]);
 
     useEffect(() => {
         if (!containerRef.current) return;
         const container = containerRef.current;
-        let resizeCount = 0;
 
-        const ro = new ResizeObserver((entries) => {
-            resizeCount++;
-            const entry = entries[0];
-            console.log(`[CherryViewer] ResizeObserver fired #${resizeCount}`, {
-                containerWidth: entry?.contentRect?.width,
-                containerHeight: entry?.contentRect?.height,
-                offsetWidth: container.offsetWidth,
-                offsetHeight: container.offsetHeight,
-                hasEcharts: !!window.echarts,
-                wrapperCount: container.querySelectorAll('.cherry-echarts-wrapper').length,
-            });
+        // Helper: initialize a chart element inside the ResizeObserver
+        const initChartInResize = (el: any, idx: number) => {
+            try {
+                const chartType = el.getAttribute('data-chart-type');
+                const tableDataStr = el.getAttribute('data-table-data');
+                const optionsStr = el.getAttribute('data-chart-options');
 
-            if (!window.echarts) return;
+                if (!chartType || !tableDataStr || el.offsetWidth <= 0) return;
+
+                const tableData = JSON.parse(tableDataStr);
+                const chartOptions = optionsStr ? JSON.parse(optionsStr) : {};
+                const plugin = tableEchartsRef.current;
+                // @ts-ignore
+                plugin.$buildEchartsThemeFromCss(container);
+                // @ts-ignore
+                const fullOptions = plugin.$generateChartOptions(chartType, tableData, chartOptions);
+                // @ts-ignore
+                plugin.createChart(el, fullOptions, chartType);
+                el.setAttribute('data-processed', 'true');
+                console.log(`[CherryViewer] ResizeObserver chart #${idx} initialized successfully`);
+            } catch (err) {
+                console.error(`[CherryViewer] ResizeObserver chart #${idx} init error:`, err);
+            }
+        };
+
+        const ro = new ResizeObserver(() => {
+            if (!window.echarts || !tableEchartsRef.current) return;
             container.querySelectorAll('.cherry-echarts-wrapper').forEach((el: any, idx: number) => {
                 const instance = window.echarts.getInstanceByDom(el);
-                const elDims = { offsetWidth: el.offsetWidth, offsetHeight: el.offsetHeight };
-                console.log(`[CherryViewer] ResizeObserver chart #${idx}`, {
-                    hasInstance: !!instance,
-                    isDisposed: instance?.isDisposed?.(),
-                    isProcessed: el.getAttribute('data-processed'),
-                    elDims,
-                });
 
-                if (instance) {
+                if (instance && !instance.isDisposed()) {
                     instance.resize();
-                    console.log(`[CherryViewer] Resized chart #${idx}`);
-                } else if (el.getAttribute('data-processed') && tableEchartsRef.current) {
-                    // Instance was disposed (e.g. during animation through zero dimensions).
-                    // Re-initialize the chart from its stored data attributes.
-                    console.log(`[CherryViewer] Chart #${idx} instance disposed, attempting re-init...`, elDims);
-                    try {
-                        const chartType = el.getAttribute('data-chart-type');
-                        const tableDataStr = el.getAttribute('data-table-data');
-                        const optionsStr = el.getAttribute('data-chart-options');
-                        if (chartType && tableDataStr && el.offsetWidth > 0) {
-                            const tableData = JSON.parse(tableDataStr);
-                            const chartOptions = optionsStr ? JSON.parse(optionsStr) : {};
-                            const plugin = tableEchartsRef.current;
-                            // @ts-ignore
-                            plugin.$buildEchartsThemeFromCss(container);
-                            // @ts-ignore
-                            const fullOptions = plugin.$generateChartOptions(chartType, tableData, chartOptions);
-                            // @ts-ignore
-                            plugin.createChart(el, fullOptions, chartType);
-                            console.log(`[CherryViewer] Chart #${idx} re-initialized successfully`);
-                        } else {
-                            console.warn(`[CherryViewer] Chart #${idx} re-init skipped`, {
-                                chartType,
-                                hasTableData: !!tableDataStr,
-                                offsetWidth: el.offsetWidth,
-                            });
-                        }
-                    } catch (err) {
-                        console.error('ECharts re-init on resize error:', err);
-                    }
                 } else {
-                    console.warn(`[CherryViewer] ResizeObserver chart #${idx}: no instance, not processed yet or no plugin`, {
-                        isProcessed: el.getAttribute('data-processed'),
-                        hasPlugin: !!tableEchartsRef.current,
-                    });
+                    // Either never initialized, or disposed during animation.
+                    // (Re-)initialize from data attributes.
+                    initChartInResize(el, idx);
                 }
             });
         });
 
         ro.observe(container);
-        console.log('[CherryViewer] ResizeObserver attached to container');
-        return () => {
-            console.log('[CherryViewer] ResizeObserver disconnected');
-            ro.disconnect();
-        };
+        return () => ro.disconnect();
     }, [html, resolvedMode]);
 
     // Cleanup on unmount
