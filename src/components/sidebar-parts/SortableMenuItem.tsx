@@ -40,14 +40,14 @@ const SortableMenuItem: React.FC<SortableMenuItemProps> = ({ id, label, isAdmin 
             ref={setNodeRef}
             style={style}
             {...(isMounted ? attributes : {})}
-            className="flex items-center w-full group/sortable"
+            className="relative flex items-center w-full group/sortable"
         >
             {isAdmin && (
-                <div {...listeners} className="mr-1 p-1 -ml-1 cursor-grab active:cursor-grabbing hover:bg-accent rounded opacity-0 group-hover/sortable:opacity-100 transition-opacity">
+                <div {...listeners} className="absolute -left-1 top-1/2 -translate-y-1/2 z-10 p-1 cursor-grab active:cursor-grabbing hover:bg-accent rounded opacity-0 group-hover/sortable:opacity-100 transition-opacity">
                     <GripVertical className="h-3.5 w-3.5 opacity-50 shrink-0" />
                 </div>
             )}
-            <div className="flex-1">{label}</div>
+            <div className="flex-1 min-w-0">{label}</div>
         </div>
     );
 };

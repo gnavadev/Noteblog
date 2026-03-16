@@ -306,6 +306,50 @@
 }
 
 /* ─────────────────────────────────────────────
+   LIST STYLES — restore what Tailwind preflight strips
+───────────────────────────────────────────── */
+.cherry-viewer-root .cherry-markdown ol,
+.cherry-viewer-wrapper .cherry-markdown ol,
+.cherry .cherry-markdown ol,
+#cherry-markdown-container ol {
+  list-style-type: decimal;
+  padding-left: 2em;
+  margin: 0.5em 0;
+}
+
+.cherry-viewer-root .cherry-markdown ul,
+.cherry-viewer-wrapper .cherry-markdown ul,
+.cherry .cherry-markdown ul,
+#cherry-markdown-container ul {
+  list-style-type: disc;
+  padding-left: 2em;
+  margin: 0.5em 0;
+}
+
+.cherry-viewer-root .cherry-markdown li,
+.cherry-viewer-wrapper .cherry-markdown li,
+.cherry .cherry-markdown li,
+#cherry-markdown-container li {
+  display: list-item;
+  margin: 0.25em 0;
+}
+
+/* Nested lists */
+.cherry-viewer-root .cherry-markdown ol ol,
+.cherry-viewer-wrapper .cherry-markdown ol ol,
+.cherry .cherry-markdown ol ol,
+#cherry-markdown-container ol ol {
+  list-style-type: lower-alpha;
+}
+
+.cherry-viewer-root .cherry-markdown ul ul,
+.cherry-viewer-wrapper .cherry-markdown ul ul,
+.cherry .cherry-markdown ul ul,
+#cherry-markdown-container ul ul {
+  list-style-type: circle;
+}
+
+/* ─────────────────────────────────────────────
    MERMAID
 ───────────────────────────────────────────── */
 .mermaid,
