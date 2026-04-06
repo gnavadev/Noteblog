@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from "@/hooks/use-toast";
-import { isAdmin as checkAdmin } from '@/lib/auth-utils';
+import { isAdmin as checkAdmin, getAvatarUrl } from '@/lib/auth-utils';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { Post } from './types';
 import { useTopics } from '../TopicProvider';
 
@@ -18,8 +19,10 @@ export function useBlogState(
     const [selectedPostId, setSelectedPostId] = useState<string | null>(initialSelectedPostId);
     const [selectedTopic, setSelectedTopic] = useState<string | null>(initialTopic);
 
-    const [user, setUser] = useState<any>(null);
-    const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
+    const { user } = useCurrentUser();
+    const [adminAvatar, setAdminAvatar] = useState<string | null>(() =>
+        typeof window !== 'undefined' ? localStorage.getItem('adminAvatar') : null
+    );
     const [isReaderExpanded, setIsReaderExpanded] = useState(!!initialSelectedPostId);
     const [showPostIt, setShowPostIt] = useState(initialShowPostIt);
 
@@ -110,47 +113,29 @@ export function useBlogState(
         setLoading(false);
     }, [user]);
 
-    // Effect 1: Auth Session & Listener
+    // Cache admin avatar when user signs in
     useEffect(() => {
-        const savedAvatar = localStorage.getItem('adminAvatar');
-        if (savedAvatar) setAdminAvatar(savedAvatar);
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
-            if (checkAdmin(currentUser?.id)) {
-                const avatar = currentUser?.user_metadata?.avatar_url;
-                if (avatar) {
-                    setAdminAvatar(avatar);
-                    localStorage.setItem('adminAvatar', avatar);
-                }
+        if (checkAdmin(user?.id)) {
+            const avatar = getAvatarUrl(user?.user_metadata);
+            if (avatar) {
+                setAdminAvatar(avatar);
+                localStorage.setItem('adminAvatar', avatar);
             }
-        });
+        }
+    }, [user]);
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
-            if (checkAdmin(currentUser?.id)) {
-                const avatar = currentUser?.user_metadata?.avatar_url;
-                if (avatar) {
-                    setAdminAvatar(avatar);
-                    localStorage.setItem('adminAvatar', avatar);
-                }
-            }
-        });
-
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, []); // Run ONLY once on mount
-
-    // Effect 2: Data Refresh & Realtime Subscriptions
-    const hasInitialFetch = useRef(initialPosts.length > 0);
+    // Effect: Data Refresh & Realtime Subscriptions
+    const skippedInitialFetch = useRef(false);
 
     useEffect(() => {
-        // Always fetch posts on mount to ensure we have the absolute latest
-        // data even if SSR provided a cached stale version.
-        fetchPosts();
+        // Skip the first fetch if the server already provided fresh posts.
+        // Re-fetch when user state changes (e.g. admin logs in to see private posts).
+        const isFirstRun = !skippedInitialFetch.current;
+        skippedInitialFetch.current = true;
+
+        if (!isFirstRun || initialPosts.length === 0) {
+            fetchPosts();
+        }
 
         const dbChannel = supabase
             .channel('magazine_db_changes')

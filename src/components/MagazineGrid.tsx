@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +26,10 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
     const { ref: loadMoreRef, inView } = useInView({ threshold: 0.1, initialInView: false });
     const POSTS_PER_PAGE = 6;
 
+    React.useEffect(() => {
+        setPage(1);
+    }, [selectedTopic]);
+
     const displayPosts = useMemo(() => {
         let filtered = [...posts].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -43,7 +47,7 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
 
     const hasMore = displayPosts.length > page * POSTS_PER_PAGE;
 
-    const handleLoadMore = async () => {
+    const handleLoadMore = useCallback(async () => {
         if (isLoadingMore || !hasMore) return;
         setIsLoadingMore(true);
         const nextPage = page + 1;
@@ -55,14 +59,14 @@ const MagazineGrid: React.FC<MagazineGridProps> = ({
         }
         setPage(nextPage);
         setIsLoadingMore(false);
-    };
+    }, [isLoadingMore, hasMore, page, displayPosts, loadMoreContent]);
 
     React.useEffect(() => {
         // Trigger load more when scrolling into view
         if (inView && displayPosts.length > 0 && !isLoadingMore) {
             handleLoadMore();
         }
-    }, [inView, displayPosts.length, isLoadingMore]);
+    }, [inView, displayPosts.length, isLoadingMore, handleLoadMore]);
 
     // Ensure currently displayed posts always have their excerpts loaded
     React.useEffect(() => {

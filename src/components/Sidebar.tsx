@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, LayoutGrid } from 'lucide-react';
 import {
@@ -61,14 +61,14 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         })
     );
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;
         if (over && active.id !== over.id) {
             const oldIndex = topics.findIndex(t => t.name === active.id);
             const newIndex = topics.findIndex(t => t.name === over.id);
             onUpdateTopicOrder?.(arrayMove(topics, oldIndex, newIndex).map(t => t.name));
         }
-    };
+    }, [topics, onUpdateTopicOrder]);
 
     return (
         <Sidebar className="border-r border-border bg-sidebar/50 backdrop-blur-sm">

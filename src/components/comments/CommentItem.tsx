@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Edit2, Reply, Pin, Minus } from 'lucide-react';
+import { Trash2, Edit2, Reply, Pin, Minus, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getAvatarUrl, getUserDisplayName } from '@/lib/auth-utils';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,7 +18,6 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CommentList from './CommentList';
-import { PlusCircleIcon } from './PlusCircleIcon';
 import type { Comment, CommentActionsProps } from './types';
 
 interface CommentItemProps extends CommentActionsProps {
@@ -73,9 +73,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 {/* Avatar Column */}
                 <div className="flex flex-col items-center shrink-0">
                     <Avatar className={cn("border border-border z-10", isRoot ? "h-10 w-10" : "h-8 w-8")}>
-                        <AvatarImage src={comment.user_metadata?.avatar_url || comment.user_metadata?.picture} />
+                        <AvatarImage src={getAvatarUrl(comment.user_metadata)} />
                         <AvatarFallback className="bg-muted text-muted-foreground font-bold">
-                            {(comment.user_metadata?.full_name?.[0] || comment.user_metadata?.name?.[0] || 'U').toUpperCase()}
+                            {getUserDisplayName(comment.user_metadata, 'U')[0].toUpperCase()}
                         </AvatarFallback>
                     </Avatar>
 
@@ -98,7 +98,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                             <div className="flex items-center justify-between mb-1.5">
                                 <div className="flex items-center gap-2">
                                     <span className={cn("text-sm font-bold truncate", isRoot ? "text-foreground" : "text-foreground/90")}>
-                                        {comment.user_metadata?.full_name || comment.user_metadata?.name || 'Anonymous User'}
+                                        {getUserDisplayName(comment.user_metadata, 'Anonymous User')}
                                     </span>
                                     {isOwner && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">YOU</span>}
                                     {comment.user_metadata?.email === 'Gabrielnavainfo@gmail.com' && <span className="text-[10px] bg-purple-500/10 text-purple-500 px-1.5 py-0.5 rounded-full font-bold">AUTHOR</span>}
@@ -140,7 +140,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                                             onClick={() => setIsCollapsed(false)}
                                             className="flex items-center gap-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
                                         >
-                                            <PlusCircleIcon className="h-4 w-4" />
+                                            <PlusCircle className="h-4 w-4" />
                                             Show {comment.replies?.length} replies
                                         </button>
                                     )}

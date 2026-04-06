@@ -23,14 +23,6 @@ export default defineConfig({
   ],
 
   vite: {
-    ssr: {
-      noExternal: ['@uiw/react-md-editor', '@uiw/react-markdown-preview', '@excalidraw/excalidraw']
-    },
-
-    optimizeDeps: {
-      include: ['@uiw/react-md-editor', '@uiw/react-markdown-preview']
-    },
-
     define: {
       'process.env': {},
       'BUILD_ENV': '"production"'

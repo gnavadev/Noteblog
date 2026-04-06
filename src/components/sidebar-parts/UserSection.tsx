@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Mail, LogOut, User, MoreHorizontal, Github, Linkedin } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import {
     SidebarMenu,
     SidebarMenuItem,
@@ -14,38 +13,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { getAvatarUrl, getUserDisplayName } from '@/lib/auth-utils';
 
 const UserSection: React.FC = () => {
-    const [user, setUser] = useState<any>(null);
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    const getRedirectUrl = () => {
-        if (typeof window !== 'undefined') {
-            return window.location.origin;
-        }
-        return "https://noteblog-self.vercel.app/";
-    };
-
-    const loginWithGithub = () => supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: { redirectTo: getRedirectUrl() }
-    });
-
-    const loginWithLinkedin = () => supabase.auth.signInWithOAuth({
-        provider: 'linkedin_oidc',
-        options: { redirectTo: getRedirectUrl() }
-    });
+    const { user, loginWithProvider, signOut } = useCurrentUser();
 
     return (
         <SidebarMenu>
@@ -64,17 +36,17 @@ const UserSection: React.FC = () => {
                         <DropdownMenuTrigger asChild>
                             <SidebarMenuButton className="py-8 px-4 h-16">
                                 <Avatar className="h-10 w-10 mr-3 shrink-0">
-                                    <AvatarImage src={user.user_metadata?.avatar_url || user.user_metadata?.picture} />
+                                    <AvatarImage src={getAvatarUrl(user.user_metadata)} />
                                     <AvatarFallback><User /></AvatarFallback>
                                 </Avatar>
                                 <span className="font-bold text-foreground truncate flex-1">
-                                    {user.user_metadata?.full_name || user.user_metadata?.name || user.email}
+                                    {getUserDisplayName(user.user_metadata, user.email)}
                                 </span>
                                 <MoreHorizontal className="ml-2 h-4 w-4 opacity-50 shrink-0" />
                             </SidebarMenuButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent side="top" align="start" className="w-[--radix-popper-anchor-width] z-[1000]">
-                            <DropdownMenuItem onClick={() => supabase.auth.signOut()} className="cursor-pointer text-destructive focus:text-destructive">
+                            <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
                                 <LogOut className="mr-2 h-4 w-4" />
                                 <span>Logout</span>
                             </DropdownMenuItem>
@@ -85,7 +57,7 @@ const UserSection: React.FC = () => {
                 <div className="py-4 px-6 flex flex-col gap-2">
                     <Button
                         variant="outline"
-                        onClick={loginWithGithub}
+                        onClick={() => loginWithProvider('github')}
                         className="w-full justify-start gap-2 h-10"
                     >
                         <Github className="w-4 h-4" />
@@ -93,7 +65,7 @@ const UserSection: React.FC = () => {
                     </Button>
                     <Button
                         variant="outline"
-                        onClick={loginWithLinkedin}
+                        onClick={() => loginWithProvider('linkedin_oidc')}
                         className="w-full justify-start gap-2 h-10"
                     >
                         <Linkedin className="w-4 h-4" />

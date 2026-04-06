@@ -6,14 +6,13 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
-import mermaid from 'mermaid';
 import { getMermaidConfig } from '@/lib/mermaid-config';
 import { ContentArea, useBlogState, useTheme } from './blog';
 import type { Post } from './blog';
 import ErrorBoundary from './ErrorBoundary';
 import { TopicProvider } from './TopicProvider';
 import { useCherryDependencies } from './cherry';
-import { getCherryWithPlugins } from './cherry/cherryPlugins';
+import { getCherryEngineWithPlugins } from './cherry/cherryPlugins';
 import WelcomeDialog from './WelcomeDialog';
 
 interface BlogShellInnerProps {
@@ -57,7 +56,9 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
     } = useBlogState(initialPosts, initialSelectedPostId, initialTopic, initialShowPostIt);
 
     useEffect(() => {
-        mermaid.initialize(getMermaidConfig(colorMode) as any);
+        import('mermaid').then(({ default: mermaid }) => {
+            mermaid.initialize(getMermaidConfig(colorMode) as any);
+        });
     }, [colorMode]);
 
     const sidebarProps = {
@@ -81,11 +82,10 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
         const warmUp = () => {
             // 1. Fire off external dependency loading (non-blocking)
             loadDependencies?.();
-            // 2. Start fetching ReaderPanel and Viewer component chunks
+            // 2. Start fetching ReaderPanel chunk
             import('./ReaderPanel');
-            import('./CherryMarkdownViewer');
-            // 3. Eagerly invoke the heavy markdown parser chunk so it's cached!
-            getCherryWithPlugins().catch(() => { });
+            // 3. Eagerly cache the engine so it's ready when a post is opened
+            getCherryEngineWithPlugins().catch(() => { });
         };
 
         if (typeof window !== 'undefined') {

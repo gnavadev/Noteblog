@@ -1,5 +1,5 @@
 // Re-export types
-export type { Post, Topic, SidebarProps } from './types';
+export type { SidebarProps } from './types';
 export { sidebarItemVariants, sidebarContainerVariants } from './types';
 
 // Re-export components

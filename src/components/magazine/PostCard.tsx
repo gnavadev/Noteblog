@@ -14,7 +14,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cardVariants, type Post, type Topic } from './types';
+import { cardVariants } from './types';
+import type { Post, Topic } from '../blog/types';
 import { stripCherryFormatting } from '@/lib/markdown-utils';
 
 interface PostCardProps {

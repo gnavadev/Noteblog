@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import SortableMenuItem from './SortableMenuItem';
-import type { Post, Topic } from './types';
+import type { Post, Topic } from '../blog/types';
 
 interface CollapsibleTopicProps {
     topic: Topic;

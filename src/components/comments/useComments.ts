@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from "@/hooks/use-toast";
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { Comment } from './types';
 
 export function useComments(postId: string) {
     const [comments, setComments] = useState<Comment[]>([]);
-    const [user, setUser] = useState<any>(null);
+    const { user, loginWithProvider } = useCurrentUser();
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
@@ -48,14 +49,6 @@ export function useComments(postId: string) {
     }, [postId, buildCommentTree]);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-
         fetchComments();
 
         const channel = supabase
@@ -66,12 +59,11 @@ export function useComments(postId: string) {
             .subscribe();
 
         return () => {
-            subscription.unsubscribe();
             supabase.removeChannel(channel);
         };
     }, [postId, fetchComments]);
 
-    const handlePostComment = async (content: string, parentId: string | null = null) => {
+    const handlePostComment = useCallback(async (content: string, parentId: string | null = null) => {
         if (!content.trim() || !user) return;
 
         if (!parentId) setLoading(true);
@@ -93,12 +85,12 @@ export function useComments(postId: string) {
         } else {
             toast({ title: parentId ? "Reply added!" : "Comment posted!" });
             fetchComments();
-            if (!parentId) return true; // Signal to clear input
+            if (!parentId) return true;
         }
         return !error;
-    };
+    }, [user, postId, toast, fetchComments]);
 
-    const handleEditComment = async (commentId: string, newContent: string) => {
+    const handleEditComment = useCallback(async (commentId: string, newContent: string) => {
         const { error } = await supabase
             .from('comments')
             .update({ content: newContent })
@@ -110,9 +102,9 @@ export function useComments(postId: string) {
             toast({ title: "Comment updated" });
             fetchComments();
         }
-    };
+    }, [toast, fetchComments]);
 
-    const handleDeleteComment = async (commentId: string) => {
+    const handleDeleteComment = useCallback(async (commentId: string) => {
         const { error } = await supabase.from('comments').delete().eq('id', commentId);
 
         if (error) {
@@ -122,9 +114,9 @@ export function useComments(postId: string) {
             toast({ title: "Comment deleted" });
             fetchComments();
         }
-    };
+    }, [toast, fetchComments]);
 
-    const handlePinComment = async (commentId: string, isPinned: boolean) => {
+    const handlePinComment = useCallback(async (commentId: string, isPinned: boolean) => {
         const { error } = await supabase
             .from('comments')
             .update({ is_pinned: isPinned })
@@ -136,18 +128,7 @@ export function useComments(postId: string) {
             toast({ title: isPinned ? "Comment Pinned" : "Comment Unpinned" });
             fetchComments();
         }
-    };
-
-    const handleLogin = (provider: 'github' | 'linkedin_oidc') => {
-        const redirectUrl = typeof window !== 'undefined' ? window.location.origin : undefined;
-        supabase.auth.signInWithOAuth({
-            provider,
-            options: {
-                redirectTo: redirectUrl,
-                scopes: 'openid profile email'
-            }
-        });
-    };
+    }, [toast, fetchComments]);
 
     return {
         comments,
@@ -157,6 +138,6 @@ export function useComments(postId: string) {
         handleEditComment,
         handleDeleteComment,
         handlePinComment,
-        handleLogin,
+        handleLogin: loginWithProvider,
     };
 }

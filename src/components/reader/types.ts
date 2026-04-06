@@ -1,17 +1,5 @@
-export interface Post {
-    id: string;
-    title: string;
-    content?: string;
-    topic: string;
-    created_at: string;
-    read_time_minutes: number;
-    featured_image?: string;
-}
-
-export interface Topic {
-    name: string;
-    color: string;
-}
+import type { Post, Topic } from '../blog/types';
+export type { Post, Topic };
 
 export interface ReaderPanelProps {
     selectedPostId: string | null;

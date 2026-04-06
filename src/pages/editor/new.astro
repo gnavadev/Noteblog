@@ -1,7 +1,17 @@
 ---
+export const prerender = false;
 import EditorLayout from "../../layouts/EditorLayout.astro";
 import EditorWrapper from "../../components/EditorWrapper";
 import { supabase } from "../../lib/supabase";
+import { createSupabaseServerClient } from "../../lib/supabase-server";
+import { isAdmin } from "../../lib/auth-utils";
+
+const serverClient = createSupabaseServerClient(Astro.request, Astro.cookies);
+const { data: { session } } = await serverClient.auth.getSession();
+
+if (!session || !isAdmin(session.user.id)) {
+    return Astro.redirect("/");
+}
 
 const { data: topics } = await supabase
     .from("topics")

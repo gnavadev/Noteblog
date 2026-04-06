@@ -1,7 +1,7 @@
 export const getMermaidConfig = (theme: 'light' | 'dark') => ({
     startOnLoad: true,
     theme: theme === 'dark' ? 'dark' : 'default',
-    securityLevel: 'loose',
+    securityLevel: 'antiscript',
     flowchart: { useMaxWidth: true, htmlLabels: true },
     sequence: { useMaxWidth: true },
     gantt: { useMaxWidth: true },

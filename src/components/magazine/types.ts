@@ -1,5 +1,4 @@
 import type { Post, Topic } from '../blog/types';
-export type { Post, Topic };
 
 export interface MagazineGridProps {
     selectedPostId: string | null;

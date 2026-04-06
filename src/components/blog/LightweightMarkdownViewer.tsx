@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { useTheme } from './useTheme';
 
 interface MapAttributes {
@@ -29,7 +30,8 @@ const LightweightMarkdownViewer: React.FC<LightweightMarkdownViewerProps> = ({ c
             // Strip any Cherry Markdown specific syntaxes here if needed, 
             // or pass it raw to Marked to render standard markdown.
             // Using standard parsing for performance.
-            return marked.parse(content, { async: false }) as string;
+            const raw = marked.parse(content, { async: false }) as string;
+            return DOMPurify.sanitize(raw);
         } catch (e) {
             console.error("Marked parsing error:", e);
             return '<p>Error rendering content.</p>';

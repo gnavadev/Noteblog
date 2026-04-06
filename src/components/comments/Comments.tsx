@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { MessageSquare, Send, Github, Linkedin } from 'lucide-react';
 import CommentList from './CommentList';
 import { useComments } from './useComments';
+import { getAvatarUrl } from '@/lib/auth-utils';
 import type { CommentsProps } from './types';
 
 const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
@@ -21,10 +22,10 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
         handleLogin,
     } = useComments(postId);
 
-    const onSubmitComment = async () => {
+    const onSubmitComment = useCallback(async () => {
         const success = await handlePostComment(newComment);
         if (success) setNewComment('');
-    };
+    }, [newComment, handlePostComment]);
 
     return (
         <div className="mt-16 space-y-8 max-w-3xl mx-auto">
@@ -61,7 +62,7 @@ const Comments: React.FC<CommentsProps> = ({ postId, isAdmin }) => {
             {user ? (
                 <div className="flex gap-4 items-start animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-sm">
-                        <AvatarImage src={user.user_metadata?.avatar_url || user.user_metadata?.picture} />
+                        <AvatarImage src={getAvatarUrl(user.user_metadata)} />
                         <AvatarFallback>ME</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-4">
