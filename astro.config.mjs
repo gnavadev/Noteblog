@@ -4,6 +4,7 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
 import tailwind from '@astrojs/tailwind';
+import compress from 'astro-compress';
 
 import cloudflare from '@astrojs/cloudflare';
 
@@ -19,7 +20,10 @@ export default defineConfig({
     mdx(),
     tailwind({
       applyBaseStyles: false,
-    })
+    }),
+    // Must be last — compresses build output (HTML, CSS, JS, SVG)
+    // Image compression disabled: remote images are handled by /api/image proxy
+    compress({ Image: false }),
   ],
 
   vite: {

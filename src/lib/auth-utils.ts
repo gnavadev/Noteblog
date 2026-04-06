@@ -13,3 +13,21 @@ export const getAvatarUrl = (metadata: any): string | undefined =>
 
 export const getUserDisplayName = (metadata: any, fallback = 'Anonymous'): string =>
     metadata?.full_name || metadata?.name || fallback;
+
+/**
+ * Routes Supabase Storage image URLs through our /api/image proxy, which resizes
+ * and converts to WebP on the server. Vercel caches the result at the edge so
+ * processing only happens once per unique URL+params combination.
+ * Falls back to the original URL for non-Supabase images.
+ */
+export const getOptimizedImageUrl = (
+    url: string | null | undefined,
+    width: number,
+    quality = 75
+): string | undefined => {
+    if (!url) return undefined;
+    if (url.includes('.supabase.co/storage/')) {
+        return `/api/image?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+    }
+    return url;
+};
