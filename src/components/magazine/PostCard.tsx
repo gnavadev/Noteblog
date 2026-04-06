@@ -17,6 +17,7 @@ import {
 import { cardVariants } from './types';
 import type { Post, Topic } from '../blog/types';
 import { stripCherryFormatting } from '@/lib/markdown-utils';
+import { getOptimizedImageUrl } from '@/lib/auth-utils';
 
 interface PostCardProps {
     post: Post;
@@ -65,7 +66,7 @@ const PostCard: React.FC<PostCardProps> = ({
                 <div className="aspect-video w-full relative bg-muted shrink-0 overflow-hidden">
                     {post.featured_image && (
                         <img
-                            src={post.featured_image}
+                            src={getOptimizedImageUrl(post.featured_image, 800)}
                             alt=""
                             loading="lazy"
                             decoding="async"

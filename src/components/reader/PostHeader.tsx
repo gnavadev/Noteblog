@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import type { Post } from './types';
+import { getOptimizedImageUrl } from '@/lib/auth-utils';
 
 interface PostHeaderProps {
     post: Post;
@@ -51,7 +52,7 @@ const PostHeader: React.FC<PostHeaderProps> = ({
                 isExpanded ? "h-[45vh]" : "h-[25vh]"
             )}
             style={{
-                background: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${post.featured_image}) center/cover no-repeat`,
+                background: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${getOptimizedImageUrl(post.featured_image, 1400)}) center/cover no-repeat`,
             }}
         >
             <div className="fixed top-6 right-6 z-50 flex items-center gap-3">

@@ -18,7 +18,6 @@ Live build -> https://www.gabrielnava.dev/
 - **Framework**: Astro.js with React
 - **UI**: Tailwind CSS, shadcn/ui, Framer Motion
 - **Backend**: Supabase (Auth, Database, Storage)
-- **Deployment**: Vercel
 - **Editor**: @uiw/react-md-editor
 - **Canvas**: Excalidraw
 
