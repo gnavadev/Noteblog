@@ -9,6 +9,10 @@ export function createSupabaseServerClient(request: Request, cookies: AstroCooki
     const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Missing PUBLIC_SUPABASE_URL or PUBLIC_SUPABASE_ANON_KEY');
+    }
+
     return createServerClient(supabaseUrl, supabaseAnonKey, {
         cookies: {
             getAll() {

@@ -22,7 +22,7 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
     // Must be last — compresses build output (HTML, CSS, JS, SVG)
-    // Image compression disabled: remote images are handled by /api/image proxy
+    // Image compression disabled: remote images are handled by wsrv.nl
     compress({ Image: false }),
   ],
 
