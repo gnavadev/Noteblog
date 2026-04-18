@@ -54,3 +54,7 @@ build_error.txt
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# etc
+.claude
+CLAUDE.md
