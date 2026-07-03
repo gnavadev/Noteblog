@@ -10,7 +10,8 @@ export function useBlogState(
     initialPosts: Post[] = [],
     initialSelectedPostId: string | null = null,
     initialTopic: string | null = null,
-    initialShowPostIt: boolean = false
+    initialShowPostIt: boolean = false,
+    initialShowLanding: boolean = false
 ) {
     const { toast } = useToast();
     const { topics: dbTopics, getTopicColor, deleteTopicIfEmpty } = useTopics();
@@ -25,6 +26,7 @@ export function useBlogState(
     );
     const [isReaderExpanded, setIsReaderExpanded] = useState(!!initialSelectedPostId);
     const [showPostIt, setShowPostIt] = useState(initialShowPostIt);
+    const [showLanding, setShowLanding] = useState(initialShowLanding);
 
     const isAdmin = checkAdmin(user?.id);
 
@@ -166,20 +168,29 @@ export function useBlogState(
                 setSelectedPostId(null);
                 setSelectedTopic(null);
                 setShowPostIt(false);
+                setShowLanding(true);
+            } else if (path === '/posts') {
+                setSelectedPostId(null);
+                setSelectedTopic(null);
+                setShowPostIt(false);
+                setShowLanding(false);
             } else if (path.startsWith('/post/')) {
                 const id = path.replace('/post/', '');
                 setSelectedPostId(id);
                 setSelectedTopic(null);
                 setShowPostIt(false);
+                setShowLanding(false);
             } else if (path.startsWith('/topic/')) {
                 const topic = decodeURIComponent(path.replace('/topic/', ''));
                 setSelectedTopic(topic);
                 setSelectedPostId(null);
                 setShowPostIt(false);
+                setShowLanding(false);
             } else if (path === '/board') {
                 setShowPostIt(true);
                 setSelectedPostId(null);
                 setSelectedTopic(null);
+                setShowLanding(false);
             }
         };
 
@@ -187,8 +198,17 @@ export function useBlogState(
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
+    const handleSelectLanding = useCallback(() => {
+        setShowLanding(true);
+        setShowPostIt(false);
+        setSelectedPostId(null);
+        setSelectedTopic(null);
+        window.history.pushState({}, '', '/');
+    }, []);
+
     const handleSelectPostIt = useCallback(() => {
         setShowPostIt(true);
+        setShowLanding(false);
         setSelectedPostId(null);
         setSelectedTopic(null);
         window.history.pushState({}, '', '/board');
@@ -197,8 +217,9 @@ export function useBlogState(
     const handleSelectPost = useCallback((id: string | null) => {
         setSelectedPostId(id);
         setShowPostIt(false);
+        setShowLanding(false);
         if (id === null) {
-            window.history.pushState({}, '', '/');
+            window.history.pushState({}, '', '/posts');
         } else {
             window.history.pushState({}, '', `/post/${id}`);
         }
@@ -207,8 +228,9 @@ export function useBlogState(
     const handleSelectTopic = useCallback((topic: string | null) => {
         setSelectedTopic(topic);
         setShowPostIt(false);
+        setShowLanding(false);
         if (topic === null) {
-            window.history.pushState({}, '', '/');
+            window.history.pushState({}, '', '/posts');
         } else {
             window.history.pushState({}, '', `/topic/${encodeURIComponent(topic)}`);
         }
@@ -299,8 +321,10 @@ export function useBlogState(
         isReaderExpanded,
         setIsReaderExpanded,
         showPostIt,
+        showLanding,
         isAdmin,
         // Handlers
+        handleSelectLanding,
         handleSelectPostIt,
         handleSelectPost,
         handleSelectTopic,

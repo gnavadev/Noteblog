@@ -13,6 +13,8 @@ export interface SidebarProps {
     adminAvatar: string | null;
     isSelectedPostIt?: boolean;
     onSelectPostIt?: () => void;
+    isSelectedHome?: boolean;
+    onSelectHome?: () => void;
 }
 
 export const sidebarItemVariants = {

@@ -13,7 +13,6 @@ import ErrorBoundary from './ErrorBoundary';
 import { TopicProvider } from './TopicProvider';
 import { useCherryDependencies } from './cherry';
 import { getCherryEngineWithPlugins } from './cherry/cherryPlugins';
-import WelcomeDialog from './WelcomeDialog';
 
 interface BlogShellInnerProps {
     colorMode: 'light' | 'dark';
@@ -22,6 +21,7 @@ interface BlogShellInnerProps {
     initialSelectedPostId?: string | null;
     initialTopic?: string | null;
     initialShowPostIt?: boolean;
+    initialShowLanding?: boolean;
 }
 
 const BlogShellInner: React.FC<BlogShellInnerProps> = ({
@@ -30,7 +30,8 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
     initialPosts = [],
     initialSelectedPostId = null,
     initialTopic = null,
-    initialShowPostIt = false
+    initialShowPostIt = false,
+    initialShowLanding = false
 }) => {
     const isMobile = useIsMobile();
     const {
@@ -44,7 +45,9 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
         isReaderExpanded,
         setIsReaderExpanded,
         showPostIt,
+        showLanding,
         isAdmin,
+        handleSelectLanding,
         handleSelectPostIt,
         handleSelectPost,
         handleSelectTopic,
@@ -53,7 +56,7 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
         handleEditPost,
         handleDeletePost,
         loadMoreContent,
-    } = useBlogState(initialPosts, initialSelectedPostId, initialTopic, initialShowPostIt);
+    } = useBlogState(initialPosts, initialSelectedPostId, initialTopic, initialShowPostIt, initialShowLanding);
 
     useEffect(() => {
         import('mermaid').then(({ default: mermaid }) => {
@@ -73,7 +76,9 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
         onUpdateTopicOrder: handleUpdateTopicOrder,
         adminAvatar,
         isSelectedPostIt: showPostIt,
-        onSelectPostIt: handleSelectPostIt
+        onSelectPostIt: handleSelectPostIt,
+        isSelectedHome: showLanding,
+        onSelectHome: handleSelectLanding
     };
 
     // Immediate Asynchronous Preloading
@@ -109,6 +114,8 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
                     <ContentArea
                         isMobile={isMobile}
                         showPostIt={showPostIt}
+                        showLanding={showLanding}
+                        adminAvatar={adminAvatar}
                         user={user}
                         posts={posts}
                         topics={topics}
@@ -149,7 +156,6 @@ const BlogShellInner: React.FC<BlogShellInnerProps> = ({
                     {colorMode === 'light' ? <Moon className="h-6 w-6" /> : <Sun className="h-6 w-6" />}
                 </Button>
             </div>
-            <WelcomeDialog />
         </div >
     );
 };
@@ -160,6 +166,7 @@ interface BlogShellProps {
     initialSelectedPostId?: string | null;
     initialTopic?: string | null;
     initialShowPostIt?: boolean;
+    initialShowLanding?: boolean;
 }
 
 const BlogShell: React.FC<BlogShellProps> = ({
@@ -167,7 +174,8 @@ const BlogShell: React.FC<BlogShellProps> = ({
     initialTopics,
     initialSelectedPostId,
     initialTopic,
-    initialShowPostIt
+    initialShowPostIt,
+    initialShowLanding
 }) => {
     const { colorMode, toggleTheme } = useTheme();
 
@@ -181,6 +189,7 @@ const BlogShell: React.FC<BlogShellProps> = ({
                     initialSelectedPostId={initialSelectedPostId}
                     initialTopic={initialTopic}
                     initialShowPostIt={initialShowPostIt}
+                    initialShowLanding={initialShowLanding}
                 />
                 <Toaster />
             </SidebarProvider>

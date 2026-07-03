@@ -6,11 +6,14 @@ import { cn } from "@/lib/utils";
 import MagazineGrid from '../MagazineGrid';
 import PostItBoard from '../PostItBoard';
 import ReaderPanel from '../ReaderPanel';
+import LandingPage from './LandingPage';
 import type { Post, Topic } from './types';
 
 interface ContentAreaProps {
     isMobile: boolean;
     showPostIt: boolean;
+    showLanding: boolean;
+    adminAvatar: string | null;
     user: any;
     posts: Post[];
     topics: Topic[];
@@ -31,6 +34,8 @@ interface ContentAreaProps {
 const ContentArea: React.FC<ContentAreaProps> = ({
     isMobile,
     showPostIt,
+    showLanding,
+    adminAvatar,
     user,
     posts,
     topics,
@@ -62,7 +67,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({
                 </div>
             )}
 
-            {showPostIt ? (
+            {showLanding ? (
+                <LandingPage onBrowsePosts={() => handleSelectPost(null)} avatarUrl={adminAvatar} />
+            ) : showPostIt ? (
                 <div className="h-full bg-card overflow-hidden border border-border shadow-xl">
                     <PostItBoard user={user} isAdmin={isAdmin} />
                 </div>

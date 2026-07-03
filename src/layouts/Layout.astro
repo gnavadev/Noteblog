@@ -13,6 +13,15 @@ const {
 	description = "Gabriel's library of thoughts, projects, and travel essays.",
 	image = "/GabrielPhoto.jpg",
 } = Astro.props;
+
+// Origin of the Supabase project, used to warm up the connection before the
+// client fires its first data/auth request.
+let supabaseOrigin: string | null = null;
+try {
+	supabaseOrigin = new URL(import.meta.env.PUBLIC_SUPABASE_URL).origin;
+} catch {
+	supabaseOrigin = null;
+}
 ---
 
 <!doctype html>
@@ -45,6 +54,14 @@ const {
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+		<!-- Warm up connections to the data + image-proxy origins -->
+		{
+			supabaseOrigin && (
+				<link rel="preconnect" href={supabaseOrigin} crossorigin />
+			)
+		}
+		<link rel="preconnect" href="https://wsrv.nl" crossorigin />
 
 		<!-- Preload heavy preview assets -->
 		<link rel="prefetch" href="/libs/echarts.min.js" as="script" />

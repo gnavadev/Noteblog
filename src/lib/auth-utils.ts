@@ -6,7 +6,7 @@ export const isAdmin = (userId: string | undefined): boolean => {
 };
 
 export const getAuthRedirectUrl = (): string =>
-    typeof window !== 'undefined' ? window.location.origin : 'https://gabrielnava.dev/';
+    typeof window !== 'undefined' ? window.location.origin : 'https://www.gabrielnava.dev/';
 
 export const getAvatarUrl = (metadata: any): string | undefined =>
     metadata?.avatar_url || metadata?.picture;

@@ -52,7 +52,9 @@ const SidebarComponent: React.FC<SidebarProps> = ({
     onUpdateTopicOrder,
     adminAvatar,
     isSelectedPostIt,
-    onSelectPostIt
+    onSelectPostIt,
+    isSelectedHome,
+    onSelectHome
 }) => {
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -73,15 +75,22 @@ const SidebarComponent: React.FC<SidebarProps> = ({
     return (
         <Sidebar className="border-r border-border bg-sidebar/50 backdrop-blur-sm">
             <SidebarHeader className="p-4 pb-2">
-                <motion.div variants={sidebarItemVariants} initial="hidden" animate="show" className="flex items-center gap-3">
-                    <Avatar className="h-14 w-14 bg-primary ring-2 ring-primary/10 transition-transform hover:scale-105">
-                        <AvatarImage src={adminAvatar || '/GabrielPhoto.jpg'} alt="Gabriel" />
-                        <AvatarFallback className="text-white text-lg">G</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                        <h2 className="text-lg font-bold m-0 text-foreground leading-tight truncate">Gabriel's Blog</h2>
-                        <span className="text-muted-foreground text-xs font-medium">← Looking for a job</span>
-                    </div>
+                <motion.div variants={sidebarItemVariants} initial="hidden" animate="show">
+                    <button
+                        type="button"
+                        onClick={onSelectHome}
+                        aria-label="Go to home page"
+                        className="flex items-center gap-3 w-full text-left rounded-lg p-1 -m-1 transition-colors hover:bg-sidebar-accent/60"
+                    >
+                        <Avatar className="h-14 w-14 bg-primary ring-2 ring-primary/10 transition-transform hover:scale-105">
+                            <AvatarImage src={adminAvatar || '/GabrielPhoto.jpg'} alt="Gabriel" />
+                            <AvatarFallback className="text-white text-lg">G</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <h2 className="text-lg font-bold m-0 text-foreground leading-tight truncate">Gabriel's Blog</h2>
+                            <span className="text-muted-foreground text-xs font-medium">← Looking for a job</span>
+                        </div>
+                    </button>
                 </motion.div>
             </SidebarHeader>
 
@@ -93,11 +102,11 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                                 <motion.div variants={sidebarItemVariants}>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
-                                            isActive={!selectedTopic && !selectedPostId && !isSelectedPostIt}
+                                            isActive={!selectedTopic && !selectedPostId && !isSelectedPostIt && !isSelectedHome}
                                             onClick={() => { onSelectPost(null); onSelectTopic(null); }}
                                             className={cn(
                                                 "py-4 px-4 h-10",
-                                                (!selectedTopic && !selectedPostId && !isSelectedPostIt) && "bg-primary/10 text-primary font-bold"
+                                                (!selectedTopic && !selectedPostId && !isSelectedPostIt && !isSelectedHome) && "bg-primary/10 text-primary font-bold"
                                             )}
                                         >
                                             <FileText className="mr-3 h-4 w-4" />

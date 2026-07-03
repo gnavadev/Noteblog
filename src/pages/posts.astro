@@ -1,0 +1,25 @@
+---
+export const prerender = false;
+Astro.response.headers.set(
+	"Cache-Control",
+	"s-maxage=60, stale-while-revalidate=3600",
+);
+
+import Layout from "../layouts/Layout.astro";
+import BlogShell from "../components/BlogShell";
+import { loadBlogIndex } from "../lib/blog-data";
+
+const { posts, topics } = await loadBlogIndex();
+---
+
+<Layout title="Segmentation Thoughts">
+	<BlogShell client:load initialPosts={posts} initialTopics={topics} />
+</Layout>
+
+<style is:global>
+	/* Background needs to be explicitly set for the whole page */
+	body {
+		background-color: var(--app-bg) !important;
+		overflow: hidden;
+	}
+</style>
