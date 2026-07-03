@@ -93,7 +93,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onBrowsePosts, avatarUrl }) =
                 <motion.div variants={itemVariants}>
                     <Button
                         onClick={onBrowsePosts}
-                        className="rounded-full px-6 h-11 font-bold text-primary-foreground shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-primary/80"
+                        className="rounded-full px-6 h-11 font-bold shadow-md hover:scale-105 transition-all duration-300"
                     >
                         Browse my posts
                         <ArrowRight className="ml-2 h-4 w-4" />

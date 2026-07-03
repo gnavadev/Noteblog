@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, LogOut, User, MoreHorizontal, Github, Linkedin } from 'lucide-react';
+import { LogOut, User, MoreHorizontal, Github, Linkedin } from 'lucide-react';
 import {
     SidebarMenu,
     SidebarMenuItem,
@@ -21,15 +21,6 @@ const UserSection: React.FC = () => {
 
     return (
         <SidebarMenu>
-            <SidebarMenuItem>
-                <SidebarMenuButton
-                    onClick={() => window.open('https://linktr.ee/gabrielnavainfo', '_blank')}
-                    className="py-6 px-4 h-12"
-                >
-                    <Mail className="mr-3 h-5 w-5" />
-                    <span className="text-[1rem]">Contact</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
             {user ? (
                 <SidebarMenuItem>
                     <DropdownMenu>
