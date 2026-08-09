@@ -122,11 +122,18 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                                 variant="secondary"
                                 size="sm"
                                 className="ml-4 gap-2 shadow-sm hidden sm:flex font-semibold text-secondary-foreground hover:bg-secondary/80"
-                                onClick={() => window.open(`/post/${post.id}`, '_blank')}
-                                title="Open dedicated focus page in new tab"
+                                asChild
                             >
-                                <span>Focus View</span>
-                                <ExternalLink className="h-3.5 w-3.5" />
+                                <a
+                                    href={`/post/${post.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    data-astro-reload
+                                    title="Open dedicated focus page in new tab"
+                                >
+                                    <span>Focus View</span>
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                </a>
                             </Button>
                         </div>
                         <div className="flex items-center gap-6 text-sm font-semibold text-muted-foreground">
@@ -139,10 +146,17 @@ const ReaderPanel: React.FC<ReaderPanelProps> = ({
                                 size="sm"
                                 variant="default"
                                 className="rounded-full px-4 font-bold shadow-lg shadow-primary/20 flex sm:hidden"
-                                onClick={() => window.open(`/post/${post.id}`, '_blank')}
+                                asChild
                             >
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                <span>Focus View</span>
+                                <a
+                                    href={`/post/${post.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    data-astro-reload
+                                >
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    <span>Focus View</span>
+                                </a>
                             </Button>
 
                             <Button

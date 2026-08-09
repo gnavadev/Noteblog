@@ -1,8 +1,10 @@
 ---
+export const prerender = false;
 import Layout from "../layouts/Layout.astro";
-import { supabase } from "../lib/supabase";
+import { createSupabaseAnonClient } from "../lib/supabase-server";
 import BlogShell from "../components/BlogShell";
 
+const supabase = createSupabaseAnonClient();
 const [postsResult, topicsResult] = await Promise.all([
     supabase
         .from("notes")

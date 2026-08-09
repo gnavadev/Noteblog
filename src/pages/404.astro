@@ -1,0 +1,33 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Button } from "@/components/ui/button";
+
+Astro.response.status = 404;
+---
+
+<Layout title="Page not found — Gabriel Nava">
+	<div
+		class="min-h-screen flex flex-col items-center justify-center px-6 py-16 text-center gap-6"
+	>
+		<p
+			class="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/50"
+		>
+			404
+		</p>
+		<h1 class="text-4xl md:text-5xl font-black tracking-tight text-balance">
+			Page not found
+		</h1>
+		<p class="max-w-md text-muted-foreground leading-relaxed">
+			That link doesn’t match a public page or post. It may have been
+			removed, or you might need to sign in to view a private draft.
+		</p>
+		<a href="/">
+			<Button
+				variant="default"
+				className="rounded-full px-6 h-11 font-bold shadow-md"
+			>
+				Back to home
+			</Button>
+		</a>
+	</div>
+</Layout>

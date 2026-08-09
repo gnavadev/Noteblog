@@ -5,7 +5,7 @@ Astro.response.headers.set(
     "s-maxage=60, stale-while-revalidate=3600",
 );
 import Layout from "../../layouts/Layout.astro";
-import { supabase } from "../../lib/supabase";
+import { createSupabaseServerClient } from "../../lib/supabase-server";
 import ReactiveMarkdownViewer from "../../components/blog/ReactiveMarkdownViewer";
 import Comments from "../../components/comments/Comments";
 import { ThemeToggle } from "../../components/blog/ThemeToggle";
@@ -16,10 +16,13 @@ import { plainTextExcerpt } from "../../lib/seo";
 const { id } = Astro.params;
 
 if (!id) {
-    return Astro.redirect("/404");
+    return Astro.rewrite("/404");
 }
 
-// Fetch only what we need for this specific post
+// Session-aware SSR client (Workers-safe). Public posts work for anon;
+// logged-in authors/admins can open Focus View on drafts via RLS.
+const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+
 const [postResult, topicsResult] = await Promise.all([
     supabase.from("notes").select("*").eq("id", id).single(),
     supabase.from("topics").select("id, name, color"),
@@ -28,7 +31,7 @@ const [postResult, topicsResult] = await Promise.all([
 const { data: post, error } = postResult;
 
 if (error || !post) {
-    return Astro.redirect("/404");
+    return Astro.rewrite("/404");
 }
 
 // Get topic color

@@ -6,15 +6,16 @@ Astro.response.headers.set(
 );
 
 import Layout from "../../layouts/Layout.astro";
-import { supabase } from "../../lib/supabase";
+import { createSupabaseAnonClient } from "../../lib/supabase-server";
 import BlogShell from "../../components/BlogShell";
 
 const { name } = Astro.params;
 
 if (!name) {
-    return Astro.redirect("/404");
+    return Astro.rewrite("/404");
 }
 
+const supabase = createSupabaseAnonClient();
 const [postsResult, topicsResult] = await Promise.all([
     supabase
         .from("notes")
@@ -34,7 +35,7 @@ const topicExists =
     posts.some((p) => p.topic === topicName);
 
 if (!topicExists) {
-    return Astro.redirect("/404");
+    return Astro.rewrite("/404");
 }
 ---
 

@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { createSupabaseAnonClient } from './supabase-server';
 
 const POST_LIST_COLUMNS =
     'id, created_at, title, topic, user_id, color, is_public, layout_json, category_color, read_time_minutes, featured_image, topic_id';
@@ -9,6 +9,7 @@ const POST_LIST_COLUMNS =
  * the client so it streams in while the visitor reads the intro.
  */
 export async function loadTopics() {
+    const supabase = createSupabaseAnonClient();
     const { data } = await supabase
         .from('topics')
         .select('*')
@@ -22,6 +23,7 @@ export async function loadTopics() {
  * (the heavy content body is discarded).
  */
 export async function loadBlogIndex() {
+    const supabase = createSupabaseAnonClient();
     const [postsResult, topicsResult, recentContentResult] = await Promise.all([
         supabase
             .from('notes')

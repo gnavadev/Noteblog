@@ -65,14 +65,22 @@ const PostHeader: React.FC<PostHeaderProps> = ({
                     <Share2 className="h-4 w-4" />
                 </Button>
 
-                {/* Mobile: Focus View Button (New Tab) */}
+                {/* Mobile: Focus View Button (New Tab) — full load, not ClientRouter */}
                 <Button
                     size="icon"
                     variant="ghost"
                     className="rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-md text-white border-none h-10 w-10 transition-colors flex sm:hidden"
-                    onClick={() => window.open(`/post/${post.id}`, '_blank')}
+                    asChild
                 >
-                    <ExternalLink className="h-4 w-4" />
+                    <a
+                        href={`/post/${post.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-astro-reload
+                        title="Open dedicated focus page in new tab"
+                    >
+                        <ExternalLink className="h-4 w-4" />
+                    </a>
                 </Button>
 
                 {/* Desktop: Minimize/Maximize Toggle */}
