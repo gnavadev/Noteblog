@@ -37,8 +37,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
         locals.user = null;
     }
 
+    const withSecurityHeaders = (response: Response) => {
+        const headers = new Headers(response.headers);
+        if (!headers.has('X-Content-Type-Options')) {
+            headers.set('X-Content-Type-Options', 'nosniff');
+        }
+        if (!headers.has('Referrer-Policy')) {
+            headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        }
+        if (!headers.has('X-Frame-Options')) {
+            headers.set('X-Frame-Options', 'SAMEORIGIN');
+        }
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers,
+        });
+    };
+
     if (request.method !== 'GET') {
-        return next();
+        return withSecurityHeaders(await next());
     }
 
     // Explicit .md URLs always return markdown (no special Accept header needed).
@@ -51,10 +69,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (negotiateMd) {
         try {
             if (path === '/') {
-                return markdownResponse(await markdownForHome());
+                return withSecurityHeaders(markdownResponse(await markdownForHome()));
             }
             if (path === '/posts') {
-                return markdownResponse(await markdownForPostsIndex());
+                return withSecurityHeaders(
+                    markdownResponse(await markdownForPostsIndex())
+                );
             }
 
             const postMatch = path.match(/^\/post\/([^/]+?)(?:\.md)?$/);
@@ -62,33 +82,38 @@ export const onRequest = defineMiddleware(async (context, next) => {
                 const id = postMatch[1].replace(/\.md$/i, '');
                 const md = await markdownForPost(id);
                 if (!md) {
-                    return markdownResponse(
-                        '# Not found\n\nThat post does not exist or is not public.\n',
-                        { status: 404 }
+                    return withSecurityHeaders(
+                        markdownResponse(
+                            '# Not found\n\nThat post does not exist or is not public.\n',
+                            { status: 404 }
+                        )
                     );
                 }
-                return markdownResponse(md);
+                return withSecurityHeaders(markdownResponse(md));
             }
 
             const topicMatch = path.match(/^\/topic\/([^/]+)$/);
             if (topicMatch) {
                 const md = await markdownForTopic(topicMatch[1]);
                 if (!md) {
-                    return markdownResponse(
-                        '# Not found\n\nThat topic was not found.\n',
-                        { status: 404 }
+                    return withSecurityHeaders(
+                        markdownResponse('# Not found\n\nThat topic was not found.\n', {
+                            status: 404,
+                        })
                     );
                 }
-                return markdownResponse(md);
+                return withSecurityHeaders(markdownResponse(md));
             }
 
             if (wantsExplicitMd) {
-                return markdownResponse('# Not found\n', { status: 404 });
+                return withSecurityHeaders(
+                    markdownResponse('# Not found\n', { status: 404 })
+                );
             }
         } catch (err) {
             console.error('[markdown-negotiation]', err);
         }
     }
 
-    return next();
+    return withSecurityHeaders(await next());
 });

@@ -6,10 +6,11 @@ interface Props {
 import "../styles/global.css";
 
 const { title } = Astro.props;
+// Intentionally no ClientRouter — full reloads keep Cherry/editor state sane.
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-astro-reload>
     <head>
         <meta charset="UTF-8" />
         <meta name="description" content="Write and publish posts on NoteBlog." />
@@ -19,7 +20,7 @@ const { title } = Astro.props;
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
     </head>
-    <body class="overflow-hidden">
+    <body class="overflow-hidden" data-astro-reload>
         <slot />
 
         <script is:inline>

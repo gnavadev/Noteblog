@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { actions } from 'astro:actions';
 import { supabase } from '../../lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -64,37 +65,33 @@ export function useComments(postId: string) {
     }, [postId, fetchComments]);
 
     const handlePostComment = useCallback(async (content: string, parentId: string | null = null) => {
-        if (!content.trim() || !user) return;
+        if (!content.trim() || !user) return false;
 
         if (!parentId) setLoading(true);
 
-        const { error } = await supabase.from('comments').insert([
-            {
-                post_id: postId,
-                content: content,
-                user_id: user.id,
-                user_metadata: user.user_metadata,
-                parent_id: parentId
-            },
-        ]);
+        const { error } = await actions.createComment({
+            postId,
+            content: content.trim(),
+            parentId: parentId ?? null,
+        });
 
         if (!parentId) setLoading(false);
 
         if (error) {
             toast({ title: "Failed to post", description: error.message, variant: "destructive" });
-        } else {
-            toast({ title: parentId ? "Reply added!" : "Comment posted!" });
-            fetchComments();
-            if (!parentId) return true;
+            return false;
         }
-        return !error;
+
+        toast({ title: parentId ? "Reply added!" : "Comment posted!" });
+        fetchComments();
+        return true;
     }, [user, postId, toast, fetchComments]);
 
     const handleEditComment = useCallback(async (commentId: string, newContent: string) => {
-        const { error } = await supabase
-            .from('comments')
-            .update({ content: newContent })
-            .eq('id', commentId);
+        const { error } = await actions.editComment({
+            commentId,
+            content: newContent.trim(),
+        });
 
         if (error) {
             toast({ title: "Update failed", description: error.message, variant: "destructive" });
@@ -105,7 +102,7 @@ export function useComments(postId: string) {
     }, [toast, fetchComments]);
 
     const handleDeleteComment = useCallback(async (commentId: string) => {
-        const { error } = await supabase.from('comments').delete().eq('id', commentId);
+        const { error } = await actions.deleteComment({ commentId });
 
         if (error) {
             console.error('Error deleting comment:', error);
@@ -117,10 +114,7 @@ export function useComments(postId: string) {
     }, [toast, fetchComments]);
 
     const handlePinComment = useCallback(async (commentId: string, isPinned: boolean) => {
-        const { error } = await supabase
-            .from('comments')
-            .update({ is_pinned: isPinned })
-            .eq('id', commentId);
+        const { error } = await actions.pinComment({ commentId, isPinned });
 
         if (error) {
             toast({ title: "Action failed", description: error.message, variant: "destructive" });

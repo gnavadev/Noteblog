@@ -54,23 +54,21 @@ const PostCard: React.FC<PostCardProps> = ({
                 isSelected && "ring-2 ring-primary border-transparent shadow-primary/10"
             )}
         >
+            {/* Real MPA link — ClientRouter/prefetch handle soft nav; no pushState SPA trap */}
             <a
                 href={`/post/${post.id}`}
                 className="flex flex-col h-full w-full"
-                onClick={(e) => {
-                    e.preventDefault();
-                    window.history.pushState({}, '', `/post/${post.id}`);
-                    onSelectPost(post.id);
-                }}
+                data-astro-prefetch="hover"
             >
                 <div className="aspect-video w-full relative bg-muted shrink-0 overflow-hidden">
                     {post.featured_image && (
                         <img
                             src={getOptimizedImageUrl(post.featured_image, 800)}
-                            alt=""
+                            alt={post.title}
                             loading="lazy"
                             decoding="async"
                             className="absolute inset-0 w-full h-full object-cover"
+                            style={{ viewTransitionName: `post-image-${post.id}` }}
                         />
                     )}
                     <div className="absolute top-4 left-4">
@@ -116,7 +114,10 @@ const PostCard: React.FC<PostCardProps> = ({
                 </div>
 
                 <div className="p-4 flex-1 flex flex-col gap-2">
-                    <h3 className="text-base font-extrabold leading-tight tracking-tight text-foreground line-clamp-1 min-h-[1.25rem]">
+                    <h3
+                        className="text-base font-extrabold leading-tight tracking-tight text-foreground line-clamp-1 min-h-[1.25rem]"
+                        style={{ viewTransitionName: `post-title-${post.id}` }}
+                    >
                         {post.title}
                     </h3>
 

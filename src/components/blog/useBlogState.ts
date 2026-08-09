@@ -199,41 +199,35 @@ export function useBlogState(
     }, []);
 
     const handleSelectLanding = useCallback(() => {
-        setShowLanding(true);
-        setShowPostIt(false);
-        setSelectedPostId(null);
-        setSelectedTopic(null);
-        window.history.pushState({}, '', '/');
+        // Full navigations let Astro ClientRouter + prefetch own the page lifecycle
+        window.location.href = '/';
     }, []);
 
     const handleSelectPostIt = useCallback(() => {
-        setShowPostIt(true);
-        setShowLanding(false);
-        setSelectedPostId(null);
-        setSelectedTopic(null);
-        window.history.pushState({}, '', '/board');
+        window.location.href = '/board';
     }, []);
 
     const handleSelectPost = useCallback((id: string | null) => {
-        setSelectedPostId(id);
-        setShowPostIt(false);
-        setShowLanding(false);
+        // Reading a post is always a real /post/{id} document (SEO, markdown, SSR body).
+        // Closing the in-shell reader (null) returns to the magazine index.
         if (id === null) {
-            window.history.pushState({}, '', '/posts');
-        } else {
-            window.history.pushState({}, '', `/post/${id}`);
+            setSelectedPostId(null);
+            setShowPostIt(false);
+            setShowLanding(false);
+            if (window.location.pathname !== '/posts') {
+                window.location.href = '/posts';
+            }
+            return;
         }
+        window.location.href = `/post/${id}`;
     }, []);
 
     const handleSelectTopic = useCallback((topic: string | null) => {
-        setSelectedTopic(topic);
-        setShowPostIt(false);
-        setShowLanding(false);
         if (topic === null) {
-            window.history.pushState({}, '', '/posts');
-        } else {
-            window.history.pushState({}, '', `/topic/${encodeURIComponent(topic)}`);
+            window.location.href = '/posts';
+            return;
         }
+        window.location.href = `/topic/${encodeURIComponent(topic)}`;
     }, []);
 
     const handleUpdateTopicOrder = useCallback((newOrder: string[]) => {

@@ -17,17 +17,18 @@ import {
     SITE_ORIGIN,
 } from "../../lib/seo";
 import { markdownToHtml } from "../../lib/ssr-markdown";
+import { isAdmin } from "../../lib/auth-utils";
 
 const { id } = Astro.params;
 
 if (!id) {
-    // rewrite() 500s on this Cloudflare adapter — use redirect to static 404
     return Astro.redirect("/404");
 }
 
 // Prefer locals.supabase (middleware); fall back to anon for public reads.
 let post: any = null;
 let topics: { id: string; name: string; color: string }[] = [];
+let relatedPosts: { id: string; title: string; topic: string | null }[] = [];
 
 const serverClient = Astro.locals.supabase;
 if (serverClient) {
@@ -66,6 +67,37 @@ if (!post) {
 if (!post) {
     return Astro.redirect("/404");
 }
+
+const db = serverClient ?? createSupabaseAnonClient();
+try {
+    let relatedQuery = db
+        .from("notes")
+        .select("id, title, topic")
+        .eq("is_public", true)
+        .neq("id", post.id)
+        .order("created_at", { ascending: false })
+        .limit(3);
+    if (post.topic) {
+        relatedQuery = relatedQuery.eq("topic", post.topic);
+    }
+    const { data: related } = await relatedQuery;
+    relatedPosts = related || [];
+    // Fallback: recent public posts if topic has no siblings
+    if (relatedPosts.length === 0) {
+        const { data: recent } = await db
+            .from("notes")
+            .select("id, title, topic")
+            .eq("is_public", true)
+            .neq("id", post.id)
+            .order("created_at", { ascending: false })
+            .limit(3);
+        relatedPosts = recent || [];
+    }
+} catch (err) {
+    console.error("[post] related posts", err);
+}
+
+const viewerIsAdmin = isAdmin(Astro.locals.user?.id);
 
 // Get topic color
 let topicColor = "#007aff";
@@ -125,7 +157,7 @@ const jsonLd = blogPostingJsonLd({
         <div
             class="fixed top-8 right-4 left-auto sm:right-auto sm:left-8 z-50 flex items-center gap-4"
         >
-            <a href="/">
+            <a href="/posts" data-astro-prefetch="hover">
                 <Button
                     variant="outline"
                     className="rounded-full gap-2 pl-3 pr-5 shadow-lg bg-background/80 backdrop-blur-xl border-primary/20 hover:border-primary/50 transition-all hover:scale-105 active:scale-95 group"
@@ -158,6 +190,7 @@ const jsonLd = blogPostingJsonLd({
 
                 <h1
                     class="text-5xl md:text-7xl font-black tracking-tight leading-[1.1] text-balance"
+                    transition:name={`post-title-${post.id}`}
                 >
                     {post.title}
                 </h1>
@@ -205,17 +238,70 @@ const jsonLd = blogPostingJsonLd({
                 >
                 </div>
 
+                {
+                    relatedPosts.length > 0 && (
+                        <section class="max-w-[700px] mx-auto space-y-4">
+                            <h2 class="text-2xl font-black tracking-tight">
+                                More to read
+                            </h2>
+                            <ul class="space-y-3">
+                                {relatedPosts.map((rp) => (
+                                    <li>
+                                        <a
+                                            href={`/post/${rp.id}`}
+                                            data-astro-prefetch="hover"
+                                            class="group flex flex-col gap-0.5 rounded-2xl border border-border/60 bg-card/50 px-5 py-4 transition-colors hover:border-primary/40 hover:bg-card"
+                                        >
+                                            <span class="font-bold tracking-tight group-hover:text-primary">
+                                                {rp.title}
+                                            </span>
+                                            {rp.topic && (
+                                                <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                                    {rp.topic}
+                                                </span>
+                                            )}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    )
+                }
+
                 <section class="max-w-[700px] mx-auto">
                     <h2 class="text-3xl font-black tracking-tight mb-8">
                         Conversations
                     </h2>
                     <!-- Hydrate only when scrolled near comments (less main-thread JS) -->
-                    <Comments postId={post.id} isAdmin={false} client:visible />
+                    <Comments
+                        postId={post.id}
+                        isAdmin={viewerIsAdmin}
+                        client:visible
+                    />
                 </section>
 
                 <footer
-                    class="pt-20 pb-12 text-center border-t border-border/40"
+                    class="pt-20 pb-12 text-center border-t border-border/40 space-y-4"
                 >
+                    <p class="text-sm text-muted-foreground">
+                        <a
+                            href={`/post/${post.id}.md`}
+                            class="underline-offset-4 hover:underline text-primary font-medium"
+                            >Markdown</a
+                        >
+                        {" · "}
+                        <a
+                            href="/rss.xml"
+                            class="underline-offset-4 hover:underline"
+                            >RSS</a
+                        >
+                        {" · "}
+                        <a
+                            href="/llms.txt"
+                            class="underline-offset-4 hover:underline"
+                            >llms.txt</a
+                        >
+                    </p>
                     <p
                         class="text-sm font-black text-muted-foreground/30 uppercase tracking-[0.3em]"
                     >
