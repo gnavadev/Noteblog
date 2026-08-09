@@ -2,8 +2,7 @@
 export const prerender = false;
 import EditorLayout from "../../layouts/EditorLayout.astro";
 import EditorWrapper from "../../components/EditorWrapper";
-import { supabase } from "../../lib/supabase";
-import { createSupabaseServerClient } from "../../lib/supabase-server";
+import { createSupabaseAnonClient } from "../../lib/supabase-server";
 import { isAdmin } from "../../lib/auth-utils";
 
 const { id } = Astro.params;
@@ -12,13 +11,12 @@ if (!id) {
     return Astro.redirect("/editor/new");
 }
 
-const serverClient = createSupabaseServerClient(Astro.request, Astro.cookies);
-const { data: { session } } = await serverClient.auth.getSession();
-
-if (!session || !isAdmin(session.user.id)) {
+const user = Astro.locals.user;
+if (!user || !isAdmin(user.id)) {
     return Astro.redirect("/");
 }
 
+const supabase = Astro.locals.supabase ?? createSupabaseAnonClient();
 const [{ data: post }, { data: topics }] = await Promise.all([
     supabase.from("notes").select("*").eq("id", id).single(),
     supabase.from("topics").select("*").order("order", { ascending: true }),

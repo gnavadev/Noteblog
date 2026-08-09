@@ -1,14 +1,23 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { Button } from "@/components/ui/button";
+import { Image } from "astro:assets";
+import gabrielPhoto from "../assets/GabrielPhoto.jpg";
 
 Astro.response.status = 404;
 ---
 
-<Layout title="Page not found — Gabriel Nava">
+<Layout title="Page not found — Gabriel Nava" prefetchHeavyLibs={false}>
 	<div
 		class="min-h-screen flex flex-col items-center justify-center px-6 py-16 text-center gap-6"
 	>
+		<Image
+			src={gabrielPhoto}
+			alt="Gabriel Nava"
+			width={96}
+			height={96}
+			class="rounded-full ring-4 ring-primary/15 shadow-xl"
+		/>
 		<p
 			class="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/50"
 		>

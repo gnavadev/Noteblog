@@ -5,10 +5,7 @@ Astro.response.headers.set(
     "s-maxage=60, stale-while-revalidate=3600",
 );
 import Layout from "../../layouts/Layout.astro";
-import {
-    createSupabaseAnonClient,
-    createSupabaseServerClient,
-} from "../../lib/supabase-server";
+import { createSupabaseAnonClient } from "../../lib/supabase-server";
 import Comments from "../../components/comments/Comments";
 import { ThemeToggle } from "../../components/blog/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -28,21 +25,22 @@ if (!id) {
     return Astro.redirect("/404");
 }
 
-// Prefer session-aware client so authors can preview drafts; fall back to
-// stateless anon client if cookie wiring fails on the edge.
+// Prefer locals.supabase (middleware); fall back to anon for public reads.
 let post: any = null;
 let topics: { id: string; name: string; color: string }[] = [];
 
-try {
-    const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
-    const [postResult, topicsResult] = await Promise.all([
-        supabase.from("notes").select("*").eq("id", id).maybeSingle(),
-        supabase.from("topics").select("id, name, color"),
-    ]);
-    post = postResult.data;
-    topics = topicsResult.data || [];
-} catch (err) {
-    console.error("[post] server client failed, falling back to anon", err);
+const serverClient = Astro.locals.supabase;
+if (serverClient) {
+    try {
+        const [postResult, topicsResult] = await Promise.all([
+            serverClient.from("notes").select("*").eq("id", id).maybeSingle(),
+            serverClient.from("topics").select("id, name, color"),
+        ]);
+        post = postResult.data;
+        topics = topicsResult.data || [];
+    } catch (err) {
+        console.error("[post] locals.supabase failed", err);
+    }
 }
 
 if (!post) {
@@ -141,7 +139,7 @@ const jsonLd = blogPostingJsonLd({
         </div>
 
         <div class="fixed bottom-8 right-8 z-50">
-            <ThemeToggle client:load />
+            <ThemeToggle client:idle />
         </div>
 
         <article
@@ -211,8 +209,8 @@ const jsonLd = blogPostingJsonLd({
                     <h2 class="text-3xl font-black tracking-tight mb-8">
                         Conversations
                     </h2>
-                    <!-- Ensure client:load is present for interactivity -->
-                    <Comments postId={post.id} isAdmin={false} client:load />
+                    <!-- Hydrate only when scrolled near comments (less main-thread JS) -->
+                    <Comments postId={post.id} isAdmin={false} client:visible />
                 </section>
 
                 <footer

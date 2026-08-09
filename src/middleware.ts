@@ -6,19 +6,17 @@ import {
     markdownForPost,
     markdownForTopic,
 } from './lib/markdown-pages';
+import { createSupabaseServerClient } from './lib/supabase-server';
 
 const CANONICAL_HOST = 'www.gabrielnava.dev';
 
 /**
- * Redirect the apex domain to the canonical www host. Supabase auth cookies
- * are host-only, so a session created on gabrielnava.dev is invisible on
- * www.gabrielnava.dev (and vice versa) — serving both hosts made visitors
- * appear logged out depending on which one they landed on.
- *
- * Also implements Accept: text/markdown content negotiation (no Cloudflare Pro
- * "Markdown for Agents" required): agents get clean markdown; browsers get HTML.
+ * - Apex → www host redirect (auth cookies are host-only)
+ * - Attach Supabase + user on Astro.locals for SSR pages
+ * - Accept: text/markdown / *.md content negotiation for agents
  */
-export const onRequest = defineMiddleware(async ({ request }, next) => {
+export const onRequest = defineMiddleware(async (context, next) => {
+    const { request, cookies, locals } = context;
     const url = new URL(request.url);
 
     if (url.hostname === 'gabrielnava.dev') {
@@ -26,12 +24,24 @@ export const onRequest = defineMiddleware(async ({ request }, next) => {
         return Response.redirect(url.toString(), 301);
     }
 
+    // Shared SSR context — pages can use Astro.locals.supabase / .user
+    try {
+        const supabase = createSupabaseServerClient(request, cookies);
+        locals.supabase = supabase;
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+        locals.user = user;
+    } catch (err) {
+        console.error('[middleware] supabase locals', err);
+        locals.user = null;
+    }
+
     if (request.method !== 'GET') {
         return next();
     }
 
     // Explicit .md URLs always return markdown (no special Accept header needed).
-    // Many agents fetch /page.md or follow rel="alternate" type="text/markdown".
     const pathRaw = url.pathname.replace(/\/$/, '') || '/';
     const wantsExplicitMd = pathRaw.endsWith('.md');
     const path = wantsExplicitMd ? pathRaw.slice(0, -3) || '/' : pathRaw;
@@ -47,7 +57,6 @@ export const onRequest = defineMiddleware(async ({ request }, next) => {
                 return markdownResponse(await markdownForPostsIndex());
             }
 
-            // /post/{id}.md or /post/{id} with Accept: text/markdown
             const postMatch = path.match(/^\/post\/([^/]+?)(?:\.md)?$/);
             if (postMatch) {
                 const id = postMatch[1].replace(/\.md$/i, '');
@@ -73,13 +82,11 @@ export const onRequest = defineMiddleware(async ({ request }, next) => {
                 return markdownResponse(md);
             }
 
-            // Unknown .md path
             if (wantsExplicitMd) {
                 return markdownResponse('# Not found\n', { status: 404 });
             }
         } catch (err) {
             console.error('[markdown-negotiation]', err);
-            // Fall through to normal HTML handling on failure
         }
     }
 

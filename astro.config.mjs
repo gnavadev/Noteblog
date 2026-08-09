@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig, envField } from 'astro/config';
 
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
@@ -10,10 +10,51 @@ import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'static',
+  // Server output matches reality: most routes use prerender=false + Supabase SSR.
+  // Static shells can still opt in with `export const prerender = true`.
+  output: 'server',
   adapter: cloudflare(),
 
-  site: 'https://www.gabrielnava.dev', // ← Update this to your new domain
+  site: 'https://www.gabrielnava.dev',
+
+  // Hover/tap prefetch for multipage navigations (View Transitions + MPA links)
+  prefetch: {
+    prefetchAll: false,
+    defaultStrategy: 'hover',
+  },
+
+  image: {
+    // Allow optimizing/proxying Supabase Storage featured images via astro:assets
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'wsrv.nl',
+      },
+    ],
+  },
+
+  env: {
+    schema: {
+      PUBLIC_SUPABASE_URL: envField.string({
+        context: 'client',
+        access: 'public',
+      }),
+      PUBLIC_SUPABASE_ANON_KEY: envField.string({
+        context: 'client',
+        access: 'public',
+      }),
+      PUBLIC_ADMIN_USER_ID: envField.string({
+        context: 'client',
+        access: 'public',
+        optional: true,
+        default: '',
+      }),
+    },
+  },
 
   integrations: [
     react(),
@@ -22,14 +63,14 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
     // Must be last — compresses build output (HTML, CSS, JS, SVG)
-    // Image compression disabled: remote images are handled by wsrv.nl
+    // Image compression disabled: remote images are handled by wsrv.nl / astro:assets
     compress({ Image: false }),
   ],
 
   vite: {
     define: {
       'process.env': {},
-      'BUILD_ENV': '"production"'
-    }
-  }
+      BUILD_ENV: '"production"',
+    },
+  },
 });
