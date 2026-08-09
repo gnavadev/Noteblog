@@ -76,9 +76,9 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         <Sidebar className="border-r border-border bg-sidebar/50 backdrop-blur-sm">
             <SidebarHeader className="p-4 pb-2">
                 <motion.div variants={sidebarItemVariants} initial="hidden" animate="show">
-                    <a
-                        href="/"
-                        data-astro-prefetch="hover"
+                    <button
+                        type="button"
+                        onClick={onSelectHome}
                         aria-label="Go to home page"
                         className="flex items-center gap-3 w-full text-left rounded-lg p-1 -m-1 transition-colors hover:bg-sidebar-accent/60"
                     >
@@ -90,7 +90,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                             <h2 className="text-lg font-bold m-0 text-foreground leading-tight truncate">Gabriel's Blog</h2>
                             <span className="text-muted-foreground text-xs font-medium">← Looking for a job</span>
                         </div>
-                    </a>
+                    </button>
                 </motion.div>
             </SidebarHeader>
 
@@ -102,34 +102,30 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                                 <motion.div variants={sidebarItemVariants}>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
-                                            asChild
                                             isActive={!selectedTopic && !selectedPostId && !isSelectedPostIt && !isSelectedHome}
+                                            onClick={() => { onSelectPost(null); onSelectTopic(null); }}
                                             className={cn(
                                                 "py-4 px-4 h-10",
                                                 (!selectedTopic && !selectedPostId && !isSelectedPostIt && !isSelectedHome) && "bg-primary/10 text-primary font-bold"
                                             )}
                                         >
-                                            <a href="/posts" data-astro-prefetch="hover">
-                                                <FileText className="mr-3 h-4 w-4" />
-                                                <span className="text-[0.9rem]">All Posts</span>
-                                            </a>
+                                            <FileText className="mr-3 h-4 w-4" />
+                                            <span className="text-[0.9rem]">All Posts</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </motion.div>
                                 <motion.div variants={sidebarItemVariants}>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
-                                            asChild
                                             isActive={isSelectedPostIt}
+                                            onClick={() => onSelectPostIt?.()}
                                             className={cn(
                                                 "py-4 px-4 h-10",
                                                 isSelectedPostIt && "bg-primary/10 text-primary font-bold"
                                             )}
                                         >
-                                            <a href="/board" data-astro-prefetch="hover">
-                                                <LayoutGrid className="mr-3 h-4 w-4" />
-                                                <span className="text-[0.9rem]">Gabriel's Post-it Board</span>
-                                            </a>
+                                            <LayoutGrid className="mr-3 h-4 w-4" />
+                                            <span className="text-[0.9rem]">Gabriel's Post-it Board</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </motion.div>

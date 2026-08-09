@@ -199,35 +199,43 @@ export function useBlogState(
     }, []);
 
     const handleSelectLanding = useCallback(() => {
-        // Full navigations let Astro ClientRouter + prefetch own the page lifecycle
-        window.location.href = '/';
+        setShowLanding(true);
+        setShowPostIt(false);
+        setSelectedPostId(null);
+        setSelectedTopic(null);
+        window.history.pushState({}, '', '/');
     }, []);
 
     const handleSelectPostIt = useCallback(() => {
-        window.location.href = '/board';
+        setShowPostIt(true);
+        setShowLanding(false);
+        setSelectedPostId(null);
+        setSelectedTopic(null);
+        window.history.pushState({}, '', '/board');
     }, []);
 
+    /** Open the in-shell side reader (magazine preview). Use real /post/{id} links for full page. */
     const handleSelectPost = useCallback((id: string | null) => {
-        // Reading a post is always a real /post/{id} document (SEO, markdown, SSR body).
-        // Closing the in-shell reader (null) returns to the magazine index.
+        setSelectedPostId(id);
+        setShowPostIt(false);
+        setShowLanding(false);
         if (id === null) {
-            setSelectedPostId(null);
-            setShowPostIt(false);
-            setShowLanding(false);
-            if (window.location.pathname !== '/posts') {
-                window.location.href = '/posts';
-            }
-            return;
+            window.history.pushState({}, '', '/posts');
+        } else {
+            window.history.pushState({}, '', `/post/${id}`);
         }
-        window.location.href = `/post/${id}`;
     }, []);
 
     const handleSelectTopic = useCallback((topic: string | null) => {
+        setSelectedTopic(topic);
+        setShowPostIt(false);
+        setShowLanding(false);
+        setSelectedPostId(null);
         if (topic === null) {
-            window.location.href = '/posts';
-            return;
+            window.history.pushState({}, '', '/posts');
+        } else {
+            window.history.pushState({}, '', `/topic/${encodeURIComponent(topic)}`);
         }
-        window.location.href = `/topic/${encodeURIComponent(topic)}`;
     }, []);
 
     const handleUpdateTopicOrder = useCallback((newOrder: string[]) => {

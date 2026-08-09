@@ -8,6 +8,7 @@ import Layout from "../../layouts/Layout.astro";
 import { createSupabaseAnonClient } from "../../lib/supabase-server";
 import Comments from "../../components/comments/Comments";
 import { ThemeToggle } from "../../components/blog/ThemeToggle";
+import ReactiveMarkdownViewer from "../../components/blog/ReactiveMarkdownViewer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import {
@@ -215,22 +216,29 @@ const jsonLd = blogPostingJsonLd({
             </div>
 
             <!--
-              Full article is server-rendered so LLMs/crawlers that only fetch HTML
-              (and only read meta tags or visible text) get the complete post —
-              not just the ~160-char og:description. JS-only islands hide body text
-              from most agent scrapers.
+              Cherry renders the full Cherry/markdown UI for readers.
+              SSR fallback (slot) keeps real HTML in the first response for crawlers
+              and for the loading gap before the island hydrates.
             -->
-            <div
-                class="w-full min-h-[50vh] prose prose-slate dark:prose-invert max-w-none
-                    prose-headings:font-bold prose-headings:tracking-tight
-                    prose-a:text-primary prose-p:leading-relaxed prose-p:mb-6
-                    prose-blockquote:border-s-[4px] prose-blockquote:border-primary/50
-                    prose-blockquote:bg-muted/50 prose-blockquote:py-1 prose-blockquote:px-4
-                    prose-blockquote:rounded-r-lg prose-blockquote:not-italic
-                    prose-pre:bg-muted prose-pre:border prose-pre:border-border
-                    prose-img:rounded-xl"
-                set:html={contentHtml}
-            />
+            <div class="w-full max-w-none min-h-[50vh]">
+                <ReactiveMarkdownViewer
+                    content={post.content}
+                    client:only="react"
+                >
+                    <div
+                        slot="fallback"
+                        class="w-full min-h-[50vh] prose prose-slate dark:prose-invert max-w-none
+                            prose-headings:font-bold prose-headings:tracking-tight
+                            prose-a:text-primary prose-p:leading-relaxed prose-p:mb-6
+                            prose-blockquote:border-s-[4px] prose-blockquote:border-primary/50
+                            prose-blockquote:bg-muted/50 prose-blockquote:py-1 prose-blockquote:px-4
+                            prose-blockquote:rounded-r-lg prose-blockquote:not-italic
+                            prose-pre:bg-muted prose-pre:border prose-pre:border-border
+                            prose-img:rounded-xl"
+                        set:html={contentHtml}
+                    />
+                </ReactiveMarkdownViewer>
+            </div>
 
             <div class="pt-20 space-y-12">
                 <div

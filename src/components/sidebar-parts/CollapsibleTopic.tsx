@@ -54,34 +54,20 @@ const CollapsibleTopic: React.FC<CollapsibleTopicProps> = ({
                     id={topic.name}
                     isAdmin={isAdmin}
                     label={
-                        <div className="flex items-center w-full gap-0">
-                            <SidebarMenuButton
-                                asChild
-                                className={cn(
-                                    "flex-1 justify-start h-9 transition-colors",
-                                    selectedTopic === topic.name && "bg-primary/5 text-primary font-bold"
-                                )}
-                            >
-                                <a
-                                    href={`/topic/${encodeURIComponent(topic.name)}`}
-                                    data-astro-prefetch="hover"
+                        <div className="flex items-center w-full">
+                            <CollapsibleTrigger asChild>
+                                <SidebarMenuButton
+                                    className={cn(
+                                        "w-full justify-start h-9 transition-colors",
+                                        selectedTopic === topic.name && "bg-primary/5 text-primary font-bold"
+                                    )}
+                                    onClick={() => onSelectTopic(topic.name)}
                                 >
                                     <div className="w-2 h-2 rounded-full mr-3 shrink-0" style={{ backgroundColor: topic.color }} />
                                     <span className="flex-1 truncate">{topic.name}</span>
                                     <span className="text-[11px] font-bold opacity-60 ml-2 shrink-0">{topic.count}</span>
-                                </a>
-                            </SidebarMenuButton>
-                            <CollapsibleTrigger asChild>
-                                <button
-                                    type="button"
-                                    className="h-9 w-8 shrink-0 flex items-center justify-center rounded-md hover:bg-sidebar-accent text-muted-foreground"
-                                    aria-label={`Expand ${topic.name}`}
-                                >
-                                    <ChevronRight className={cn(
-                                        "h-4 w-4 transition-transform duration-200",
-                                        isOpen && "rotate-90"
-                                    )} />
-                                </button>
+                                    <ChevronRight className="h-4 w-4 ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                </SidebarMenuButton>
                             </CollapsibleTrigger>
                         </div>
                     }
@@ -103,15 +89,26 @@ const CollapsibleTopic: React.FC<CollapsibleTopicProps> = ({
                                     {topicPosts.map(post => (
                                         <SidebarMenuSubItem key={post.id}>
                                             <SidebarMenuSubButton
-                                                href={`/post/${post.id}`}
-                                                data-astro-prefetch="hover"
+                                                asChild
                                                 isActive={selectedPostId === post.id}
                                                 className={cn(
                                                     "text-[13px] py-1 h-auto min-h-[1.75rem]",
                                                     selectedPostId === post.id ? "text-primary font-semibold" : "font-normal text-muted-foreground"
                                                 )}
                                             >
-                                                {post.title}
+                                                <a
+                                                    href={`/post/${post.id}`}
+                                                    data-astro-prefetch="hover"
+                                                    onClick={(e) => {
+                                                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                                                            return;
+                                                        }
+                                                        e.preventDefault();
+                                                        onSelectPost(post.id);
+                                                    }}
+                                                >
+                                                    {post.title}
+                                                </a>
                                             </SidebarMenuSubButton>
                                         </SidebarMenuSubItem>
                                     ))}

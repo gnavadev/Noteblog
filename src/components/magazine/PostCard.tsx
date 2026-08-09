@@ -54,11 +54,22 @@ const PostCard: React.FC<PostCardProps> = ({
                 isSelected && "ring-2 ring-primary border-transparent shadow-primary/10"
             )}
         >
-            {/* Real MPA link — ClientRouter/prefetch handle soft nav; no pushState SPA trap */}
+            {/*
+              href = real focus URL (middle-click / open in new tab / crawlers).
+              Primary click opens the in-shell side reader preview.
+            */}
             <a
                 href={`/post/${post.id}`}
                 className="flex flex-col h-full w-full"
                 data-astro-prefetch="hover"
+                onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                        return;
+                    }
+                    e.preventDefault();
+                    window.history.pushState({}, '', `/post/${post.id}`);
+                    onSelectPost(post.id);
+                }}
             >
                 <div className="aspect-video w-full relative bg-muted shrink-0 overflow-hidden">
                     {post.featured_image && (

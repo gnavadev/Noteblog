@@ -92,13 +92,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onBrowsePosts, avatarUrl }) =
 
                 <motion.div variants={itemVariants}>
                     <Button
-                        asChild
+                        onClick={onBrowsePosts}
                         className="rounded-full px-6 h-11 font-bold shadow-md hover:scale-105 transition-all duration-300"
                     >
-                        <a href="/posts" data-astro-prefetch="hover">
-                            Browse my posts
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                        </a>
+                        Browse my posts
+                        <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 </motion.div>
             </motion.div>
