@@ -11,6 +11,7 @@ import Comments from "../../components/comments/Comments";
 import { ThemeToggle } from "../../components/blog/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
+import { plainTextExcerpt } from "../../lib/seo";
 
 const { id } = Astro.params;
 
@@ -46,12 +47,15 @@ const formattedDate = new Date(post.created_at).toLocaleDateString("en-US", {
     year: "numeric",
     timeZone: "UTC",
 });
+
+const description = plainTextExcerpt(post.content);
 ---
 
 <Layout
     title={post.title}
-    description={post.content.slice(0, 160)}
+    description={description}
     image={post.featured_image}
+    type="article"
 >
     <!-- Focus Mode Layout -->
     <div

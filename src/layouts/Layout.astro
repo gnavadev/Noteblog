@@ -1,18 +1,41 @@
 ---
 import "../styles/global.css";
 import { ClientRouter } from "astro:transitions";
+import {
+	SITE_NAME,
+	DEFAULT_DESCRIPTION,
+	getOgImageUrl,
+	absoluteUrl,
+} from "../lib/seo";
 
 interface Props {
 	title: string;
 	description?: string;
-	image?: string;
+	image?: string | null;
+	type?: "website" | "article";
+	/** Override canonical URL; defaults to the current page URL on the canonical host. */
+	canonicalUrl?: string;
 }
 
 const {
 	title,
-	description = "Gabriel's library of thoughts, projects, and travel essays.",
-	image = "/GabrielPhoto.jpg",
+	description = DEFAULT_DESCRIPTION,
+	image = null,
+	type = "website",
+	canonicalUrl,
 } = Astro.props;
+
+// Prefer configured site origin so crawlers always see www + https,
+// even if the request hit a preview/worker host.
+const siteOrigin =
+	Astro.site?.origin ?? "https://www.gabrielnava.dev";
+const pageUrl = canonicalUrl
+	? absoluteUrl(canonicalUrl, siteOrigin)
+	: new URL(Astro.url.pathname + Astro.url.search, siteOrigin).href;
+const ogImage = getOgImageUrl(image);
+const metaDescription = (description || DEFAULT_DESCRIPTION)
+	.replace(/\s+/g, " ")
+	.trim();
 
 // Origin of the Supabase project, used to warm up the connection before the
 // client fires its first data/auth request.
@@ -54,6 +77,7 @@ try {
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+		<link rel="canonical" href={pageUrl} />
 
 		<!-- Warm up connections to the data + image-proxy origins -->
 		{
@@ -74,19 +98,27 @@ try {
 		<!-- Primary Meta Tags -->
 		<title>{title}</title>
 		<meta name="title" content={title} />
-		<meta name="description" content={description} />
+		<meta name="description" content={metaDescription} />
 
-		<!-- Open Graph / Facebook -->
-		<meta property="og:type" content="website" />
+		<!-- Open Graph / LinkedIn / Facebook -->
+		<meta property="og:type" content={type} />
+		<meta property="og:site_name" content={SITE_NAME} />
+		<meta property="og:locale" content="en_US" />
+		<meta property="og:url" content={pageUrl} />
 		<meta property="og:title" content={title} />
-		<meta property="og:description" content={description} />
-		<meta property="og:image" content={new URL(image, Astro.url)} />
+		<meta property="og:description" content={metaDescription} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:secure_url" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:type" content="image/jpeg" />
+		<meta property="og:image:alt" content={title} />
 
-		<!-- Twitter -->
-		<meta property="twitter:card" content="summary_large_image" />
-		<meta property="twitter:title" content={title} />
-		<meta property="twitter:description" content={description} />
-		<meta property="twitter:image" content={new URL(image, Astro.url)} />
+		<!-- Twitter / X -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={metaDescription} />
+		<meta name="twitter:image" content={ogImage} />
 	</head>
 	<body class="bg-background text-foreground enable-custom-scroll">
 		<slot />

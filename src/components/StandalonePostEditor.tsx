@@ -6,6 +6,7 @@ import CherryEditor from './CherryEditor';
 import { EditorHeader } from './editor';
 import { useTopics } from './TopicProvider';
 import { isAdmin as checkAdmin } from '@/lib/auth-utils';
+import { compressImageFile } from '@/lib/image-utils';
 import { Button } from "@/components/ui/button";
 
 interface StandalonePostEditorProps {
@@ -70,7 +71,9 @@ const StandalonePostEditor: React.FC<StandalonePostEditorProps> = ({ postId, ini
     // -- File Upload Logic (Supabase) --
     const handleFileUpload = useCallback(async (file: File, callback: (url: string) => void) => {
         try {
-            const fileExt = file.name.split('.').pop();
+            // Resize/compress so social crawlers and the site never hit multi‑MB covers
+            const uploadFile = await compressImageFile(file);
+            const fileExt = uploadFile.name.split('.').pop() || 'jpg';
             const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
             const filePath = `post-assets/${fileName}`;
 
@@ -79,7 +82,7 @@ const StandalonePostEditor: React.FC<StandalonePostEditorProps> = ({ postId, ini
 
             const { error: uploadError } = await supabase.storage
                 .from('post-assets')
-                .upload(filePath, file);
+                .upload(filePath, uploadFile);
 
             if (uploadError) throw uploadError;
 
@@ -186,7 +189,7 @@ const StandalonePostEditor: React.FC<StandalonePostEditorProps> = ({ postId, ini
                 content: markdown,
                 user_id: session.user.id,
                 is_public: isPublic,
-                featured_image: featuredImage || `https://picsum.photos/seed/${encodeURIComponent(title)}/800/400`,
+                featured_image: featuredImage || `https://picsum.photos/seed/${encodeURIComponent(title)}/1200/630`,
                 read_time_minutes: Math.max(1, Math.ceil(markdown.split(/\s+/).length / 200))
             };
 
