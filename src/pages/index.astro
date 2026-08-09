@@ -7,18 +7,51 @@ Astro.response.headers.set(
 
 import Layout from "../layouts/Layout.astro";
 import BlogShell from "../components/BlogShell";
-import { loadTopics } from "../lib/blog-data";
+import { loadTopics, loadBlogIndex } from "../lib/blog-data";
+import { SITE_NAME, SITE_ORIGIN, DEFAULT_DESCRIPTION, plainTextExcerpt } from "../lib/seo";
 
-// The landing page shows no posts, so we only need the (tiny) topics list for
-// the sidebar. Posts are fetched client-side and stream in while the visitor
-// reads the intro, so they're ready the instant they hit "Browse my posts".
-const topics = await loadTopics();
+// Topics for the shell; recent public posts for crawlable HTML + optional shell warm-up
+const [{ posts }, topics] = await Promise.all([
+	loadBlogIndex(),
+	loadTopics(),
+]);
+const recent = posts.slice(0, 12);
 ---
 
-<Layout title="Gabriel Nava">
+<Layout
+	title={`${SITE_NAME} — Blog`}
+	description={DEFAULT_DESCRIPTION}
+>
+	{/* Crawlable intro + post index (hidden visually but present for bots) */}
+	<section class="sr-only" aria-label="Site introduction">
+		<h1>{SITE_NAME}</h1>
+		<p>{DEFAULT_DESCRIPTION}</p>
+		<h2>Recent posts</h2>
+		<ul>
+			{
+				recent.map((post) => (
+					<li>
+						<a href={`${SITE_ORIGIN}/post/${post.id}`}>{post.title}</a>
+						{(post as any).excerpt && (
+							<p>{plainTextExcerpt((post as any).excerpt, 140)}</p>
+						)}
+					</li>
+				))
+			}
+		</ul>
+		<p>
+			<a href={`${SITE_ORIGIN}/posts`}>Browse all posts</a>
+			{" · "}
+			<a href={`${SITE_ORIGIN}/llms.txt`}>llms.txt</a>
+			{" · "}
+			<a href={`${SITE_ORIGIN}/rss.xml`}>RSS</a>
+		</p>
+	</section>
+
 	<BlogShell
 		client:idle
 		initialTopics={topics}
+		initialPosts={recent}
 		initialShowLanding={true}
 	/>
 </Layout>

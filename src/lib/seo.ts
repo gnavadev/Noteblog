@@ -11,6 +11,12 @@ export const SITE_ORIGIN = 'https://www.gabrielnava.dev';
 export const SITE_NAME = 'Gabriel Nava';
 export const DEFAULT_DESCRIPTION =
     "Gabriel's library of thoughts, projects, and travel essays.";
+export const AUTHOR_NAME = 'Gabriel Nava';
+export const AUTHOR_URL = `${SITE_ORIGIN}/`;
+export const AUTHOR_SAME_AS = [
+    'https://github.com/gnavadev',
+    'https://www.linkedin.com/in/gabriel-nava-dev/',
+] as const;
 
 /** Absolute URL of the default (local) share image before OG resizing. */
 export const DEFAULT_OG_SOURCE = `${SITE_ORIGIN}/GabrielPhoto.jpg`;
@@ -99,4 +105,67 @@ export function absoluteUrl(pathOrUrl: string, base: string | URL = SITE_ORIGIN)
     } catch {
         return SITE_ORIGIN;
     }
+}
+
+/** Full plain text of a post for JSON-LD articleBody (no length cap). */
+export function plainTextBody(content: string | null | undefined): string {
+    if (!content) return '';
+    return plainTextExcerpt(content, 100_000).replace(/…$/, '').trim();
+}
+
+export function websiteJsonLd() {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: SITE_ORIGIN,
+        description: DEFAULT_DESCRIPTION,
+        inLanguage: 'en',
+        publisher: personJsonLd(),
+    };
+}
+
+export function personJsonLd() {
+    return {
+        '@type': 'Person',
+        name: AUTHOR_NAME,
+        url: AUTHOR_URL,
+        sameAs: [...AUTHOR_SAME_AS],
+    };
+}
+
+export function blogPostingJsonLd(options: {
+    title: string;
+    description: string;
+    url: string;
+    image?: string | null;
+    datePublished?: string | null;
+    dateModified?: string | null;
+    articleBody?: string | null;
+    section?: string | null;
+}) {
+    const image = getOgImageUrl(options.image);
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: options.title,
+        description: options.description,
+        image: [image],
+        datePublished: options.datePublished || undefined,
+        dateModified: options.dateModified || options.datePublished || undefined,
+        author: personJsonLd(),
+        publisher: {
+            '@type': 'Person',
+            name: AUTHOR_NAME,
+            url: AUTHOR_URL,
+        },
+        mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': options.url,
+        },
+        articleSection: options.section || undefined,
+        articleBody: options.articleBody || undefined,
+        inLanguage: 'en',
+        url: options.url,
+    };
 }

@@ -48,6 +48,8 @@ export const GET: APIRoute = async () => {
         urlEntry(`${SITE_ORIGIN}/`, today, 'weekly', '1.0'),
         urlEntry(`${SITE_ORIGIN}/posts`, today, 'daily', '0.9'),
         urlEntry(`${SITE_ORIGIN}/board`, today, 'monthly', '0.4'),
+        urlEntry(`${SITE_ORIGIN}/llms.txt`, today, 'daily', '0.3'),
+        urlEntry(`${SITE_ORIGIN}/rss.xml`, today, 'daily', '0.3'),
     ];
 
     for (const post of posts) {

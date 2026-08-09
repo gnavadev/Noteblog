@@ -39,7 +39,24 @@ if (!topicExists) {
 }
 ---
 
-<Layout title={`Stories in ${topicName}`}>
+<Layout
+    title={`${topicName} — Gabriel Nava`}
+    description={`Posts about ${topicName} on Gabriel Nava's blog.`}
+>
+    <nav class="sr-only" aria-label={`Posts in ${topicName}`}>
+        <h1>{topicName}</h1>
+        <ul>
+            {
+                posts
+                    .filter((p) => p.topic === topicName)
+                    .map((p) => (
+                        <li>
+                            <a href={`/post/${p.id}`}>{p.title}</a>
+                        </li>
+                    ))
+            }
+        </ul>
+    </nav>
     <BlogShell
         client:load
         initialPosts={posts}

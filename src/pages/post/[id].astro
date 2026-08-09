@@ -13,7 +13,12 @@ import Comments from "../../components/comments/Comments";
 import { ThemeToggle } from "../../components/blog/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
-import { plainTextExcerpt } from "../../lib/seo";
+import {
+    plainTextExcerpt,
+    plainTextBody,
+    blogPostingJsonLd,
+    SITE_ORIGIN,
+} from "../../lib/seo";
 import { markdownToHtml } from "../../lib/ssr-markdown";
 
 const { id } = Astro.params;
@@ -86,6 +91,20 @@ const description = plainTextExcerpt(post.content);
 // the ~160 char meta description.
 const contentHtml = markdownToHtml(post.content);
 const markdownAlternate = `/post/${post.id}.md`;
+const pageUrl = `${SITE_ORIGIN}/post/${post.id}`;
+const publishedTime = post.created_at
+    ? new Date(post.created_at).toISOString()
+    : null;
+const jsonLd = blogPostingJsonLd({
+    title: post.title,
+    description,
+    url: pageUrl,
+    image: post.featured_image,
+    datePublished: publishedTime,
+    dateModified: publishedTime,
+    articleBody: plainTextBody(post.content),
+    section: post.topic,
+});
 ---
 
 <Layout
@@ -94,6 +113,11 @@ const markdownAlternate = `/post/${post.id}.md`;
     image={post.featured_image}
     type="article"
     markdownAlternate={markdownAlternate}
+    jsonLd={jsonLd}
+    publishedTime={publishedTime}
+    modifiedTime={publishedTime}
+    section={post.topic}
+    prefetchHeavyLibs={false}
 >
     <!-- Focus Mode Layout -->
     <div

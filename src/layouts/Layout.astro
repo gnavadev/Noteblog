@@ -6,6 +6,8 @@ import {
 	DEFAULT_DESCRIPTION,
 	getOgImageUrl,
 	absoluteUrl,
+	websiteJsonLd,
+	SITE_ORIGIN,
 } from "../lib/seo";
 
 interface Props {
@@ -17,6 +19,15 @@ interface Props {
 	canonicalUrl?: string;
 	/** Optional absolute or site-relative URL for text/markdown alternate (agents). */
 	markdownAlternate?: string | null;
+	/** Extra JSON-LD objects (BlogPosting, etc.). WebSite is always included. */
+	jsonLd?: Record<string, unknown> | Record<string, unknown>[] | null;
+	/** Open Graph article times (ISO). */
+	publishedTime?: string | null;
+	modifiedTime?: string | null;
+	/** Open Graph article:section (topic). */
+	section?: string | null;
+	/** Skip heavy lib prefetches on content pages (default true for article). */
+	prefetchHeavyLibs?: boolean;
 }
 
 const {
@@ -26,12 +37,17 @@ const {
 	type = "website",
 	canonicalUrl,
 	markdownAlternate = null,
+	jsonLd = null,
+	publishedTime = null,
+	modifiedTime = null,
+	section = null,
+	prefetchHeavyLibs = type !== "article",
 } = Astro.props;
 
 // Prefer configured site origin so crawlers always see www + https,
 // even if the request hit a preview/worker host.
 const siteOrigin =
-	Astro.site?.origin ?? "https://www.gabrielnava.dev";
+	Astro.site?.origin ?? SITE_ORIGIN;
 const pageUrl = canonicalUrl
 	? absoluteUrl(canonicalUrl, siteOrigin)
 	: new URL(Astro.url.pathname + Astro.url.search, siteOrigin).href;
@@ -44,6 +60,12 @@ const markdownAlternateUrl = markdownAlternate
 	: type === "article"
 		? `${pageUrl.replace(/\/$/, "")}.md`
 		: null;
+
+const jsonLdBlocks: Record<string, unknown>[] = [websiteJsonLd()];
+if (jsonLd) {
+	if (Array.isArray(jsonLd)) jsonLdBlocks.push(...jsonLd);
+	else jsonLdBlocks.push(jsonLd);
+}
 
 // Origin of the Supabase project, used to warm up the connection before the
 // client fires its first data/auth request.
@@ -84,8 +106,15 @@ try {
 
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="author" content={SITE_NAME} />
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 		<link rel="canonical" href={pageUrl} />
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title={`${SITE_NAME} RSS`}
+			href={`${siteOrigin}/rss.xml`}
+		/>
 		{
 			markdownAlternateUrl && (
 				<link
@@ -105,13 +134,18 @@ try {
 		}
 		<link rel="preconnect" href="https://wsrv.nl" crossorigin />
 
-		<!-- Preload heavy preview assets -->
-		<link rel="prefetch" href="/libs/echarts.min.js" as="script" />
-		<link
-			rel="prefetch"
-			href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
-			as="script"
-		/>
+		{
+			prefetchHeavyLibs && (
+				<>
+					<link rel="prefetch" href="/libs/echarts.min.js" as="script" />
+					<link
+						rel="prefetch"
+						href="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+						as="script"
+					/>
+				</>
+			)
+		}
 
 		<!-- Primary Meta Tags -->
 		<title>{title}</title>
@@ -131,12 +165,31 @@ try {
 		<meta property="og:image:height" content="630" />
 		<meta property="og:image:type" content="image/jpeg" />
 		<meta property="og:image:alt" content={title} />
+		{publishedTime && (
+			<meta property="article:published_time" content={publishedTime} />
+		)}
+		{modifiedTime && (
+			<meta property="article:modified_time" content={modifiedTime} />
+		)}
+		{section && <meta property="article:section" content={section} />}
+		{type === "article" && (
+			<meta property="article:author" content={SITE_NAME} />
+		)}
 
 		<!-- Twitter / X -->
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={metaDescription} />
 		<meta name="twitter:image" content={ogImage} />
+
+		{
+			jsonLdBlocks.map((block) => (
+				<script
+					type="application/ld+json"
+					set:html={JSON.stringify(block)}
+				/>
+			))
+		}
 	</head>
 	<body class="bg-background text-foreground enable-custom-scroll">
 		<slot />

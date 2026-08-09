@@ -47,9 +47,11 @@ export const onRequest = defineMiddleware(async ({ request }, next) => {
                 return markdownResponse(await markdownForPostsIndex());
             }
 
-            const postMatch = path.match(/^\/post\/([^/]+)$/);
+            // /post/{id}.md or /post/{id} with Accept: text/markdown
+            const postMatch = path.match(/^\/post\/([^/]+?)(?:\.md)?$/);
             if (postMatch) {
-                const md = await markdownForPost(postMatch[1]);
+                const id = postMatch[1].replace(/\.md$/i, '');
+                const md = await markdownForPost(id);
                 if (!md) {
                     return markdownResponse(
                         '# Not found\n\nThat post does not exist or is not public.\n',

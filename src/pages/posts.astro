@@ -8,11 +8,32 @@ Astro.response.headers.set(
 import Layout from "../layouts/Layout.astro";
 import BlogShell from "../components/BlogShell";
 import { loadBlogIndex } from "../lib/blog-data";
+import { plainTextExcerpt, SITE_ORIGIN, SITE_NAME } from "../lib/seo";
 
 const { posts, topics } = await loadBlogIndex();
+const description = `All public essays and notes on ${SITE_NAME} — security, hardware, projects, and more.`;
 ---
 
-<Layout title="Segmentation Thoughts">
+<Layout title={`All posts — ${SITE_NAME}`} description={description}>
+	{/* Crawlable HTML list for bots that ignore JS islands */}
+	<nav class="sr-only" aria-label="All public posts">
+		<h1>All posts</h1>
+		<ul>
+			{
+				posts.map((post) => (
+					<li>
+						<a href={`${SITE_ORIGIN}/post/${post.id}`}>
+							{post.title}
+						</a>
+						{(post as any).excerpt && (
+							<p>{plainTextExcerpt((post as any).excerpt, 160)}</p>
+						)}
+					</li>
+				))
+			}
+		</ul>
+	</nav>
+
 	<BlogShell client:load initialPosts={posts} initialTopics={topics} />
 </Layout>
 
