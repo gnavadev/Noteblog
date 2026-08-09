@@ -12,7 +12,7 @@ import BlogShell from "../../components/BlogShell";
 const { name } = Astro.params;
 
 if (!name) {
-    return Astro.rewrite("/404");
+    return Astro.redirect("/404");
 }
 
 const supabase = createSupabaseAnonClient();
@@ -35,7 +35,7 @@ const topicExists =
     posts.some((p) => p.topic === topicName);
 
 if (!topicExists) {
-    return Astro.rewrite("/404");
+    return Astro.redirect("/404");
 }
 ---
 

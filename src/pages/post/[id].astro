@@ -5,7 +5,10 @@ Astro.response.headers.set(
     "s-maxage=60, stale-while-revalidate=3600",
 );
 import Layout from "../../layouts/Layout.astro";
-import { createSupabaseServerClient } from "../../lib/supabase-server";
+import {
+    createSupabaseAnonClient,
+    createSupabaseServerClient,
+} from "../../lib/supabase-server";
 import ReactiveMarkdownViewer from "../../components/blog/ReactiveMarkdownViewer";
 import Comments from "../../components/comments/Comments";
 import { ThemeToggle } from "../../components/blog/ThemeToggle";
@@ -16,27 +19,53 @@ import { plainTextExcerpt } from "../../lib/seo";
 const { id } = Astro.params;
 
 if (!id) {
-    return Astro.rewrite("/404");
+    // rewrite() 500s on this Cloudflare adapter — use redirect to static 404
+    return Astro.redirect("/404");
 }
 
-// Session-aware SSR client (Workers-safe). Public posts work for anon;
-// logged-in authors/admins can open Focus View on drafts via RLS.
-const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+// Prefer session-aware client so authors can preview drafts; fall back to
+// stateless anon client if cookie wiring fails on the edge.
+let post: any = null;
+let topics: { id: string; name: string; color: string }[] = [];
 
-const [postResult, topicsResult] = await Promise.all([
-    supabase.from("notes").select("*").eq("id", id).single(),
-    supabase.from("topics").select("id, name, color"),
-]);
+try {
+    const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+    const [postResult, topicsResult] = await Promise.all([
+        supabase.from("notes").select("*").eq("id", id).maybeSingle(),
+        supabase.from("topics").select("id, name, color"),
+    ]);
+    post = postResult.data;
+    topics = topicsResult.data || [];
+} catch (err) {
+    console.error("[post] server client failed, falling back to anon", err);
+}
 
-const { data: post, error } = postResult;
+if (!post) {
+    try {
+        const anon = createSupabaseAnonClient();
+        const [postResult, topicsResult] = await Promise.all([
+            anon
+                .from("notes")
+                .select("*")
+                .eq("id", id)
+                .eq("is_public", true)
+                .maybeSingle(),
+            anon.from("topics").select("id, name, color"),
+        ]);
+        post = postResult.data;
+        if (!topics.length) topics = topicsResult.data || [];
+    } catch (err) {
+        console.error("[post] anon client failed", err);
+    }
+}
 
-if (error || !post) {
-    return Astro.rewrite("/404");
+// Missing (or RLS-hidden private) posts → clean 404 (never 500)
+if (!post) {
+    return Astro.redirect("/404");
 }
 
 // Get topic color
 let topicColor = "#007aff";
-const topics = topicsResult.data || [];
 const matchingTopic = topics.find(
     (t) =>
         (post.topic_id && t.id === post.topic_id) ||
