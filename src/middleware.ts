@@ -26,9 +26,19 @@ export const onRequest = defineMiddleware(async ({ request }, next) => {
         return Response.redirect(url.toString(), 301);
     }
 
-    if (request.method === 'GET' && prefersMarkdown(request.headers.get('Accept'))) {
-        const path = url.pathname.replace(/\/$/, '') || '/';
+    if (request.method !== 'GET') {
+        return next();
+    }
 
+    // Explicit .md URLs always return markdown (no special Accept header needed).
+    // Many agents fetch /page.md or follow rel="alternate" type="text/markdown".
+    const pathRaw = url.pathname.replace(/\/$/, '') || '/';
+    const wantsExplicitMd = pathRaw.endsWith('.md');
+    const path = wantsExplicitMd ? pathRaw.slice(0, -3) || '/' : pathRaw;
+    const negotiateMd =
+        wantsExplicitMd || prefersMarkdown(request.headers.get('Accept'));
+
+    if (negotiateMd) {
         try {
             if (path === '/') {
                 return markdownResponse(await markdownForHome());
@@ -41,9 +51,10 @@ export const onRequest = defineMiddleware(async ({ request }, next) => {
             if (postMatch) {
                 const md = await markdownForPost(postMatch[1]);
                 if (!md) {
-                    return markdownResponse('# Not found\n\nThat post does not exist or is not public.\n', {
-                        status: 404,
-                    });
+                    return markdownResponse(
+                        '# Not found\n\nThat post does not exist or is not public.\n',
+                        { status: 404 }
+                    );
                 }
                 return markdownResponse(md);
             }
@@ -52,11 +63,17 @@ export const onRequest = defineMiddleware(async ({ request }, next) => {
             if (topicMatch) {
                 const md = await markdownForTopic(topicMatch[1]);
                 if (!md) {
-                    return markdownResponse('# Not found\n\nThat topic was not found.\n', {
-                        status: 404,
-                    });
+                    return markdownResponse(
+                        '# Not found\n\nThat topic was not found.\n',
+                        { status: 404 }
+                    );
                 }
                 return markdownResponse(md);
+            }
+
+            // Unknown .md path
+            if (wantsExplicitMd) {
+                return markdownResponse('# Not found\n', { status: 404 });
             }
         } catch (err) {
             console.error('[markdown-negotiation]', err);

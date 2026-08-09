@@ -9,12 +9,12 @@ import {
     createSupabaseAnonClient,
     createSupabaseServerClient,
 } from "../../lib/supabase-server";
-import ReactiveMarkdownViewer from "../../components/blog/ReactiveMarkdownViewer";
 import Comments from "../../components/comments/Comments";
 import { ThemeToggle } from "../../components/blog/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import { plainTextExcerpt } from "../../lib/seo";
+import { markdownToHtml } from "../../lib/ssr-markdown";
 
 const { id } = Astro.params;
 
@@ -81,6 +81,11 @@ const formattedDate = new Date(post.created_at).toLocaleDateString("en-US", {
 });
 
 const description = plainTextExcerpt(post.content);
+// Full article HTML in the initial response so scrapers/LLMs that don't run JS
+// (and don't send Accept: text/markdown) still get the complete post — not just
+// the ~160 char meta description.
+const contentHtml = markdownToHtml(post.content);
+const markdownAlternate = `/post/${post.id}.md`;
 ---
 
 <Layout
@@ -88,6 +93,7 @@ const description = plainTextExcerpt(post.content);
     description={description}
     image={post.featured_image}
     type="article"
+    markdownAlternate={markdownAlternate}
 >
     <!-- Focus Mode Layout -->
     <div
@@ -153,25 +159,23 @@ const description = plainTextExcerpt(post.content);
             >
             </div>
 
-            <!-- Content Section -->
-            <div class="w-full max-w-none min-h-[50vh]">
-                <ReactiveMarkdownViewer
-                    content={post.content}
-                    client:only="react"
-                >
-                    <div
-                        slot="fallback"
-                        class="w-full flex flex-col space-y-6 py-10 animate-pulse"
-                    >
-                        <div class="h-6 w-3/4 bg-border/40 rounded-md"></div>
-                        <div class="h-6 w-full bg-border/40 rounded-md"></div>
-                        <div class="h-6 w-5/6 bg-border/40 rounded-md"></div>
-                        <div class="h-6 w-2/3 bg-border/40 rounded-md"></div>
-                        <div class="h-6 w-full bg-border/40 rounded-md"></div>
-                        <div class="h-6 w-4/5 bg-border/40 rounded-md"></div>
-                    </div>
-                </ReactiveMarkdownViewer>
-            </div>
+            <!--
+              Full article is server-rendered so LLMs/crawlers that only fetch HTML
+              (and only read meta tags or visible text) get the complete post —
+              not just the ~160-char og:description. JS-only islands hide body text
+              from most agent scrapers.
+            -->
+            <div
+                class="w-full min-h-[50vh] prose prose-slate dark:prose-invert max-w-none
+                    prose-headings:font-bold prose-headings:tracking-tight
+                    prose-a:text-primary prose-p:leading-relaxed prose-p:mb-6
+                    prose-blockquote:border-s-[4px] prose-blockquote:border-primary/50
+                    prose-blockquote:bg-muted/50 prose-blockquote:py-1 prose-blockquote:px-4
+                    prose-blockquote:rounded-r-lg prose-blockquote:not-italic
+                    prose-pre:bg-muted prose-pre:border prose-pre:border-border
+                    prose-img:rounded-xl"
+                set:html={contentHtml}
+            />
 
             <div class="pt-20 space-y-12">
                 <div
