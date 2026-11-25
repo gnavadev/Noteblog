@@ -37,6 +37,9 @@ Allow: /
 User-agent: bingbot
 Allow: /
 
+User-agent: Google-adstxt
+Disallow:
+
 # Private / author-only surfaces
 User-agent: *
 Disallow: /editor/
